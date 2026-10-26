@@ -10,7 +10,7 @@ Status legend: `[ ]` to do · `[x]` done
 
 - **Phase 1 — Template setup:** ✅ done (2026-10-26), commit `8f20758`
 - **Plan review (rev. 6, 2026-10-26):** ✅ consistency + free-tier review done, see [Review findings](#review-findings-rev-6)
-- **Phase 2 — "Padlet for PBL" app:** 🚧 in progress — Google sign-in enabled · M4 Steps 1–6 done (`/health` → `config: ok`) · service account key ready · **M1 ✅** · **Loop 1 (M2) ✅ code done** — waiting for you: `npm run deploy:rules` + acceptance test ([report](reports/loop-01-m2.md)) (Worker live at `https://media-api.paradisserossa.workers.dev`, 2026-10-26)
+- **Phase 2 — "Padlet for PBL" app:** 🚧 in progress — Google sign-in enabled · M4 Steps 1–6 done (`/health` → `config: ok`) · service account key ready · **M1 ✅** · **Loop 1 (M2) ✅** ([report](reports/loop-01-m2.md)) · **Loop 2 (M3) ✅ code done** — waiting for you: `npm run deploy:rules` + acceptance test ([report](reports/loop-02-m3.md)) (Worker live at `https://media-api.paradisserossa.workers.dev`, 2026-10-26)
 
 ---
 
@@ -582,7 +582,7 @@ Saved as `reports/loop-NN-<milestone>.md` (committed) and summarized in the chat
 | ---- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
 | 0 ✅ | **M1 finish**                             | —                                                                                                                                                                   | `npm run admin -- setup --email paradisserossa@gmail.com` · log in as teacher and as student |
 | 1 ✅ | **Infra + M2** Boards, students & joining | emulator seed, Playwright setup, `npm test`; teacher dashboard, create board, students table, JSON import + quick add, auto-join, invite link, merge, rules + tests | `npm run deploy:rules` (rules + indexes) · acceptance test                                   |
-| 2    | **M3** Dashboard                          | Padlet-like board view, live cards, space profile (no cover yet)                                                                                                    | `npm run deploy:rules` · acceptance test                                                     |
+| 2 ✅ | **M3** Dashboard                          | Padlet-like board view, live cards, space profile (no cover yet)                                                                                                    | `npm run deploy:rules` · acceptance test                                                     |
 | 3    | **M4** Uploads (Worker Steps 7–12)        | token check, permission check, signed uploads, cover image, asset registry, rules                                                                                   | `npx wrangler deploy` · upload a real image · `npm run deploy:rules`                         |
 | 4    | **M5** Excalidraw slides                  | editor, autosave (throttled), images via Cloudinary, viewer, self-hosted fonts                                                                                      | `npm run deploy:rules` · acceptance test                                                     |
 | 5    | **M6** Presentation                       | full screen, keyboard, next student, GSAP transitions                                                                                                               | acceptance test                                                                              |
@@ -635,9 +635,14 @@ Each milestone ends with something we can try in the browser, plus a commit.
 
 ### M3 — Dashboard (the reference screen)
 
-- [ ] Board header, masonry columns of `SpaceCard`, live updates, skeletons, empty states
-- [ ] Card actions: open, edit (owner), present (teacher)
-- [ ] Space profile: title, summary, color (cover image comes in M4)
+- [x] Board header (title, description, student count), Padlet-like yellow background, masonry columns of `SpaceCard`, **live updates**, my card first, skeletons, empty and read-only states, GSAP entrance
+- [x] Card actions: open (space page), edit (owner only) · **present (teacher) moves to M6**, where presentation mode exists
+- [x] Space profile: title, summary (1000 chars), 7 named colors (cover image comes in M4)
+- [x] Rules: student edits only their own card (either account), only while the board is active; teacher syncs the name on rename (37 rules tests)
+- [x] Space page `/b/:boardId/s/:studentId` (slides viewer arrives in M5)
+- [x] E2E: 6 dashboard flows incl. live teacher ↔ student update (16 e2e total)
+- [ ] **Deploy rules** (you): `npm run deploy:rules`
+- [ ] **Acceptance test** (you): [checklist](reports/loop-02-m3.md#5-acceptance-test)
 
 ### M4 — Media API (Cloudflare Worker) + Cloudinary — **baby steps below**
 
