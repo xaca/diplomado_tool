@@ -1,10 +1,17 @@
-import { collection, doc, serverTimestamp, updateDoc } from 'firebase/firestore'
+import {
+  collection,
+  doc,
+  serverTimestamp,
+  updateDoc,
+  writeBatch,
+} from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import type { WithId } from '@/lib/firestore-hooks'
 import { toDate } from '@/lib/time'
 import {
   paths,
   spaceProfileSchema,
+  type ImageRef,
   type SpaceDoc,
   type SpaceProfile,
 } from '@/model'
@@ -42,4 +49,27 @@ export function sortSpaces<
     const byJoin = toDate(a.createdAt).getTime() - toDate(b.createdAt).getTime()
     return byJoin !== 0 ? byJoin : a.ownerName.localeCompare(b.ownerName, 'es')
   })
+}
+
+/**
+ * Sets (or removes, with null) the card cover. The previous image is marked "orphaned"
+ * in the registry so the M7 cleanup can delete it from Cloudinary.
+ */
+export async function setSpaceCover(
+  boardId: string,
+  studentId: string,
+  next: ImageRef | null,
+  previous: ImageRef | null | undefined,
+) {
+  const batch = writeBatch(db)
+  batch.update(doc(db, paths.space(boardId, studentId)), {
+    cover: next,
+    updatedAt: serverTimestamp(),
+  })
+  if (previous && previous.assetId !== next?.assetId) {
+    batch.update(doc(db, paths.asset(boardId, previous.assetId)), {
+      status: 'orphaned',
+    })
+  }
+  await batch.commit()
 }

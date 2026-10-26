@@ -11,6 +11,7 @@ import { SpaceProfileDialog } from '@/features/spaces/components/SpaceProfileDia
 import { useMyStudentId } from '@/features/spaces/hooks'
 import { db } from '@/lib/firebase'
 import { useLiveDoc } from '@/lib/firestore-hooks'
+import { IMAGE_SIZES, imageUrl } from '@/lib/cloudinary'
 import { initials } from '@/lib/initials'
 import { formatRelative, toDate } from '@/lib/time'
 import { paths, type SpaceDoc } from '@/model'
@@ -60,6 +61,13 @@ export function SpacePage() {
         style={{ backgroundColor: space.data.color }}
         data-testid="space-detail"
       >
+        {space.data.cover && (
+          <img
+            src={imageUrl(space.data.cover, IMAGE_SIZES.slide)}
+            alt=""
+            className="mb-4 aspect-video w-full rounded-xl object-cover"
+          />
+        )}
         <header className="mb-4 flex items-center gap-3">
           <Avatar>
             <AvatarImage

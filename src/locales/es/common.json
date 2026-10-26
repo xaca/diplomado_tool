@@ -183,5 +183,20 @@
     "saved": "Tarjeta guardada",
     "notFound": "No encontramos este espacio o no tienes acceso.",
     "slidesSoon": "Aquí verás las diapositivas del proceso (llegan en M5)."
+  },
+  "cover": {
+    "label": "Imagen de portada",
+    "none": "Sin portada",
+    "choose": "Subir imagen",
+    "change": "Cambiar imagen",
+    "remove": "Quitar",
+    "uploading": "Subiendo {{progress}} %",
+    "saved": "Portada actualizada",
+    "errors": {
+      "type": "Formato no soportado. Usa JPG, PNG, WebP o GIF.",
+      "tooLarge": "La imagen es demasiado grande (máximo 30 MB).",
+      "forbidden": "No tienes permiso para subir imágenes a este espacio (¿el tablero está cerrado?).",
+      "network": "No se pudo subir la imagen. Revisa tu conexión e inténtalo de nuevo."
+    }
   }
 }

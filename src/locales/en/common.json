@@ -183,5 +183,20 @@
     "saved": "Card saved",
     "notFound": "We couldn't find this space, or you don't have access.",
     "slidesSoon": "The slides of the process will appear here (coming in M5)."
+  },
+  "cover": {
+    "label": "Cover image",
+    "none": "No cover",
+    "choose": "Upload image",
+    "change": "Change image",
+    "remove": "Remove",
+    "uploading": "Uploading {{progress}}%",
+    "saved": "Cover updated",
+    "errors": {
+      "type": "Unsupported format. Use JPG, PNG, WebP or GIF.",
+      "tooLarge": "The image is too large (30 MB max).",
+      "forbidden": "You can't upload images to this space (is the board closed?).",
+      "network": "Couldn't upload the image. Check your connection and try again."
+    }
   }
 }

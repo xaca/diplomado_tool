@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import type { Space } from '@/features/spaces/api'
+import { IMAGE_SIZES, imageUrl } from '@/lib/cloudinary'
 import { initials } from '@/lib/initials'
 import { formatRelative, toDate } from '@/lib/time'
 
@@ -30,6 +31,17 @@ export function SpaceCard({ boardId, space, isMine, onEdit }: Props) {
       className="mb-4 break-inside-avoid rounded-xl border border-black/5 shadow-sm transition-shadow hover:shadow-md"
       style={{ backgroundColor: space.color }}
     >
+      {space.cover && (
+        <img
+          src={imageUrl(space.cover, IMAGE_SIZES.cardCover)}
+          alt=""
+          loading="lazy"
+          width={400}
+          height={225}
+          className="aspect-video w-full rounded-t-xl object-cover"
+          data-testid="card-cover"
+        />
+      )}
       <header className="flex items-center gap-2 p-3 pb-0">
         <Avatar className="size-7">
           <AvatarImage

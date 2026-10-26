@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { updateSpaceProfile, type Space } from '@/features/spaces/api'
+import { CoverPicker } from '@/features/spaces/components/CoverPicker'
 import { cn } from '@/lib/utils'
 import {
   SPACE_COLOR_NAMES,
@@ -98,6 +99,8 @@ export function SpaceProfileDialog({
               {summary.length}/1000
             </span>
           </div>
+
+          <CoverPicker boardId={boardId} space={space} />
 
           <fieldset className="flex flex-col gap-2">
             <legend className="mb-2 text-sm font-medium">

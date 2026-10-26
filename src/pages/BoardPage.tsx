@@ -5,7 +5,6 @@ import { Settings, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useBoard } from '@/features/boards/hooks'
-import type { Space } from '@/features/spaces/api'
 import { SpaceCard } from '@/features/spaces/components/SpaceCard'
 import { SpaceProfileDialog } from '@/features/spaces/components/SpaceProfileDialog'
 import { useMyStudentId, useSpaces } from '@/features/spaces/hooks'
@@ -20,7 +19,8 @@ export function BoardPage() {
   const board = useBoard(boardId)
   const me = useMyStudentId(boardId)
   const spaces = useSpaces(boardId, me.studentId)
-  const [editing, setEditing] = useState<Space | null>(null)
+  // Keep the id, not a copy: the dialog must see live changes (e.g. a new cover)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const grid = useRef<HTMLDivElement>(null)
   const ready = !spaces.loading && !me.loading
 
@@ -59,6 +59,7 @@ export function BoardPage() {
 
   const teacher = isTeacherRole(role)
   const mySpace = spaces.data.find((space) => space.id === me.studentId)
+  const editing = spaces.data.find((space) => space.id === editingId)
 
   return (
     <div className="board-background min-h-[calc(100svh-3.5rem)]">
@@ -83,7 +84,7 @@ export function BoardPage() {
           </div>
           <div className="flex gap-2">
             {mySpace && board.data.status === 'active' && (
-              <Button onClick={() => setEditing(mySpace)}>
+              <Button onClick={() => setEditingId(mySpace.id)}>
                 {t('dashboard.editMine')}
               </Button>
             )}
@@ -139,7 +140,7 @@ export function BoardPage() {
                 isMine={space.id === me.studentId}
                 onEdit={
                   board.data!.status === 'active'
-                    ? () => setEditing(space)
+                    ? () => setEditingId(space.id)
                     : undefined
                 }
               />
@@ -154,7 +155,7 @@ export function BoardPage() {
           boardId={boardId}
           space={editing}
           open
-          onOpenChange={(open) => !open && setEditing(null)}
+          onOpenChange={(open) => !open && setEditingId(null)}
         />
       )}
     </div>
