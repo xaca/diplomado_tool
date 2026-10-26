@@ -5,6 +5,7 @@ import { BoardPage } from '@/pages/BoardPage'
 import { JoinPage } from '@/pages/JoinPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
+import { SpacePage } from '@/pages/SpacePage'
 import { StudentHomePage } from '@/pages/StudentHomePage'
 import { TeacherBoardPage } from '@/pages/TeacherBoardPage'
 import { TeacherHomePage } from '@/pages/TeacherHomePage'
@@ -23,6 +24,7 @@ export const router = createBrowserRouter([
           },
           { path: 'join/:code', element: <JoinPage /> },
           { path: 'b/:boardId', element: <BoardPage /> },
+          { path: 'b/:boardId/s/:studentId', element: <SpacePage /> },
           {
             element: <RequireTeacher />,
             children: [

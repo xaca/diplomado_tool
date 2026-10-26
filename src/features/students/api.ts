@@ -114,6 +114,12 @@ export async function updateStudent(
     })
   for (const email of removed)
     batch.delete(doc(db, paths.studentEmail(boardId, email)))
+  // The dashboard card shows a copy of the name: keep it in sync (only if they already joined)
+  if (input.name !== student.displayName) {
+    const space = doc(db, paths.space(boardId, student.id))
+    if ((await getDoc(space)).exists())
+      batch.update(space, { ownerName: input.name })
+  }
   await batch.commit()
 }
 

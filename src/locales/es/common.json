@@ -51,8 +51,7 @@
     "created": "Tablero creado",
     "notFound": "No encontramos este tablero o no tienes acceso.",
     "open": "Ver tablero",
-    "manage": "Administrar",
-    "dashboardSoon": "Aquí verás las tarjetas de cada estudiante (llega en el siguiente paso, M3)."
+    "manage": "Administrar"
   },
   "invite": {
     "title": "Enlace de invitación",
@@ -147,5 +146,42 @@
   "notFound": {
     "title": "Página no encontrada",
     "back": "Volver al inicio"
+  },
+  "dashboard": {
+    "students_one": "{{count}} estudiante",
+    "students_other": "{{count}} estudiantes",
+    "editMine": "Editar mi tarjeta",
+    "readOnly": "Este tablero está cerrado: puedes verlo, pero ya no se puede editar.",
+    "emptyTitle": "Todavía no hay tarjetas",
+    "emptyTeacher": "Las tarjetas aparecen cuando tus estudiantes inician sesión por primera vez. Agrégalos desde Administrar.",
+    "emptyStudent": "Pronto verás aquí el trabajo de tus compañeros."
+  },
+  "space": {
+    "mine": "Tú",
+    "edit": "Editar",
+    "open": "Abrir",
+    "empty": "Aún sin título",
+    "emptyMine": "Toca Editar para contar de qué trata tu proyecto",
+    "slides_one": "{{count}} diapositiva",
+    "slides_other": "{{count}} diapositivas",
+    "editTitle": "Mi tarjeta",
+    "editHint": "Así te verán tu docente y tus compañeros en el tablero.",
+    "title": "Título del proyecto",
+    "titlePlaceholder": "App de rastreo de mascotas",
+    "summary": "Resumen",
+    "summaryPlaceholder": "¿Qué problema resuelve? ¿Para quién? ¿Cómo vas?",
+    "color": "Color de la tarjeta",
+    "colors": {
+      "white": "Blanco",
+      "yellow": "Amarillo",
+      "pink": "Rosa",
+      "purple": "Lila",
+      "blue": "Azul",
+      "green": "Verde",
+      "orange": "Naranja"
+    },
+    "saved": "Tarjeta guardada",
+    "notFound": "No encontramos este espacio o no tienes acceso.",
+    "slidesSoon": "Aquí verás las diapositivas del proceso (llegan en M5)."
   }
 }

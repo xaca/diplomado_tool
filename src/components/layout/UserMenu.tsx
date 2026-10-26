@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useAuthActions, useLanguage } from '@/features/auth/hooks'
 import { SUPPORTED_LANGUAGES } from '@/lib/i18n'
+import { initials } from '@/lib/initials'
 import { useAuth } from '@/providers/auth-context'
 
 export function UserMenu() {
@@ -25,12 +26,7 @@ export function UserMenu() {
 
   if (!user) return null
 
-  const initials = (user.displayName ?? user.email ?? '?')
-    .split(' ')
-    .map((part) => part[0])
-    .slice(0, 2)
-    .join('')
-    .toUpperCase()
+  const fallback = initials(user.displayName ?? user.email ?? '')
 
   return (
     <DropdownMenu>
@@ -50,7 +46,7 @@ export function UserMenu() {
             alt=""
             referrerPolicy="no-referrer"
           />
-          <AvatarFallback>{initials}</AvatarFallback>
+          <AvatarFallback>{fallback}</AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
 

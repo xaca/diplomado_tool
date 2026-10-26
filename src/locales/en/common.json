@@ -51,8 +51,7 @@
     "created": "Board created",
     "notFound": "We couldn't find this board, or you don't have access.",
     "open": "View board",
-    "manage": "Manage",
-    "dashboardSoon": "Each student's card will appear here (coming in the next step, M3)."
+    "manage": "Manage"
   },
   "invite": {
     "title": "Invite link",
@@ -147,5 +146,42 @@
   "notFound": {
     "title": "Page not found",
     "back": "Back home"
+  },
+  "dashboard": {
+    "students_one": "{{count}} student",
+    "students_other": "{{count}} students",
+    "editMine": "Edit my card",
+    "readOnly": "This board is closed: you can view it, but it can no longer be edited.",
+    "emptyTitle": "No cards yet",
+    "emptyTeacher": "Cards appear when your students sign in for the first time. Add them from Manage.",
+    "emptyStudent": "Your classmates' work will show up here soon."
+  },
+  "space": {
+    "mine": "You",
+    "edit": "Edit",
+    "open": "Open",
+    "empty": "No title yet",
+    "emptyMine": "Tap Edit to tell what your project is about",
+    "slides_one": "{{count}} slide",
+    "slides_other": "{{count}} slides",
+    "editTitle": "My card",
+    "editHint": "This is how your teacher and classmates see you on the board.",
+    "title": "Project title",
+    "titlePlaceholder": "Pet tracking app",
+    "summary": "Summary",
+    "summaryPlaceholder": "What problem does it solve? For whom? How is it going?",
+    "color": "Card color",
+    "colors": {
+      "white": "White",
+      "yellow": "Yellow",
+      "pink": "Pink",
+      "purple": "Lilac",
+      "blue": "Blue",
+      "green": "Green",
+      "orange": "Orange"
+    },
+    "saved": "Card saved",
+    "notFound": "We couldn't find this space, or you don't have access.",
+    "slidesSoon": "The slides of the process will appear here (coming in M5)."
   }
 }

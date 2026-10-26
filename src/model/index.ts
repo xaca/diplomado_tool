@@ -134,6 +134,17 @@ export const SPACE_COLORS = [
   '#FFEDD5',
 ] as const
 
+/** Same order as SPACE_COLORS (translated as space.colors.<name>) */
+export const SPACE_COLOR_NAMES = [
+  'white',
+  'yellow',
+  'pink',
+  'purple',
+  'blue',
+  'green',
+  'orange',
+] as const
+
 export const spaceProfileSchema = z.object({
   title: z.string().trim().max(120),
   summary: z.string().trim().max(1000),

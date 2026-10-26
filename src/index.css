@@ -128,3 +128,10 @@
     @apply font-sans;
   }
 }
+
+/* Padlet-like board background: warm yellow with a soft dot pattern */
+.board-background {
+  background-color: #fcd34d;
+  background-image: radial-gradient(rgb(0 0 0 / 0.06) 1.5px, transparent 1.5px);
+  background-size: 22px 22px;
+}
