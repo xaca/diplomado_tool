@@ -9,7 +9,7 @@ Images: **Cloudinary** · Media service: **Cloudflare Worker** · Admin tasks: *
 Status legend: `[ ]` to do · `[x]` done
 
 - **Phase 1 — Template setup:** ✅ done (2026-10-26), commit `8f20758`
-- **Phase 2 — "Padlet for PBL" app:** 🚧 in progress — M4 Steps 1–4 done (Worker live at `https://media-api.paradisserossa.workers.dev`, 2026-10-26)
+- **Phase 2 — "Padlet for PBL" app:** 🚧 in progress — M4 Steps 1–5 done, Step 6 waiting for the secret (Worker live at `https://media-api.paradisserossa.workers.dev`, 2026-10-26)
 
 ---
 
@@ -583,7 +583,9 @@ How we'll do it in pair programming: **one small step at a time**. Each step say
 ### Step 1 — Create the free accounts (you, ~10 min)
 
 - [x] **Cloudflare** (2026-10-26): free plan, 100,000 requests/day. Subdomain **`paradisserossa.workers.dev`**, so the Worker will live at **`https://media-api.paradisserossa.workers.dev`**.
-- [ ] **Cloudinary:** sign up at cloudinary.com (free plan, no credit card). Write down the **Cloud name**, **API Key** and **API Secret** (Settings → API Keys). Needed from Step 6.
+- [x] **Cloudinary** (2026-10-26): free plan. Cloud name **`syqkgwws`**. The API key is in `wrangler.jsonc` (public); the API secret goes only in `.dev.vars` and Cloudflare secrets (Step 6).
+
+> **Lesson learned:** Cloudinary's dashboard shows a Node.js quickstart (`import { v2 as cloudinary } from 'cloudinary'` + `api_secret`). That code is for **servers only**. It was removed from `src/lib/cloudinary.ts`, and the `cloudinary` package was uninstalled from the app. In the browser we only build URLs; the secret lives in the Worker.
 
 ✅ Check: you can see both dashboards. **Never paste the API Secret in the chat or in any committed file.**
 
@@ -639,15 +641,21 @@ npx wrangler deploy
 
 ✅ Check: the output prints `https://media-api.paradisserossa.workers.dev`. Open it and see "Hello World!" on the internet; the Worker now also appears in the dashboard under **Workers & Pages**. **Commit** if anything changed.
 
-### Step 5 — Health route + CORS (I write, you review)
+### Step 5 ✅ — Health route + CORS (I write, you review)
 
 - Replace Hello World with a tiny router: `GET /health` → `{ ok: true }`.
 - Add CORS for the allowed origins: `http://localhost:5173` and the Firebase Hosting domains `diplomado-fc679.web.app` / `.firebaseapp.com`.
 - Add `VITE_MEDIA_API_URL` to `.env.local` / `.env.example`, plus a typed `lib/media-api.ts` client in the app.
 
-✅ Check: from the app (a dev-only button), `/health` answers `ok`. A request from another origin is blocked.
+Done:
 
-### Step 6 — Configuration and secrets (you type the secret)
+- `services/media-api/src/index.ts`: route table, `GET /health`, CORS from `ALLOWED_ORIGINS` (other origins → `403`), `404` for unknown routes
+- `services/media-api/test/index.spec.ts`: 4 tests (health, 404, allowed origin, rejected origin) — `npm test` in `services/media-api`
+- App: `VITE_MEDIA_API_URL` + `VITE_CLOUDINARY_CLOUD_NAME` (validated in `lib/env.ts`), `lib/media-api.ts` (typed client), `lib/cloudinary.ts` (`ImageRef` type + `imageUrl()` builder, no SDK)
+
+✅ Check: tests pass; from the app, `mediaApi.health()` answers `ok` (we wire a button in M1 when the app has a layout).
+
+### Step 6 — Configuration and secrets (you type the secret) — 🟡 code done, your part pending
 
 - **Public values** go in `wrangler.jsonc` → `vars`: `FIREBASE_PROJECT_ID`, `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `ALLOWED_ORIGINS`.
 - **The secret, locally:** put it in `services/media-api/.dev.vars` (git-ignored): `CLOUDINARY_API_SECRET=…`
@@ -657,7 +665,15 @@ npx wrangler deploy
 npx wrangler secret put CLOUDINARY_API_SECRET   # paste it when asked; it's stored encrypted in Cloudflare
 ```
 
-✅ Check: `GET /health` reports `config: ok` (it confirms the secret exists without ever printing it).
+Done by me: `vars` in `wrangler.jsonc`, `.dev.vars.example`, an empty `.dev.vars` (git-ignored), regenerated `Env` types (`npm run cf-typegen`).
+
+Your part:
+
+- [ ] Open `services/media-api/.dev.vars` and paste the secret after `CLOUDINARY_API_SECRET=`
+- [ ] `npx wrangler secret put CLOUDINARY_API_SECRET` (paste it when asked)
+- [ ] `npx wrangler deploy`
+
+✅ Check: `http://localhost:8787/health` (with `npx wrangler dev`) and `https://media-api.paradisserossa.workers.dev/health` both report `config: ok`. The Worker confirms the secret exists without ever printing it.
 
 ### Step 7 — Who is calling? Verify the Firebase ID token (I write, we test together)
 

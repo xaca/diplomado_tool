@@ -1,0 +1,2 @@
+# Copy to .dev.vars (git-ignored) and paste the real secret from Cloudinary → Settings → API Keys
+CLOUDINARY_API_SECRET=

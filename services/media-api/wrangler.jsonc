@@ -10,7 +10,15 @@
 	"observability": {
 		"enabled": true
 	},
-	"upload_source_maps": true
+	"upload_source_maps": true,
+	// Public configuration. The Cloudinary API secret is NOT here:
+	// local → .dev.vars (git-ignored) · production → `npx wrangler secret put CLOUDINARY_API_SECRET`
+	"vars": {
+		"FIREBASE_PROJECT_ID": "diplomado-fc679",
+		"CLOUDINARY_CLOUD_NAME": "syqkgwws",
+		"CLOUDINARY_API_KEY": "719523683767324",
+		"ALLOWED_ORIGINS": "http://localhost:5173,https://diplomado-fc679.web.app,https://diplomado-fc679.firebaseapp.com"
+	}
 	/**
 	 * Smart Placement
 	 * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement

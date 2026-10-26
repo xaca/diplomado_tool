@@ -7,6 +7,8 @@ const envSchema = z.object({
   VITE_FIREBASE_STORAGE_BUCKET: z.string().min(1),
   VITE_FIREBASE_MESSAGING_SENDER_ID: z.string().min(1),
   VITE_FIREBASE_APP_ID: z.string().min(1),
+  VITE_CLOUDINARY_CLOUD_NAME: z.string().min(1),
+  VITE_MEDIA_API_URL: z.url(),
   VITE_USE_EMULATORS: z
     .enum(['true', 'false'])
     .default('false')
