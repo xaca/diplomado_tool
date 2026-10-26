@@ -1,6 +1,15 @@
 {
   "appName": "PBL Diplomado",
   "loading": "Cargando…",
+  "common": {
+    "save": "Guardar",
+    "saving": "Guardando…",
+    "cancel": "Cancelar",
+    "remove": "Eliminar"
+  },
+  "errors": {
+    "generic": "Algo salió mal. Inténtalo de nuevo."
+  },
   "language": {
     "label": "Idioma",
     "es": "Español",
@@ -26,11 +35,114 @@
   },
   "teacher": {
     "title": "Panel docente",
-    "empty": "Aquí verás tus tableros. Crearlos llega en el siguiente paso (M2)."
+    "empty": "Todavía no tienes tableros. Crea el primero para tu curso."
   },
   "student": {
     "title": "Mis tableros",
-    "empty": "Todavía no estás en ningún tablero. Cuando tu docente te agregue, aparecerá aquí."
+    "empty": "Todavía no estás en ningún tablero. Cuando tu docente te agregue con tu correo, aparecerá aquí al iniciar sesión."
+  },
+  "boards": {
+    "new": "Nuevo tablero",
+    "newHint": "Un tablero por curso o grupo. Luego agregas a tus estudiantes.",
+    "title": "Título",
+    "titlePlaceholder": "Diplomado PBL 2026-2",
+    "description": "Descripción (opcional)",
+    "create": "Crear tablero",
+    "created": "Tablero creado",
+    "notFound": "No encontramos este tablero o no tienes acceso.",
+    "open": "Ver tablero",
+    "manage": "Administrar",
+    "dashboardSoon": "Aquí verás las tarjetas de cada estudiante (llega en el siguiente paso, M3)."
+  },
+  "invite": {
+    "title": "Enlace de invitación",
+    "hint": "Para estudiantes que no estén en tu lista. Quienes ya agregaste solo necesitan iniciar sesión con Google.",
+    "enabled": "Enlace activo",
+    "disabled": "Enlace desactivado",
+    "link": "Enlace de invitación",
+    "copy": "Copiar",
+    "copied": "Enlace copiado",
+    "code": "Código"
+  },
+  "students": {
+    "title": "Estudiantes",
+    "counts": "{{total}} en total · {{joined}} ya ingresaron",
+    "add": "Agregar estudiante",
+    "added": "Estudiante agregado",
+    "edit": "Editar estudiante",
+    "updated": "Estudiante actualizado",
+    "export": "Exportar JSON",
+    "empty": "Aún no hay estudiantes. Agrégalos uno a uno, impórtalos o comparte el enlace de invitación.",
+    "name": "Nombre",
+    "emails": "Correos",
+    "email": "Correo",
+    "emailsHint": "Agrega los correos con los que puede iniciar sesión (personal y/o de la universidad). Cualquiera lo lleva a su mismo espacio.",
+    "personalEmail": "correo personal (Gmail)",
+    "universityEmail": "correo de la universidad",
+    "addEmail": "Agregar otro correo",
+    "group": "Grupo (opcional)",
+    "status": "Estado",
+    "statuses": {
+      "invited": "Invitado",
+      "joined": "Ingresó"
+    },
+    "accounts_one": "{{count}} cuenta",
+    "accounts_other": "{{count}} cuentas",
+    "emailTaken": "{{email}} ya pertenece a otro estudiante.",
+    "removeTitle": "¿Eliminar a {{name}}?",
+    "removeHint": "Se eliminan sus correos, sus cuentas vinculadas y su espacio en este tablero. No se puede deshacer.",
+    "removed": "Estudiante eliminado"
+  },
+  "merge": {
+    "selected": "2 estudiantes seleccionados: ¿son la misma persona?",
+    "button": "Combinar",
+    "select": "Seleccionar a {{name}}",
+    "title": "Combinar estudiantes",
+    "hint": "Los correos y cuentas de ambos pasan a uno solo. El otro se elimina.",
+    "keep": "Conservar a",
+    "confirm": "Combinar",
+    "done": "Estudiantes combinados",
+    "tooManyEmails": "Juntos tendrían más de 5 correos. Quita alguno antes de combinar."
+  },
+  "import": {
+    "button": "Importar",
+    "title": "Importar estudiantes",
+    "hint": "Pega una lista (una persona por línea) o sube el archivo JSON. Revisa la vista previa antes de confirmar.",
+    "quickAdd": "Lista rápida: nombre; correo; correo",
+    "orFile": "o sube un archivo:",
+    "file": "Archivo JSON de estudiantes",
+    "template": "Descargar plantilla",
+    "clearFile": "Quitar archivo",
+    "invalidJson": "El archivo no es un JSON válido.",
+    "invalidFormat": "El archivo no tiene el formato de estudiantes (usa la plantilla).",
+    "summary": "{{new}} nuevos · {{update}} se actualizan · {{unchanged}} sin cambios · {{invalid}} inválidos · {{conflict}} con conflicto · {{writes}} escrituras",
+    "confirm": "Importar {{count}}",
+    "importing": "Importando {{done}} de {{total}}…",
+    "done": "{{count}} estudiantes importados",
+    "status": {
+      "new": "Nuevo",
+      "update": "Actualiza",
+      "unchanged": "Sin cambios",
+      "invalid": "Inválido",
+      "conflict": "Conflicto"
+    },
+    "reason": {
+      "name": "Falta el nombre",
+      "email": "Correo inválido",
+      "noEmail": "Sin correo",
+      "tooManyEmails": "Más de 5 correos",
+      "duplicateInFile": "Correo repetido en la lista",
+      "otherStudents": "Sus correos pertenecen a estudiantes distintos"
+    }
+  },
+  "join": {
+    "invitedTo": "Te invitaron a",
+    "as": "Ingresarás como {{email}}",
+    "button": "Unirme al tablero",
+    "joining": "Uniéndote…",
+    "invalidTitle": "Enlace no válido",
+    "invalid": "Este enlace de invitación no existe. Pídele a tu docente uno nuevo.",
+    "rejected": "No pudimos unirte: el enlace está desactivado o el tablero está cerrado. Habla con tu docente."
   },
   "notFound": {
     "title": "Página no encontrada",

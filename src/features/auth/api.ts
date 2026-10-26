@@ -1,5 +1,6 @@
 import {
   GoogleAuthProvider,
+  signInWithCredential,
   signInWithPopup,
   signInWithRedirect,
   signOut as firebaseSignOut,
@@ -8,6 +9,7 @@ import {
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
 import { FirebaseError } from 'firebase/app'
 import { COLLECTIONS, normalizeEmail, type StaffRole } from '@/lib/collections'
+import { env } from '@/lib/env'
 import { auth, db } from '@/lib/firebase'
 
 const provider = new GoogleAuthProvider()
@@ -67,4 +69,26 @@ export async function fetchRole(user: User): Promise<StaffRole | 'student'> {
 
 export async function saveLocale(uid: string, locale: 'es' | 'en') {
   await setDoc(doc(db, COLLECTIONS.users, uid), { locale }, { merge: true })
+}
+
+// ---------- emulator-only test sign-in (Playwright) ----------
+// The Auth emulator accepts a fake Google ID token, so tests can sign in without the Google popup.
+// Never available in production builds: guarded by DEV + emulator mode.
+
+declare global {
+  interface Window {
+    __pblTestSignIn?: (email: string, name?: string) => Promise<void>
+  }
+}
+
+if (import.meta.env.DEV && env.VITE_USE_EMULATORS) {
+  window.__pblTestSignIn = async (email, name = email.split('@')[0]) => {
+    const token = JSON.stringify({
+      sub: email,
+      email,
+      email_verified: true,
+      name,
+    })
+    await signInWithCredential(auth, GoogleAuthProvider.credential(token))
+  }
 }

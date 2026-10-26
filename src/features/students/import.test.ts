@@ -132,3 +132,18 @@ describe('toStudentsFile', () => {
     expect(preview.every((item) => item.status === 'unchanged')).toBe(true)
   })
 })
+
+describe('email limit', () => {
+  it('an update cannot push a student past 5 emails', () => {
+    const full: ExistingStudent[] = [
+      {
+        id: 'st_full',
+        displayName: 'Full',
+        emails: ['a@x.co', 'b@x.co', 'c@x.co', 'd@x.co', 'e@x.co'],
+        group: '',
+      },
+    ]
+    const [item] = buildPreview(parseQuickAdd('Full; a@x.co; f@x.co'), full)
+    expect(item).toMatchObject({ status: 'invalid', reason: 'tooManyEmails' })
+  })
+})

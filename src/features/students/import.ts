@@ -1,6 +1,10 @@
 import { z } from 'zod'
 import { normalizeEmail } from '@/lib/collections'
-import { studentInputSchema, type StudentInput } from '@/model'
+import {
+  MAX_EMAILS_PER_STUDENT,
+  studentInputSchema,
+  type StudentInput,
+} from '@/model'
 
 // Pure import logic (no Firebase): parse a students JSON file or quick-add lines,
 // then compare against the current roster to build a preview (PLAN.md → "Import / export").
@@ -135,7 +139,7 @@ export function buildPreview(
           ? 'noEmail'
           : paths.includes('name')
             ? 'name'
-            : row.emails.length > 5
+            : row.emails.length > MAX_EMAILS_PER_STUDENT
               ? 'tooManyEmails'
               : 'email'
       return { line: row.line, status: 'invalid', name: row.name, reason }
@@ -170,6 +174,14 @@ export function buildPreview(
     const addedEmails = input.emails.filter(
       (email) => !match.emails.includes(email),
     )
+    if (match.emails.length + addedEmails.length > MAX_EMAILS_PER_STUDENT) {
+      return {
+        line: row.line,
+        status: 'invalid',
+        name: row.name,
+        reason: 'tooManyEmails',
+      }
+    }
     const changed =
       addedEmails.length > 0 ||
       match.displayName !== input.name ||

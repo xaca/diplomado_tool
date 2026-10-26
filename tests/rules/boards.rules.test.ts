@@ -40,7 +40,7 @@ let env: RulesTestEnvironment
 function as(user: { uid: string; email: string }) {
   return env
     .authenticatedContext(user.uid, { email: user.email, email_verified: true })
-    .firestore()
+    .firestore() as unknown as Firestore // compat type → modular API (same object at runtime)
 }
 
 const board = (overrides: Record<string, unknown> = {}) => ({

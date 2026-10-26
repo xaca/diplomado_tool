@@ -1,6 +1,15 @@
 {
   "appName": "PBL Diplomado",
   "loading": "Loading…",
+  "common": {
+    "save": "Save",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "remove": "Remove"
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again."
+  },
   "language": {
     "label": "Language",
     "es": "Español",
@@ -26,11 +35,114 @@
   },
   "teacher": {
     "title": "Teacher dashboard",
-    "empty": "Your boards will appear here. Creating them comes in the next step (M2)."
+    "empty": "You don't have any boards yet. Create the first one for your course."
   },
   "student": {
     "title": "My boards",
-    "empty": "You're not in any board yet. When your teacher adds you, it will show up here."
+    "empty": "You're not in any board yet. When your teacher adds your email, it will show up here after you sign in."
+  },
+  "boards": {
+    "new": "New board",
+    "newHint": "One board per course or group. Then you add your students.",
+    "title": "Title",
+    "titlePlaceholder": "PBL Diploma 2026-2",
+    "description": "Description (optional)",
+    "create": "Create board",
+    "created": "Board created",
+    "notFound": "We couldn't find this board, or you don't have access.",
+    "open": "View board",
+    "manage": "Manage",
+    "dashboardSoon": "Each student's card will appear here (coming in the next step, M3)."
+  },
+  "invite": {
+    "title": "Invite link",
+    "hint": "For students who aren't on your list. The ones you added only need to sign in with Google.",
+    "enabled": "Link active",
+    "disabled": "Link disabled",
+    "link": "Invite link",
+    "copy": "Copy",
+    "copied": "Link copied",
+    "code": "Code"
+  },
+  "students": {
+    "title": "Students",
+    "counts": "{{total}} total · {{joined}} joined",
+    "add": "Add student",
+    "added": "Student added",
+    "edit": "Edit student",
+    "updated": "Student updated",
+    "export": "Export JSON",
+    "empty": "No students yet. Add them one by one, import them, or share the invite link.",
+    "name": "Name",
+    "emails": "Emails",
+    "email": "Email",
+    "emailsHint": "Add the emails they can sign in with (personal and/or university). Any of them leads to the same space.",
+    "personalEmail": "personal email (Gmail)",
+    "universityEmail": "university email",
+    "addEmail": "Add another email",
+    "group": "Group (optional)",
+    "status": "Status",
+    "statuses": {
+      "invited": "Invited",
+      "joined": "Joined"
+    },
+    "accounts_one": "{{count}} account",
+    "accounts_other": "{{count}} accounts",
+    "emailTaken": "{{email}} already belongs to another student.",
+    "removeTitle": "Remove {{name}}?",
+    "removeHint": "Their emails, linked accounts and space in this board are deleted. This can't be undone.",
+    "removed": "Student removed"
+  },
+  "merge": {
+    "selected": "2 students selected: are they the same person?",
+    "button": "Merge",
+    "select": "Select {{name}}",
+    "title": "Merge students",
+    "hint": "Emails and accounts of both move to a single student. The other one is deleted.",
+    "keep": "Keep",
+    "confirm": "Merge",
+    "done": "Students merged",
+    "tooManyEmails": "Together they would have more than 5 emails. Remove one before merging."
+  },
+  "import": {
+    "button": "Import",
+    "title": "Import students",
+    "hint": "Paste a list (one person per line) or upload the JSON file. Check the preview before confirming.",
+    "quickAdd": "Quick list: name; email; email",
+    "orFile": "or upload a file:",
+    "file": "Students JSON file",
+    "template": "Download template",
+    "clearFile": "Remove file",
+    "invalidJson": "The file isn't valid JSON.",
+    "invalidFormat": "The file doesn't have the students format (use the template).",
+    "summary": "{{new}} new · {{update}} updated · {{unchanged}} unchanged · {{invalid}} invalid · {{conflict}} conflicts · {{writes}} writes",
+    "confirm": "Import {{count}}",
+    "importing": "Importing {{done}} of {{total}}…",
+    "done": "{{count}} students imported",
+    "status": {
+      "new": "New",
+      "update": "Update",
+      "unchanged": "Unchanged",
+      "invalid": "Invalid",
+      "conflict": "Conflict"
+    },
+    "reason": {
+      "name": "Missing name",
+      "email": "Invalid email",
+      "noEmail": "No email",
+      "tooManyEmails": "More than 5 emails",
+      "duplicateInFile": "Email repeated in the list",
+      "otherStudents": "Its emails belong to different students"
+    }
+  },
+  "join": {
+    "invitedTo": "You're invited to",
+    "as": "You'll join as {{email}}",
+    "button": "Join the board",
+    "joining": "Joining…",
+    "invalidTitle": "Invalid link",
+    "invalid": "This invite link doesn't exist. Ask your teacher for a new one.",
+    "rejected": "We couldn't add you: the link is disabled or the board is closed. Talk to your teacher."
   },
   "notFound": {
     "title": "Page not found",
