@@ -123,14 +123,23 @@ export const JOIN_CODE_ALPHABET = '23456789ABCDEFGHJKMNPQRSTUVWXYZ'
 export const JOIN_CODE_LENGTH = 6
 export const newJoinCode = customAlphabet(JOIN_CODE_ALPHABET, JOIN_CODE_LENGTH)
 
+/** Card colors (Padlet-like pastels). White first: the default card. */
 export const SPACE_COLORS = [
-  '#FDE68A',
-  '#BFDBFE',
-  '#BBF7D0',
-  '#FBCFE8',
-  '#DDD6FE',
-  '#FED7AA',
+  '#FFFFFF',
+  '#FEF3C7',
+  '#FCE7F3',
+  '#EDE9FE',
+  '#DBEAFE',
+  '#DCFCE7',
+  '#FFEDD5',
 ] as const
+
+export const spaceProfileSchema = z.object({
+  title: z.string().trim().max(120),
+  summary: z.string().trim().max(1000),
+  color: z.enum(SPACE_COLORS),
+})
+export type SpaceProfile = z.infer<typeof spaceProfileSchema>
 
 export function defaultSpace(
   studentId: string,

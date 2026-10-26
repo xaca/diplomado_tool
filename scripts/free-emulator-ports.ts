@@ -14,7 +14,7 @@ const EMULATOR_HINTS = [
 
 function listeners(): { port: number; pid: number; command: string }[] {
   if (process.platform === 'win32') {
-    const script = `Get-NetTCPConnection -State Listen -LocalPort ${PORTS.join(',')} -ErrorAction SilentlyContinue | ForEach-Object { $c = (Get-CimInstance Win32_Process -Filter "ProcessId=$($_.OwningProcess)").CommandLine; "$($_.LocalPort)|$($_.OwningProcess)|$c" }`
+    const script = `Get-NetTCPConnection -State Listen -LocalPort ${PORTS.join(',')} -ErrorAction SilentlyContinue | ForEach-Object { $c = (Get-CimInstance Win32_Process -Filter "ProcessId=$($_.OwningProcess)").CommandLine; "$($_.LocalPort)|$($_.OwningProcess)|$c" }; exit 0`
     const output = execFileSync(
       'powershell',
       ['-NoProfile', '-Command', script],

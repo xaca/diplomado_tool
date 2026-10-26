@@ -78,7 +78,7 @@ const space = (studentId: string) => ({
   ownerPhotoURL: null,
   title: '',
   summary: '',
-  color: '#FDE68A',
+  color: '#FFFFFF',
   slideOrder: [],
   slideCount: 0,
   createdAt: serverTimestamp(),
@@ -412,6 +412,123 @@ describe('spaces', () => {
         doc(as(LAURA), 'boards', BOARD, 'spaces', 'st_seb'),
         space('st_seb'),
       ),
+    )
+  })
+})
+
+describe('spaces — editing the card (M3)', () => {
+  async function joined() {
+    await seed()
+    await autoJoin(as(LAURA), LAURA, 'st_laura')
+  }
+
+  const edit = (overrides: Record<string, unknown> = {}) => ({
+    title: 'App de rastreo',
+    summary: 'Una app para el bienestar de las mascotas',
+    color: '#FCE7F3',
+    updatedAt: serverTimestamp(),
+    ...overrides,
+  })
+
+  it('the student edits title, summary and color of their own card', async () => {
+    await joined()
+    await assertSucceeds(
+      updateDoc(doc(as(LAURA), 'boards', BOARD, 'spaces', 'st_laura'), edit()),
+    )
+  })
+
+  it('their second account can edit the same card', async () => {
+    await joined()
+    await autoJoin(as(LAURA_UNI), LAURA_UNI, 'st_laura', false)
+    await assertSucceeds(
+      updateDoc(
+        doc(as(LAURA_UNI), 'boards', BOARD, 'spaces', 'st_laura'),
+        edit(),
+      ),
+    )
+  })
+
+  it("a classmate can read but not edit someone else's card", async () => {
+    await joined()
+    await env.withSecurityRulesDisabled(async (context) => {
+      const db = context.firestore()
+      await setDoc(
+        doc(db, 'boards', BOARD, 'students', 'st_seb'),
+        student(['seb@gmail.com']),
+      )
+      await setDoc(doc(db, 'boards', BOARD, 'studentEmails', 'seb@gmail.com'), {
+        email: 'seb@gmail.com',
+        studentId: 'st_seb',
+      })
+    })
+    const SEB = { uid: 'seb', email: 'seb@gmail.com' }
+    await autoJoin(as(SEB), SEB, 'st_seb')
+    await assertSucceeds(
+      getDoc(doc(as(SEB), 'boards', BOARD, 'spaces', 'st_laura')),
+    )
+    await assertFails(
+      updateDoc(doc(as(SEB), 'boards', BOARD, 'spaces', 'st_laura'), edit()),
+    )
+  })
+
+  it('rejects colors outside the palette, too-long texts and other fields', async () => {
+    await joined()
+    const ref = doc(as(LAURA), 'boards', BOARD, 'spaces', 'st_laura')
+    await assertFails(updateDoc(ref, edit({ color: '#000000' })))
+    await assertFails(updateDoc(ref, edit({ title: 'x'.repeat(121) })))
+    await assertFails(updateDoc(ref, edit({ summary: 'x'.repeat(1001) })))
+    await assertFails(updateDoc(ref, edit({ ownerName: 'Otra persona' })))
+    await assertFails(updateDoc(ref, edit({ slideCount: 99 })))
+  })
+
+  it('updatedAt must be the server time (no faking "updated just now")', async () => {
+    await joined()
+    await assertFails(
+      updateDoc(
+        doc(as(LAURA), 'boards', BOARD, 'spaces', 'st_laura'),
+        edit({ updatedAt: new Date(2030, 0, 1) }),
+      ),
+    )
+  })
+
+  it('no edits when the board is not active', async () => {
+    await joined()
+    await env.withSecurityRulesDisabled(async (context) => {
+      await updateDoc(doc(context.firestore(), 'boards', BOARD), {
+        status: 'locked',
+      })
+    })
+    await assertFails(
+      updateDoc(doc(as(LAURA), 'boards', BOARD, 'spaces', 'st_laura'), edit()),
+    )
+  })
+
+  it('the teacher can only sync the name; a student cannot rename themselves', async () => {
+    await joined()
+    await assertSucceeds(
+      updateDoc(doc(as(TEACHER), 'boards', BOARD, 'spaces', 'st_laura'), {
+        ownerName: 'Laura N. Gómez',
+      }),
+    )
+    await assertFails(
+      updateDoc(doc(as(TEACHER), 'boards', BOARD, 'spaces', 'st_laura'), {
+        title: 'x',
+      }),
+    )
+    await assertFails(
+      updateDoc(doc(as(LAURA), 'boards', BOARD, 'spaces', 'st_laura'), {
+        ownerName: 'Otra',
+      }),
+    )
+  })
+
+  it('merging: the teacher may create a space that already has content', async () => {
+    await seed()
+    await assertSucceeds(
+      setDoc(doc(as(TEACHER), 'boards', BOARD, 'spaces', 'st_laura'), {
+        ...space('st_laura'),
+        title: 'Con contenido',
+      }),
     )
   })
 })

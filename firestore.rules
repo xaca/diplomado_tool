@@ -212,24 +212,52 @@ service cloud.firestore {
 
       // ---------- spaces/{studentId}: what the dashboard card shows ----------
 
-      function validNewSpace(studentId) {
+      // Keep in sync with SPACE_COLORS in src/model/index.ts
+      function spaceColors() {
+        return ['#FFFFFF', '#FEF3C7', '#FCE7F3', '#EDE9FE', '#DBEAFE', '#DCFCE7', '#FFEDD5'];
+      }
+
+      function validSpace(studentId) {
         let data = request.resource.data;
         return data.keys().hasOnly(['studentId', 'ownerName', 'ownerPhotoURL', 'title', 'summary', 'color',
             'slideOrder', 'slideCount', 'createdAt', 'updatedAt'])
           && data.studentId == studentId
           && isString(data.ownerName, 1, 120)
-          && data.title == '' && data.summary == ''
-          && data.slideOrder == [] && data.slideCount == 0;
+          && (data.ownerPhotoURL == null || isString(data.ownerPhotoURL, 1, 2000))
+          && isString(data.title, 0, 120)
+          && isString(data.summary, 0, 1000)
+          && data.color in spaceColors()
+          && data.slideOrder is list && data.slideCount is int;
+      }
+
+      function isSpaceOwner(boardId, studentId) {
+        return isMember(boardId) && get(memberPath(boardId, request.auth.uid)).data.studentId == studentId;
+      }
+
+      function boardIsActive(boardId) {
+        return get(boardPath(boardId)).data.status == 'active';
       }
 
       match /spaces/{studentId} {
         allow read: if isBoardTeacher(boardId) || isMember(boardId);
-        // Created when the student joins (their own space only)
-        allow create: if validNewSpace(studentId) && (
+        allow create: if validSpace(studentId) && (
+          // the teacher (e.g. merging two students keeps the content)
           isBoardTeacher(boardId)
-          || getAfter(memberPath(boardId, request.auth.uid)).data.studentId == studentId
+          // the student when joining: their own, empty space
+          || (getAfter(memberPath(boardId, request.auth.uid)).data.studentId == studentId
+              && request.resource.data.title == '' && request.resource.data.summary == ''
+              && request.resource.data.slideOrder == [] && request.resource.data.slideCount == 0)
         );
-        allow update: if false; // editing the space arrives in M3
+        allow update: if validSpace(studentId) && (
+          // the student edits their card (slides arrive in M5)
+          (isSpaceOwner(boardId, studentId) && boardIsActive(boardId)
+            && request.resource.data.updatedAt == request.time
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['title', 'summary', 'color', 'ownerPhotoURL', 'updatedAt']))
+          // the teacher renames the student → keep the card name in sync
+          || (isBoardTeacher(boardId)
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ownerName']))
+        );
         allow delete: if isBoardTeacher(boardId);
       }
     }
