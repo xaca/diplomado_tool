@@ -10,7 +10,7 @@ Status legend: `[ ]` to do · `[x]` done
 
 - **Phase 1 — Template setup:** ✅ done (2026-10-26), commit `8f20758`
 - **Plan review (rev. 6, 2026-10-26):** ✅ consistency + free-tier review done, see [Review findings](#review-findings-rev-6)
-- **Phase 2 — "Padlet for PBL" app:** 🚧 in progress — Google sign-in enabled · M4 Steps 1–6 done (`/health` → `config: ok`) · service account key ready · **M1 in progress** (code done · database ready · next: deploy rules, run setup, try login) (Worker live at `https://media-api.paradisserossa.workers.dev`, 2026-10-26)
+- **Phase 2 — "Padlet for PBL" app:** 🚧 in progress — Google sign-in enabled · M4 Steps 1–6 done (`/health` → `config: ok`) · service account key ready · **M1 almost done** (rules deployed · waiting for you: `setup` + login test) · **from M2: autonomous loops** ([how](#working-mode-autonomous-loops-from-m2)) (Worker live at `https://media-api.paradisserossa.workers.dev`, 2026-10-26)
 
 ---
 
@@ -509,7 +509,88 @@ scripts/admin/         Admin CLI (firebase-admin + Cloudinary Admin API)
 | shadcn: `dialog`, `dropdown-menu`, `input`, `textarea`, `card`, `avatar`, `tooltip`, `sonner`, `progress`, `table`, `alert-dialog`, `skeleton`, `tabs` | MIT          | UI                                     | on demand            |
 | Worker: `wrangler` (dev), `jose`                                                                                                                       | Apache / MIT | media-api, Firebase token verification | `services/media-api` |
 | CLI: `firebase-admin`, `cloudinary`, `commander`, `tsx` (dev)                                                                                          | Apache / MIT | Admin CLI                              | `scripts/admin`      |
+| Dev: `@playwright/test` (end-to-end on the emulators)                                                                                                  | Apache-2.0   | E2E tests                              | —                    |
 | Dev: `vitest`, `@testing-library/react`, `jsdom`, `@firebase/rules-unit-testing`                                                                       | MIT / Apache | Tests                                  | —                    |
+
+---
+
+## Working mode: autonomous loops (from M2)
+
+From M2 on, **I develop on my own** in loops: each loop takes a milestone from start to finish, verifies it locally, commits it, and ends with a **report** for you. You only do what needs your accounts, your secrets or your eyes: deploys, console clicks, and a final check with real Google accounts.
+
+### Who does what
+
+| Me (independently)                                                                                  | You                                                                                             |
+| --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| All code: app, Worker, admin CLI, Security Rules, indexes                                           | **Deploys:** `npm run deploy:rules`, `npm run deploy` (hosting), `npx wrangler deploy` (Worker) |
+| Tests: unit, rules (emulator), Worker (Cloudinary mocked), end-to-end (Playwright on the emulators) | **Console actions:** Firebase, Cloudinary, Cloudflare (e.g. App Check, reCAPTCHA key)           |
+| Spanish + English texts                                                                             | **Secrets:** anything with keys (`.dev.vars`, `wrangler secret put`)                            |
+| Plan updates (checkboxes, decisions)                                                                | **Production admin commands:** `npm run admin -- setup / staff add / board purge`               |
+| Local commits (authored as you, no Claude attribution)                                              | **Acceptance test** with real Google accounts (a checklist in each report)                      |
+| The loop report                                                                                     | **Product decisions** I flag in the report, plus `git push` once there's a remote               |
+
+### What I never do without you
+
+- Deploy anything (rules, hosting, Worker) or change Firebase / Cloudflare / Cloudinary settings
+- Write to the **production** database or Cloudinary account (I only use the **local emulators**; Worker tests mock Cloudinary)
+- Handle or print secrets (I only check that they exist)
+- Delete data, push to a remote, add anything that costs money or needs a license key (**everything stays free**)
+
+### How I verify without you (all free, all local)
+
+| Check                       | Tool                                                                                                  | Command                                                         |
+| --------------------------- | ----------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| Types, lint, format         | TypeScript, ESLint, Prettier                                                                          | `npm run typecheck` · `npm run lint` · `npx prettier --check .` |
+| Database rules              | Firestore emulator + rules-unit-testing                                                               | `npm run test:rules`                                            |
+| Logic and components        | Vitest + Testing Library                                                                              | `npm test`                                                      |
+| Worker                      | Vitest (Workers pool), Cloudinary mocked                                                              | `npm test` in `services/media-api`                              |
+| **Real flows in a browser** | **Playwright** (Apache-2.0) on the **Auth + Firestore emulators**, with fake teacher/student accounts | `npm run test:e2e`                                              |
+| Demo data                   | Seed script: 1 teacher, 1 board, 5 students (some with 2 emails)                                      | `npm run seed` (emulators only)                                 |
+| Build + bundle size         | Vite                                                                                                  | `npm run build`                                                 |
+
+**Quality gate:** a milestone only counts as done when **all** the checks above pass. If one fails and I can't fix it, the loop stops and the report says why.
+
+### Loop structure
+
+1. Read the plan and pick the milestone's open tasks.
+2. Implement in small steps, **one commit per step**.
+3. Run the quality gate.
+4. Tick the plan's checkboxes; record any decision I took.
+5. Write the report and stop.
+
+**Stop early** when I hit something only you can do (a deploy needed to continue, a console setting, a secret), or a product decision that can't be undone. For reversible details I pick the plan's default and list it in the report as an **assumption** you can change.
+
+### The report (end of each loop)
+
+Saved as `reports/loop-NN-<milestone>.md` (committed) and summarized in the chat:
+
+```
+# Loop NN — <milestone>            date · commits a1b2c3d..e4f5g6h
+1. Summary            what works now, in 3–5 lines
+2. Done               tasks + commits
+3. Quality gate       typecheck · lint · tests (n passed) · e2e · build size
+4. Your turn          exact commands to run (deploys) + console steps, in order
+5. Acceptance test    click-through checklist with real accounts (teacher + student)
+6. Assumptions        decisions I took that you may want to change
+7. Issues / risks     anything open, free-tier impact
+8. Next loop          what comes next and what I need from you before it
+```
+
+### Loop roadmap
+
+| Loop | Milestone                                 | I build                                                                                                                                                             | You do at the end                                                                            |
+| ---- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| 0    | **M1 finish**                             | —                                                                                                                                                                   | `npm run admin -- setup --email paradisserossa@gmail.com` · log in as teacher and as student |
+| 1    | **Infra + M2** Boards, students & joining | emulator seed, Playwright setup, `npm test`; teacher dashboard, create board, students table, JSON import + quick add, auto-join, invite link, merge, rules + tests | `npm run deploy:rules` (rules + indexes) · acceptance test                                   |
+| 2    | **M3** Dashboard                          | Padlet-like board view, live cards, space profile (no cover yet)                                                                                                    | `npm run deploy:rules` · acceptance test                                                     |
+| 3    | **M4** Uploads (Worker Steps 7–12)        | token check, permission check, signed uploads, cover image, asset registry, rules                                                                                   | `npx wrangler deploy` · upload a real image · `npm run deploy:rules`                         |
+| 4    | **M5** Excalidraw slides                  | editor, autosave (throttled), images via Cloudinary, viewer, self-hosted fonts                                                                                      | `npm run deploy:rules` · acceptance test                                                     |
+| 5    | **M6** Presentation                       | full screen, keyboard, next student, GSAP transitions                                                                                                               | acceptance test                                                                              |
+| 6    | **M7** Lifecycle & backups                | archived projects, cleanup, purge, JSON backup/restore, CLI commands, Worker delete/usage                                                                           | `npx wrangler deploy` · `npm run deploy:rules` · try cleanup on a test board                 |
+| 7    | **M8** Hardening & launch                 | App Check code, final rules review, privacy notice, metadata                                                                                                        | create a reCAPTCHA v3 key + register App Check (console) · `npm run deploy` (hosting)        |
+| —    | **M9** More teachers                      | when you need it                                                                                                                                                    | —                                                                                            |
+
+**Starting a loop:** say **"run loop N"** (e.g. "run loop 1"). I'll work through it and come back with the report.
 
 ---
 
@@ -538,7 +619,7 @@ Each milestone ends with something we can try in the browser, plus a commit.
 - [x] Firestore offline cache (`persistentLocalCache`, multi-tab)
 - [x] Rules: `users`, `staffEmails`, deny everything else + **11 emulator tests** (`npm run test:rules`)
 - [x] Rules dry run: compiled successfully on Firebase (2026-10-26)
-- [ ] **Deploy the rules** (you): `npm run deploy:rules`
+- [x] **Deploy the rules** (you): `npm run deploy:rules` — done 2026-10-26
 - [ ] **Try it:** sign in as teacher (→ `/teacher`) and with another Google account (→ student home)
 
 ### M2 — Boards, students & joining
