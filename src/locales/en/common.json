@@ -1,0 +1,39 @@
+{
+  "appName": "PBL Diplomado",
+  "loading": "Loading…",
+  "language": {
+    "label": "Language",
+    "es": "Español",
+    "en": "English"
+  },
+  "auth": {
+    "title": "Welcome",
+    "subtitle": "Document and present your project process.",
+    "signIn": "Continue with Google",
+    "signingIn": "Opening Google…",
+    "signOut": "Sign out",
+    "switchAccount": "Switch account",
+    "signedInAs": "Signed in as",
+    "hint": "Use your Gmail or university account.",
+    "privacy": "Academic use: we store your name and email only for the course.",
+    "error": "Couldn't sign in. Please try again.",
+    "profileError": "Couldn't load your profile. Check your connection and try again."
+  },
+  "roles": {
+    "admin": "Teacher (admin)",
+    "teacher": "Teacher",
+    "student": "Student"
+  },
+  "teacher": {
+    "title": "Teacher dashboard",
+    "empty": "Your boards will appear here. Creating them comes in the next step (M2)."
+  },
+  "student": {
+    "title": "My boards",
+    "empty": "You're not in any board yet. When your teacher adds you, it will show up here."
+  },
+  "notFound": {
+    "title": "Page not found",
+    "back": "Back home"
+  }
+}

@@ -1,6 +1,11 @@
 import { initializeApp } from 'firebase/app'
 import { connectAuthEmulator, getAuth } from 'firebase/auth'
-import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore'
+import {
+  connectFirestoreEmulator,
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+} from 'firebase/firestore'
 import { env } from '@/lib/env'
 
 // Single Firebase entry point: import `auth` / `db` from here, never initialize elsewhere.
@@ -16,7 +21,12 @@ export const app = initializeApp({
 })
 
 export const auth = getAuth(app)
-export const db = getFirestore(app)
+// Offline cache shared across tabs: fewer repeated reads (free-tier budget) and resilient editing
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({
+    tabManager: persistentMultipleTabManager(),
+  }),
+})
 
 if (import.meta.env.DEV && env.VITE_USE_EMULATORS) {
   // Ports must match the "emulators" section in firebase.json

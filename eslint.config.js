@@ -20,6 +20,11 @@ export default defineConfig([
     },
   },
   {
+    // Admin CLI and rules tests run in Node, not the browser
+    files: ['scripts/**/*.ts', 'tests/**/*.ts'],
+    languageOptions: { globals: globals.node },
+  },
+  {
     // shadcn components also export variants/helpers next to the component
     files: ['src/components/ui/**/*.{ts,tsx}'],
     rules: { 'react-refresh/only-export-components': 'off' },

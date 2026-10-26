@@ -1,18 +1,57 @@
-rules_version='2'
+rules_version = '2';
 
+// Security Rules are the backend (PLAN.md → "Security Rules").
+// Deny by default: every collection must be listed explicitly.
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      // This rule allows anyone with your database reference to view, edit,
-      // and delete all data in your database. It is useful for getting
-      // started, but it is configured to expire after 30 days because it
-      // leaves your app open to attackers. At that time, all client
-      // requests to your database will be denied.
-      //
-      // Make sure to write security rules for your app before that time, or
-      // else all client requests to your database will be denied until you
-      // update your rules.
-      allow read, write: if request.time < timestamp.date(2026, 11, 25);
+
+    // ---------- helpers ----------
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function verified() {
+      return signedIn() && request.auth.token.email_verified == true;
+    }
+
+    function myEmail() {
+      return request.auth.token.email.lower();
+    }
+
+    function staffPath(email) {
+      return /databases/$(database)/documents/staffEmails/$(email);
+    }
+
+    function isAdmin() {
+      return verified()
+        && exists(staffPath(myEmail()))
+        && get(staffPath(myEmail())).data.role == 'admin';
+    }
+
+    // ---------- users/{uid}: login account profile ----------
+
+    function validUser() {
+      let data = request.resource.data;
+      return data.keys().hasOnly(['displayName', 'email', 'photoURL', 'locale', 'createdAt', 'lastLoginAt'])
+        && data.email == myEmail()
+        && (!('locale' in data) || data.locale in ['es', 'en']);
+    }
+
+    match /users/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow create, update: if signedIn() && request.auth.uid == uid && validUser();
+      allow delete: if false;
+    }
+
+    // ---------- staffEmails/{email}: the teacher list ----------
+    // `get` checks the path, not resource.data: a student reading their own (nonexistent)
+    // entry must get "not found", not "permission denied" (PLAN.md review R6).
+
+    match /staffEmails/{email} {
+      allow get: if verified() && (email == myEmail() || isAdmin());
+      allow list: if isAdmin();
+      allow write: if false; // v1: only the admin CLI (Admin SDK) writes here
     }
   }
 }

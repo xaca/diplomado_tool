@@ -10,7 +10,7 @@ Status legend: `[ ]` to do · `[x]` done
 
 - **Phase 1 — Template setup:** ✅ done (2026-10-26), commit `8f20758`
 - **Plan review (rev. 6, 2026-10-26):** ✅ consistency + free-tier review done, see [Review findings](#review-findings-rev-6)
-- **Phase 2 — "Padlet for PBL" app:** 🚧 in progress — Google sign-in enabled · M4 Steps 1–6 done (`/health` → `config: ok`) · service account key ready · **setup complete, next: M1** (Worker live at `https://media-api.paradisserossa.workers.dev`, 2026-10-26)
+- **Phase 2 — "Padlet for PBL" app:** 🚧 in progress — Google sign-in enabled · M4 Steps 1–6 done (`/health` → `config: ok`) · service account key ready · **M1 in progress** (code done, waiting for the Firestore database) (Worker live at `https://media-api.paradisserossa.workers.dev`, 2026-10-26)
 
 ---
 
@@ -525,15 +525,20 @@ Each milestone ends with something we can try in the browser, plus a commit.
   - **Ignore** the SHA-1 notice (Android apps only), "entidades seguras" (optional) and "Configuración del SDK web" (not needed)
   - **Guardar**
   - Check **Authentication → Configuración → Dominios autorizados** lists `localhost`, `diplomado-fc679.firebaseapp.com` and `diplomado-fc679.web.app`
-- [ ] `signInWithGoogle` (`prompt: 'select_account'`), `signOut`, `users/{uid}`
-- [ ] `/login`, `RequireAuth`, `UserMenu` (signed in as…, switch account, language, sign out)
-- [ ] i18next setup (**es default**, en), language switch, typed keys
+- [ ] **Create the Firestore database** (Standard edition, `(default)`, location `northamerica-south1` as in `firebase.json`; permanent choice) — found missing on 2026-10-26 (`5 NOT_FOUND`)
+- [x] `signInWithGoogle` (`prompt: 'select_account'`, popup → redirect fallback), `signOut`, `users/{uid}` (`features/auth/api.ts`)
+- [x] `/login` (Spanish/English switch, privacy line), `RequireAuth`, `UserMenu` (signed in as…, role, switch account, language, sign out), `AppShell`
+- [x] i18next setup (**es default**, en), language switch saved in `users.locale`, typed keys (`src/i18next.d.ts`)
 - [x] `.gitignore`: `secrets/`, `backups/` (`.env.admin.local` is already covered by `.env.*`)
 - [x] Download the Firebase **service account key** (verified 2026-10-26) (you) → `secrets/service-account.json` — [step by step](#how-to-get-the-firebase-service-account-key)
-- [ ] Admin CLI skeleton + `setup` command → **your personal Gmail becomes the teacher (admin) from this console**
-- [ ] After login: teacher email → `/teacher`; any other email → student home `/`
-- [ ] `useRole()` + `RequireTeacher` / `RequireAdmin`
-- [ ] Rules: `users`, `staffEmails` (deny everything else) + tests
+- [x] Admin CLI (`scripts/admin/`, `npm run admin`): `setup`, `staff list | add | remove`
+- [ ] **Run** `npm run admin -- setup --email paradisserossa@gmail.com` → your Gmail becomes the teacher (admin) (needs the database)
+- [x] After login: teacher email → `/teacher`; any other email → student home `/` (`HomeRedirect`)
+- [x] Role in `AuthProvider` (`useAuth().role`) + `RequireTeacher` (`RequireAdmin` arrives with M9)
+- [x] Firestore offline cache (`persistentLocalCache`, multi-tab)
+- [x] Rules: `users`, `staffEmails`, deny everything else + **11 emulator tests** (`npm run test:rules`)
+- [ ] **Deploy the rules** (`firebase deploy --only firestore:rules`) — replaces the open rules that expire 2026-11-25
+- [ ] **Try it:** sign in as teacher (→ `/teacher`) and with another Google account (→ student home)
 
 ### M2 — Boards, students & joining
 

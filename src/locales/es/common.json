@@ -1,0 +1,39 @@
+{
+  "appName": "PBL Diplomado",
+  "loading": "Cargando…",
+  "language": {
+    "label": "Idioma",
+    "es": "Español",
+    "en": "English"
+  },
+  "auth": {
+    "title": "Bienvenido",
+    "subtitle": "Documenta y presenta el proceso de tu proyecto.",
+    "signIn": "Continuar con Google",
+    "signingIn": "Abriendo Google…",
+    "signOut": "Cerrar sesión",
+    "switchAccount": "Cambiar de cuenta",
+    "signedInAs": "Sesión iniciada como",
+    "hint": "Usa tu cuenta de Gmail o la de la universidad.",
+    "privacy": "Uso académico: guardamos tu nombre y correo solo para el curso.",
+    "error": "No se pudo iniciar sesión. Inténtalo de nuevo.",
+    "profileError": "No se pudo cargar tu perfil. Revisa tu conexión e inténtalo de nuevo."
+  },
+  "roles": {
+    "admin": "Docente (admin)",
+    "teacher": "Docente",
+    "student": "Estudiante"
+  },
+  "teacher": {
+    "title": "Panel docente",
+    "empty": "Aquí verás tus tableros. Crearlos llega en el siguiente paso (M2)."
+  },
+  "student": {
+    "title": "Mis tableros",
+    "empty": "Todavía no estás en ningún tablero. Cuando tu docente te agregue, aparecerá aquí."
+  },
+  "notFound": {
+    "title": "Página no encontrada",
+    "back": "Volver al inicio"
+  }
+}
