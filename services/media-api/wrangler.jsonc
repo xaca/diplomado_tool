@@ -17,6 +17,10 @@
 		"FIREBASE_PROJECT_ID": "diplomado-fc679",
 		"CLOUDINARY_CLOUD_NAME": "syqkgwws",
 		"CLOUDINARY_API_KEY": "719523683767324",
+		// "firebase" verifies real Google-signed tokens; "emulator" (local only, demo-* projects) accepts emulator tokens
+		"AUTH_MODE": "firebase",
+		// Empty = production Firestore; local emulator: http://127.0.0.1:8080
+		"FIRESTORE_HOST": "",
 		"ALLOWED_ORIGINS": "http://localhost:5173,https://diplomado-fc679.web.app,https://diplomado-fc679.firebaseapp.com"
 	}
 	/**

@@ -7,7 +7,9 @@
     "dev": "wrangler dev",
     "start": "wrangler dev",
     "test": "vitest",
-    "cf-typegen": "wrangler types"
+    "cf-typegen": "wrangler types --strict-vars=false",
+    "dev:emulators": "wrangler dev --var AUTH_MODE:emulator --var FIREBASE_PROJECT_ID:demo-pbl --var FIRESTORE_HOST:http://127.0.0.1:8080",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@cloudflare/vitest-plugin": "^1.4.3",
@@ -15,5 +17,8 @@
     "typescript": "^5.5.2",
     "vitest": "~5.0.3",
     "wrangler": "^4.153.0"
+  },
+  "dependencies": {
+    "jose": "^6.2.13"
   }
 }
