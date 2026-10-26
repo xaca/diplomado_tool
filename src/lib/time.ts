@@ -20,7 +20,7 @@ export function formatRelative(
     if (Math.abs(seconds) >= size)
       return format.format(Math.round(seconds / size), unit)
   }
-  return format.format(0, 'minute') // "en este minuto" / "this minute"
+  return locale.startsWith('es') ? 'hace un momento' : 'just now'
 }
 
 /** Firestore Timestamp (any SDK) or pending server timestamp → Date (pending = now). */

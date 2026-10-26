@@ -1,4 +1,4 @@
-import { FieldValue } from 'firebase-admin/firestore'
+import { FieldValue, Timestamp } from 'firebase-admin/firestore'
 import { emulatorDb, resetEmulators } from './emulator.ts'
 
 // Demo data for the LOCAL emulators only (`npm run emulators` in one terminal, `npm run seed` in another).
@@ -42,6 +42,37 @@ export const DEMO = {
     },
   ],
 } as const
+
+/** Spaces that already have a title/summary (students who "joined" before) */
+export const DEMO_CARDS = [
+  {
+    studentId: 'st_sebastian',
+    title: 'Plataforma para agencias',
+    summary:
+      'Una plataforma donde los clientes conozcan los servicios de la agencia, soliciten cotizaciones y hagan seguimiento a sus proyectos.',
+    color: '#FFFFFF',
+    joinedDaysAgo: 30,
+    updatedDaysAgo: 30,
+  },
+  {
+    studentId: 'st_elma',
+    title: 'App de rastreo 🐶',
+    summary:
+      'Una aplicación enfocada en la seguridad y bienestar de las mascotas, con una experiencia UI/UX intuitiva y con personalidad propia.',
+    color: '#EDE9FE',
+    joinedDaysAgo: 29,
+    updatedDaysAgo: 3,
+  },
+  {
+    studentId: 'st_carolina',
+    title: 'Procesos más divertidos',
+    summary:
+      'Quiero optimizar procesos y hacer que el análisis de datos sea más sencillo, dinámico y gráfico.',
+    color: '#FCE7F3',
+    joinedDaysAgo: 28,
+    updatedDaysAgo: 9,
+  },
+] as const
 
 export async function seedDemo() {
   await resetEmulators()
@@ -91,6 +122,27 @@ export async function seedDemo() {
         { email, studentId: student.id },
       )
     }
+  }
+
+  // Cards with content (as if these students already joined), like the Padlet reference
+  const daysAgo = (days: number) =>
+    Timestamp.fromMillis(Date.now() - days * 24 * 3600 * 1000)
+  for (const card of DEMO_CARDS) {
+    batch.set(
+      emulatorDb.doc(`boards/${DEMO.boardId}/spaces/${card.studentId}`),
+      {
+        studentId: card.studentId,
+        ownerName: DEMO.students.find((s) => s.id === card.studentId)!.name,
+        ownerPhotoURL: null,
+        title: card.title,
+        summary: card.summary,
+        color: card.color,
+        slideOrder: [],
+        slideCount: 0,
+        createdAt: daysAgo(card.joinedDaysAgo),
+        updatedAt: daysAgo(card.updatedDaysAgo),
+      },
+    )
   }
 
   await batch.commit()
