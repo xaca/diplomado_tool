@@ -10,7 +10,7 @@ Status legend: `[ ]` to do · `[x]` done
 
 - **Phase 1 — Template setup:** ✅ done (2026-10-26), commit `8f20758`
 - **Plan review (rev. 6, 2026-10-26):** ✅ consistency + free-tier review done, see [Review findings](#review-findings-rev-6)
-- **Phase 2 — "Padlet for PBL" app:** 🚧 in progress — Google sign-in enabled · M4 Steps 1–6 done (`/health` → `config: ok`) · service account key ready · **M1 almost done** (rules deployed · waiting for you: `setup` + login test) · **from M2: autonomous loops** ([how](#working-mode-autonomous-loops-from-m2)) (Worker live at `https://media-api.paradisserossa.workers.dev`, 2026-10-26)
+- **Phase 2 — "Padlet for PBL" app:** 🚧 in progress — Google sign-in enabled · M4 Steps 1–6 done (`/health` → `config: ok`) · service account key ready · **M1 ✅** · **Loop 1 (M2) ✅ code done** — waiting for you: `npm run deploy:rules` + acceptance test ([report](reports/loop-01-m2.md)) (Worker live at `https://media-api.paradisserossa.workers.dev`, 2026-10-26)
 
 ---
 
@@ -505,7 +505,7 @@ scripts/admin/         Admin CLI (firebase-admin + Cloudinary Admin API)
 | `i18next`, `react-i18next`, `i18next-browser-languagedetector`                                                                                         | MIT          | ES / EN                                | app                  |
 | `@dnd-kit/core`, `@dnd-kit/sortable`                                                                                                                   | MIT          | Reordering slides                      | editor chunk         |
 | `nanoid`                                                                                                                                               | MIT          | ids, invite codes                      | app                  |
-| `react-hook-form`, `@hookform/resolvers`                                                                                                               | MIT          | Forms                                  | app                  |
+| ~~`react-hook-form`, `@hookform/resolvers`~~ (not used: peer-dependency conflict; forms are small → React state + Zod)                                 | MIT          | Forms                                  | app                  |
 | shadcn: `dialog`, `dropdown-menu`, `input`, `textarea`, `card`, `avatar`, `tooltip`, `sonner`, `progress`, `table`, `alert-dialog`, `skeleton`, `tabs` | MIT          | UI                                     | on demand            |
 | Worker: `wrangler` (dev), `jose`                                                                                                                       | Apache / MIT | media-api, Firebase token verification | `services/media-api` |
 | CLI: `firebase-admin`, `cloudinary`, `commander`, `tsx` (dev)                                                                                          | Apache / MIT | Admin CLI                              | `scripts/admin`      |
@@ -580,8 +580,8 @@ Saved as `reports/loop-NN-<milestone>.md` (committed) and summarized in the chat
 
 | Loop | Milestone                                 | I build                                                                                                                                                             | You do at the end                                                                            |
 | ---- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| 0    | **M1 finish**                             | —                                                                                                                                                                   | `npm run admin -- setup --email paradisserossa@gmail.com` · log in as teacher and as student |
-| 1    | **Infra + M2** Boards, students & joining | emulator seed, Playwright setup, `npm test`; teacher dashboard, create board, students table, JSON import + quick add, auto-join, invite link, merge, rules + tests | `npm run deploy:rules` (rules + indexes) · acceptance test                                   |
+| 0 ✅ | **M1 finish**                             | —                                                                                                                                                                   | `npm run admin -- setup --email paradisserossa@gmail.com` · log in as teacher and as student |
+| 1 ✅ | **Infra + M2** Boards, students & joining | emulator seed, Playwright setup, `npm test`; teacher dashboard, create board, students table, JSON import + quick add, auto-join, invite link, merge, rules + tests | `npm run deploy:rules` (rules + indexes) · acceptance test                                   |
 | 2    | **M3** Dashboard                          | Padlet-like board view, live cards, space profile (no cover yet)                                                                                                    | `npm run deploy:rules` · acceptance test                                                     |
 | 3    | **M4** Uploads (Worker Steps 7–12)        | token check, permission check, signed uploads, cover image, asset registry, rules                                                                                   | `npx wrangler deploy` · upload a real image · `npm run deploy:rules`                         |
 | 4    | **M5** Excalidraw slides                  | editor, autosave (throttled), images via Cloudinary, viewer, self-hosted fonts                                                                                      | `npm run deploy:rules` · acceptance test                                                     |
@@ -613,22 +613,25 @@ Each milestone ends with something we can try in the browser, plus a commit.
 - [x] `.gitignore`: `secrets/`, `backups/` (`.env.admin.local` is already covered by `.env.*`)
 - [x] Download the Firebase **service account key** (verified 2026-10-26) (you) → `secrets/service-account.json` — [step by step](#how-to-get-the-firebase-service-account-key)
 - [x] Admin CLI (`scripts/admin/`, `npm run admin`): `setup`, `staff list | add | remove`
-- [ ] **Run** `npm run admin -- setup --email paradisserossa@gmail.com` → your Gmail becomes the teacher (admin)
+- [x] **Run** `npm run admin -- setup --email paradisserossa@gmail.com` → your Gmail becomes the teacher (admin) — verified 2026-10-26
 - [x] After login: teacher email → `/teacher`; any other email → student home `/` (`HomeRedirect`)
 - [x] Role in `AuthProvider` (`useAuth().role`) + `RequireTeacher` (`RequireAdmin` arrives with M9)
 - [x] Firestore offline cache (`persistentLocalCache`, multi-tab)
 - [x] Rules: `users`, `staffEmails`, deny everything else + **11 emulator tests** (`npm run test:rules`)
 - [x] Rules dry run: compiled successfully on Firebase (2026-10-26)
 - [x] **Deploy the rules** (you): `npm run deploy:rules` — done 2026-10-26
-- [ ] **Try it:** sign in as teacher (→ `/teacher`) and with another Google account (→ student home)
+- [x] **Try it:** teacher → `/teacher`, other accounts → student home (also covered by e2e tests)
 
 ### M2 — Boards, students & joining
 
-- [ ] Teacher dashboard: my boards, create a board, invite link (on/off)
-- [ ] Students table: add a student (1–2 emails), edit emails, remove
-- [ ] **JSON import** (template, preview, batched) + **quick add** box + students JSON export
-- [ ] Auto-join with either email · `/join/:code` fallback · merge students
-- [ ] Rules + tests, including "two accounts → same student → same space"
+- [x] Teacher dashboard: my boards (live), create a board with invite code, invite link (copy, on/off)
+- [x] Students table: add / edit a student (1–5 emails), remove, joined status + linked accounts
+- [x] **JSON import** (template, preview with new / update / unchanged / invalid / conflict, batched) + **quick add** box + students JSON export
+- [x] Auto-join with either email · `/join/:code` fallback · merge students
+- [x] Rules + tests, including "two accounts → same student → same space" (29 rules tests)
+- [x] Test infra: emulator mode (`.env.emulators`, `demo-pbl`), `npm run seed`, Playwright e2e (10 flows), `npm run check`
+- [ ] **Deploy rules + indexes** (you): `npm run deploy:rules`
+- [ ] **Acceptance test** (you): [checklist](reports/loop-01-m2.md#5-acceptance-test)
 
 ### M3 — Dashboard (the reference screen)
 
