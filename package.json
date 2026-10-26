@@ -10,11 +10,16 @@
     "preview": "vite preview",
     "format": "prettier --write .",
     "typecheck": "tsc -b",
-    "emulators": "firebase emulators:start",
+    "emulators": "firebase emulators:start --only auth,firestore --project demo-pbl",
     "deploy": "npm run build && firebase deploy",
     "admin": "tsx scripts/admin/index.ts",
-    "test:rules": "firebase emulators:exec --only firestore --project demo-pbl-rules \"vitest run tests/rules\"",
-    "deploy:rules": "firebase deploy --only firestore:rules,firestore:indexes"
+    "test:rules": "firebase emulators:exec --only firestore --project demo-pbl \"vitest run --project rules\"",
+    "deploy:rules": "firebase deploy --only firestore:rules,firestore:indexes",
+    "dev:emulators": "vite --mode emulators",
+    "seed": "tsx scripts/seed.ts",
+    "test": "vitest run --project unit",
+    "test:e2e": "firebase emulators:exec --only auth,firestore --project demo-pbl \"playwright test\"",
+    "check": "npm run typecheck && npm run lint && prettier --check . && npm test && npm run test:rules && npm run test:e2e && npm run build"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
@@ -28,6 +33,7 @@
     "i18next": "^26.5.11",
     "i18next-browser-languagedetector": "^8.2.3",
     "lucide-react": "^1.61.0",
+    "nanoid": "^6.0.2",
     "next-themes": "^0.4.6",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
@@ -42,6 +48,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@firebase/rules-unit-testing": "^5.0.2",
+    "@playwright/test": "^1.64.1",
     "@types/node": "^24.19.2",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",

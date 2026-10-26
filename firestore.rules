@@ -23,10 +23,44 @@ service cloud.firestore {
       return /databases/$(database)/documents/staffEmails/$(email);
     }
 
+    function isTeacher() {
+      return verified() && exists(staffPath(myEmail()));
+    }
+
     function isAdmin() {
-      return verified()
-        && exists(staffPath(myEmail()))
-        && get(staffPath(myEmail())).data.role == 'admin';
+      return isTeacher() && get(staffPath(myEmail())).data.role == 'admin';
+    }
+
+    function boardPath(boardId) {
+      return /databases/$(database)/documents/boards/$(boardId);
+    }
+
+    function memberPath(boardId, uid) {
+      return /databases/$(database)/documents/boards/$(boardId)/members/$(uid);
+    }
+
+    function studentPath(boardId, studentId) {
+      return /databases/$(database)/documents/boards/$(boardId)/students/$(studentId);
+    }
+
+    function studentEmailPath(boardId, email) {
+      return /databases/$(database)/documents/boards/$(boardId)/studentEmails/$(email);
+    }
+
+    function isBoardTeacher(boardId) {
+      return verified() && myEmail() in get(boardPath(boardId)).data.teacherEmails;
+    }
+
+    function isMember(boardId) {
+      return signedIn() && exists(memberPath(boardId, request.auth.uid));
+    }
+
+    function isString(value, min, max) {
+      return value is string && value.size() >= min && value.size() <= max;
+    }
+
+    function validEmails(emails) {
+      return emails is list && emails.size() >= 1 && emails.size() <= 5;
     }
 
     // ---------- users/{uid}: login account profile ----------
@@ -52,6 +86,162 @@ service cloud.firestore {
       allow get: if verified() && (email == myEmail() || isAdmin());
       allow list: if isAdmin();
       allow write: if false; // v1: only the admin CLI (Admin SDK) writes here
+    }
+
+    // ---------- joinCodes/{code}: invite link → board ----------
+
+    match /joinCodes/{code} {
+      allow get: if verified();
+      allow list: if false; // codes can't be enumerated
+      allow create: if isTeacher()
+        && request.resource.data.keys().hasOnly(['boardId', 'boardTitle', 'createdAt'])
+        && myEmail() in getAfter(boardPath(request.resource.data.boardId)).data.teacherEmails
+        && getAfter(boardPath(request.resource.data.boardId)).data.joinCode == code;
+      allow update: if isBoardTeacher(resource.data.boardId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['boardTitle']);
+      allow delete: if isBoardTeacher(resource.data.boardId);
+    }
+
+    // ---------- boards/{boardId} ----------
+
+    function validBoard() {
+      let data = request.resource.data;
+      return data.keys().hasOnly(['title', 'description', 'teacherEmails', 'joinCode', 'joinCodeEnabled', 'status',
+          'archiveAfterDays', 'background', 'createdAt', 'updatedAt', 'lastActivityAt', 'archivedAt'])
+        && isString(data.title, 1, 120)
+        && isString(data.description, 0, 500)
+        && data.teacherEmails is list && myEmail() in data.teacherEmails
+        && data.joinCodeEnabled is bool
+        && data.status in ['active', 'locked', 'archived']
+        && data.archiveAfterDays is int && data.archiveAfterDays >= 7 && data.archiveAfterDays <= 3650;
+    }
+
+    match /boards/{boardId} {
+      allow get: if (verified() && myEmail() in resource.data.teacherEmails) || isMember(boardId);
+      // The teacher dashboard queries `teacherEmails array-contains <my email>`
+      allow list: if verified() && myEmail() in resource.data.teacherEmails;
+      allow create: if isTeacher() && validBoard() && request.resource.data.status == 'active';
+      allow update: if verified() && myEmail() in resource.data.teacherEmails && validBoard()
+        && request.resource.data.joinCode == resource.data.joinCode;
+      allow delete: if false; // purge arrives in M7
+
+      // ---------- students: one doc per person, 1..n emails ----------
+
+      function validStudent() {
+        let data = request.resource.data;
+        return data.keys().hasOnly(['displayName', 'emails', 'group', 'status', 'linkedUids', 'source',
+            'createdAt', 'joinedAt', 'inviteCode'])
+          && isString(data.displayName, 1, 120)
+          && validEmails(data.emails)
+          && isString(data.group, 0, 60)
+          && data.status in ['invited', 'joined']
+          && data.linkedUids is list
+          && data.source in ['import', 'manual', 'invite'];
+      }
+
+      // Invite link: a student not on the list adds themselves, proving they know the board's code
+      function joinsWithInvite(boardId) {
+        let board = get(boardPath(boardId)).data;
+        let data = request.resource.data;
+        return verified()
+          && board.joinCodeEnabled == true
+          && board.status == 'active'
+          && data.source == 'invite'
+          && data.inviteCode == board.joinCode
+          && data.emails == [myEmail()]
+          && data.linkedUids == [request.auth.uid]
+          && data.status == 'joined'
+          && !exists(studentEmailPath(boardId, myEmail()));
+      }
+
+      // Auto-join / second account: the student links their own uid to their own entry
+      function linksOwnAccount() {
+        let changed = request.resource.data.diff(resource.data).affectedKeys();
+        return verified()
+          && myEmail() in resource.data.emails
+          && changed.hasOnly(['linkedUids', 'status', 'joinedAt'])
+          && request.resource.data.status == 'joined'
+          && request.resource.data.linkedUids.toSet()
+               == resource.data.linkedUids.toSet().union([request.auth.uid].toSet());
+      }
+
+      match /students/{studentId} {
+        allow get: if isBoardTeacher(boardId) || (verified() && myEmail() in resource.data.emails);
+        allow list: if isBoardTeacher(boardId);
+        allow create: if validStudent() && (isBoardTeacher(boardId) || joinsWithInvite(boardId));
+        allow update: if validStudent() && (isBoardTeacher(boardId) || linksOwnAccount());
+        allow delete: if isBoardTeacher(boardId);
+      }
+
+      // ---------- studentEmails/{email}: email → studentId (lookup index) ----------
+
+      function validStudentEmail(email) {
+        let data = request.resource.data;
+        return data.keys().hasOnly(['email', 'studentId']) && data.email == email && data.studentId is string;
+      }
+
+      match /studentEmails/{email} {
+        allow get: if isBoardTeacher(boardId) || (verified() && email == myEmail());
+        allow list: if isBoardTeacher(boardId);
+        allow create: if validStudentEmail(email) && (
+          isBoardTeacher(boardId)
+          // invite batch: my own email, pointing to the student I'm creating in the same batch
+          || (verified() && email == myEmail()
+              && getAfter(studentPath(boardId, request.resource.data.studentId)).data.source == 'invite'
+              && getAfter(memberPath(boardId, request.auth.uid)).data.studentId == request.resource.data.studentId)
+        );
+        allow update: if validStudentEmail(email) && isBoardTeacher(boardId);
+        allow delete: if isBoardTeacher(boardId);
+      }
+
+      // ---------- members/{uid}: a login account linked to a student ----------
+
+      match /members/{uid} {
+        allow get: if isBoardTeacher(boardId) || (signedIn() && request.auth.uid == uid);
+        allow list: if isBoardTeacher(boardId);
+        // The email index (existing, or created in the same invite batch) must point to this student
+        allow create: if verified() && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['uid', 'studentId', 'email', 'joinedAt'])
+          && request.resource.data.uid == uid
+          && request.resource.data.email == myEmail()
+          && getAfter(studentEmailPath(boardId, myEmail())).data.studentId == request.resource.data.studentId;
+        allow update: if isBoardTeacher(boardId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['studentId']);
+        allow delete: if isBoardTeacher(boardId) || (signedIn() && request.auth.uid == uid);
+      }
+
+      // ---------- spaces/{studentId}: what the dashboard card shows ----------
+
+      function validNewSpace(studentId) {
+        let data = request.resource.data;
+        return data.keys().hasOnly(['studentId', 'ownerName', 'ownerPhotoURL', 'title', 'summary', 'color',
+            'slideOrder', 'slideCount', 'createdAt', 'updatedAt'])
+          && data.studentId == studentId
+          && isString(data.ownerName, 1, 120)
+          && data.title == '' && data.summary == ''
+          && data.slideOrder == [] && data.slideCount == 0;
+      }
+
+      match /spaces/{studentId} {
+        allow read: if isBoardTeacher(boardId) || isMember(boardId);
+        // Created when the student joins (their own space only)
+        allow create: if validNewSpace(studentId) && (
+          isBoardTeacher(boardId)
+          || getAfter(memberPath(boardId, request.auth.uid)).data.studentId == studentId
+        );
+        allow update: if false; // editing the space arrives in M3
+        allow delete: if isBoardTeacher(boardId);
+      }
+    }
+
+    // ---------- collection-group queries (auto-join, "my boards") ----------
+
+    match /{path=**}/studentEmails/{email} {
+      allow list: if verified() && resource.data.email == myEmail();
+    }
+
+    match /{path=**}/members/{uid} {
+      allow list: if signedIn() && resource.data.uid == request.auth.uid;
     }
   }
 }
