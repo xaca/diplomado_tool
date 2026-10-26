@@ -10,7 +10,7 @@ Status legend: `[ ]` to do · `[x]` done
 
 - **Phase 1 — Template setup:** ✅ done (2026-10-26), commit `8f20758`
 - **Plan review (rev. 6, 2026-10-26):** ✅ consistency + free-tier review done, see [Review findings](#review-findings-rev-6)
-- **Phase 2 — "Padlet for PBL" app:** 🚧 in progress — Google sign-in enabled · M4 Steps 1–6 done (`/health` → `config: ok`) · next: service account key, then M1 (Worker live at `https://media-api.paradisserossa.workers.dev`, 2026-10-26)
+- **Phase 2 — "Padlet for PBL" app:** 🚧 in progress — Google sign-in enabled · M4 Steps 1–6 done (`/health` → `config: ok`) · service account key ready · **setup complete, next: M1** (Worker live at `https://media-api.paradisserossa.workers.dev`, 2026-10-26)
 
 ---
 
@@ -529,7 +529,7 @@ Each milestone ends with something we can try in the browser, plus a commit.
 - [ ] `/login`, `RequireAuth`, `UserMenu` (signed in as…, switch account, language, sign out)
 - [ ] i18next setup (**es default**, en), language switch, typed keys
 - [x] `.gitignore`: `secrets/`, `backups/` (`.env.admin.local` is already covered by `.env.*`)
-- [ ] Download the Firebase **service account key** (you) → `secrets/service-account.json` — [step by step](#how-to-get-the-firebase-service-account-key)
+- [x] Download the Firebase **service account key** (verified 2026-10-26) (you) → `secrets/service-account.json` — [step by step](#how-to-get-the-firebase-service-account-key)
 - [ ] Admin CLI skeleton + `setup` command → **your personal Gmail becomes the teacher (admin) from this console**
 - [ ] After login: teacher email → `/teacher`; any other email → student home `/`
 - [ ] `useRole()` + `RequireTeacher` / `RequireAdmin`
@@ -762,7 +762,7 @@ Full review of the plan for consistency, free-tier limits and security, done bef
 | --- | ------------------------------------------------------------------------------------------------------------------- | --- | --------------- |
 | 1   | Enable Google sign-in in Firebase                                                                                   | you | ✅              |
 | 2   | Cloudinary secret in `.dev.vars` + `wrangler secret put` + `wrangler deploy` (Step 6)                               | you | ✅ `config: ok` |
-| 3   | Firebase service account key → `secrets/service-account.json` ([how](#how-to-get-the-firebase-service-account-key)) | you | ⬜              |
+| 3   | Firebase service account key → `secrets/service-account.json` ([how](#how-to-get-the-firebase-service-account-key)) | you | ✅              |
 | 4   | Everything else (template, Worker, Cloudinary URL builder, env validation)                                          | —   | ✅              |
 
 ### How to get the Firebase service account key
