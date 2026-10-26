@@ -13,7 +13,8 @@
     "emulators": "firebase emulators:start",
     "deploy": "npm run build && firebase deploy",
     "admin": "tsx scripts/admin/index.ts",
-    "test:rules": "firebase emulators:exec --only firestore --project demo-pbl-rules \"vitest run tests/rules\""
+    "test:rules": "firebase emulators:exec --only firestore --project demo-pbl-rules \"vitest run tests/rules\"",
+    "deploy:rules": "firebase deploy --only firestore:rules,firestore:indexes"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
