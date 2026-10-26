@@ -9,7 +9,8 @@ Images: **Cloudinary** · Media service: **Cloudflare Worker** · Admin tasks: *
 Status legend: `[ ]` to do · `[x]` done
 
 - **Phase 1 — Template setup:** ✅ done (2026-10-26), commit `8f20758`
-- **Phase 2 — "Padlet for PBL" app:** 🚧 in progress — M4 Steps 1–5 done, Step 6 waiting for the secret (Worker live at `https://media-api.paradisserossa.workers.dev`, 2026-10-26)
+- **Plan review (rev. 6, 2026-10-26):** ✅ consistency + free-tier review done, see [Review findings](#review-findings-rev-6)
+- **Phase 2 — "Padlet for PBL" app:** 🚧 in progress — Google sign-in enabled · M4 Steps 1–6 done (`/health` → `config: ok`) · next: service account key, then M1 (Worker live at `https://media-api.paradisserossa.workers.dev`, 2026-10-26)
 
 ---
 
@@ -55,7 +56,7 @@ Students can see their classmates' spaces **read-only**.
 
 | Piece                             | Why it exists                                                                                                            | Free tier                                                                                     |
 | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
-| Firebase (Spark)                  | Login, database, hosting. Security Rules enforce permissions.                                                            | Auth free · Firestore 50K reads / 20K writes per day, 1 GiB · Hosting 10 GB, 360 MB/day       |
+| Firebase (Spark)                  | Login, database, hosting, App Check (reCAPTCHA v3). Security Rules enforce permissions.                                  | Auth free · Firestore 50K reads / 20K writes per day, 1 GiB · Hosting 10 GB, 360 MB/day       |
 | Cloudinary Free                   | Images: storage, CDN, resizing by URL                                                                                    | 25 credits/month (1 credit = 1 GB storage **or** 1 GB bandwidth **or** 1,000 transformations) |
 | **media-api** (Cloudflare Worker) | Everything that needs the **Cloudinary secret**: signed uploads, deleting images from the teacher dashboard, usage meter | 100K requests/day, no credit card                                                             |
 | **Admin CLI** (local)             | Full-privilege tasks that never go to the browser: create the first admin, bulk cleanup, purge, backups                  | runs on your computer                                                                         |
@@ -65,13 +66,13 @@ Cloud Functions and Cloud Storage for Firebase need the paid Blaze plan, so they
 
 ### Budget estimate (40 students, 1 board, per month)
 
-| Item                                                               | Usage                               | Free limit         |
-| ------------------------------------------------------------------ | ----------------------------------- | ------------------ |
-| Firestore reads (dashboard ~40, space ~11, full presentation ~450) | a few thousand per day at peak      | 50K / day          |
-| Firestore writes (debounced autosave)                              | ~50–150 per student editing session | 20K / day          |
-| Cloudinary storage (40 × 20 images × ~300 KB)                      | ~0.25 GB                            | 25 credits / month |
-| Cloudinary bandwidth (thumbnails + presentations)                  | 2–4 GB                              | (shared credits)   |
-| Worker requests (sign / delete / usage)                            | a few hundred per day               | 100K / day         |
+| Item                                                               | Usage                                                               | Free limit         |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------- | ------------------ |
+| Firestore reads (dashboard ~40, space ~11, full presentation ~450) | a few thousand per day at peak                                      | 50K / day          |
+| Firestore writes (autosave: idle 3 s, max 1 save / 15 s per slide) | ≤ 120 per student per 30-min session → ~5K for 40 students in class | 20K / day          |
+| Cloudinary storage (40 × 20 images × ~300 KB)                      | ~0.25 GB                                                            | 25 credits / month |
+| Cloudinary bandwidth (thumbnails + presentations)                  | 2–4 GB                                                              | (shared credits)   |
+| Worker requests (sign / delete / usage)                            | a few hundred per day                                               | 100K / day         |
 
 → About **3–5 Cloudinary credits** per class per month. Cleanup and purging old boards keep storage from growing semester after semester.
 
@@ -87,7 +88,7 @@ A student may sign in with a **personal Gmail** one day and a **university email
 | **Email**   | A way to recognize the person at login. A person can have several. | `laura@gmail.com`, `lnataly@uni.edu.co`                       |
 | **Account** | A Firebase login (`uid`), linked to a person.                      | `uid_A` (Gmail) → `st_8f2k`, `uid_B` (university) → `st_8f2k` |
 
-The space belongs to the **person**, so either email leads to the **same space**. Teachers use the same pattern (`staff` + `staffEmails`).
+The space belongs to the **person**, so either email leads to the **same space**. Teachers are simpler: **a teacher is recognized by email** (see [Roles](#roles-who-is-a-teacher)).
 
 ```
  login (uid, email) ──► studentEmails/{email} ──► students/{studentId} ──► spaces/{studentId}
@@ -104,8 +105,7 @@ Security Rules can't search inside arrays, only read documents by path. The `*Em
 ```
 users/{uid}                                     login account profile + preferences
 
-staff/{staffId}                                 a teacher / admin (person)
-staffEmails/{email}                             email → staffId + role (lookup index)
+staffEmails/{email}                             teacher list: one doc per teacher email → role
 
 boards/{boardId}                                a class board
 boards/{boardId}/students/{studentId}           a student (person), 1..n emails
@@ -124,15 +124,12 @@ joinCodes/{code}                                invite code → boardId
 users/{uid}
 { displayName, email, photoURL, locale: 'es' | 'en', createdAt, lastLoginAt }
 
-staff/{staffId}
-{ displayName, emails: string[], role: 'admin' | 'teacher', createdAt, addedBy }
-
 staffEmails/{email}                       // lowercased
-{ email, staffId, role }                  // role copied here → rules need only 1 get()
+{ email, displayName, role: 'admin' | 'teacher', addedAt }   // exists → this email is a teacher
 
 boards/{boardId}
 { title, description,
-  teacherIds: string[],                   // staffIds → co-teachers later, no migration
+  teacherEmails: string[],                // who teaches it (your emails; co-teachers later)
   joinCode, joinCodeEnabled,
   status: 'active' | 'locked' | 'archived',
   lastActivityAt,                         // any edit in the board (throttled) → auto-archive
@@ -183,6 +180,7 @@ joinCodes/{code}
 - **Slides store `assetIds`**, so finding unused images doesn't require parsing scene JSON.
 - **`content` is a JSON string**, excluded from indexes (`fieldOverrides`). This avoids index costs and map-depth limits. The editor warns at 800 KB per slide.
 - **Images are never inside the scene:** only references, so slides stay small.
+- **Slide saves don't touch the space document.** The dashboard listens live to `spaces`, so every space update costs 1 read **per open dashboard**. The space doc changes only when title, summary, cover or slide order change, and `updatedAt` at most every 10 minutes. Without this, 40 students saving while 40 dashboards are open would burn the 50K reads/day.
 - **`engine` + `schemaVersion`:** old slides always say how they were made, which allows future migrations.
 
 ---
@@ -200,13 +198,13 @@ joinCodes/{code}
   - It has **no bold or italic inside a text box**. For an academic slide that's usually enough. Accepted as "simple text".
 - **Links:**
   - Any element can carry a **hyperlink** (click opens it).
-  - **Embeds** show YouTube, Vimeo, Figma, Google Docs/Slides and other allow-listed sites live on the slide.
+  - **Embeds** show allow-listed sites (YouTube, Vimeo, Figma and others) live on the slide. We extend the list with `validateEmbeddable` (e.g. Google Slides published links) and check each one in M5.
   - No link-preview server is needed.
 - **Images:**
   - Excalidraw keeps images in a separate `files` map (data URLs).
   - **Save:** we detect new files, upload them to Cloudinary (signed, through the media-api) and store only `fileId → ImageRef` in Firestore.
   - **Load:** we fetch each image from Cloudinary at the size needed and give it back to Excalidraw with `addFiles()`. This is the same pattern excalidraw.com uses with its own storage.
-- **Autosave:** `onChange` → debounced (~1.5 s), only when the scene version changed. Shows "Guardando… / Guardado".
+- **Autosave:** saves after **3 s idle**, at most **once every 15 s** per slide, and always on slide switch, tab hide and page close. Only when the scene version changed. Shows "Guardando… / Guardado". This keeps a full class drawing at the same time well under the 20K writes/day limit.
 - **Viewer & presenter:** `exportToSvg()` of the slide frame, which is crisp at any size and has no editor UI to load. Thumbnails for the slide sidebar and presenter overview use the same export, cached in memory, at zero quota cost.
 - **Language:** `langCode="es-ES"` or `"en"`, following the app language.
 - **Fonts:** the Excalidraw fonts are **self-hosted** from `/public` (`EXCALIDRAW_ASSET_PATH`) instead of a third-party CDN, so slides don't depend on an external service.
@@ -221,7 +219,7 @@ joinCodes/{code}
 
 1. Excalidraw (or the cover picker) gives us an image. The browser resizes it to max 2560 px and compresses it.
 2. The app calls `media-api POST /uploads/sign` with the Firebase ID token and `{ boardId, studentId }`.
-3. The Worker verifies the token and checks with Firestore that the user is that student or a board teacher. It uses the **user's own token**, so the Security Rules decide. It then returns a **signature** for exactly `public_id = pbl/{env}/{boardId}/{studentId}/{assetId}`.
+3. The Worker picks `env` from the request origin (`localhost` → `dev`, Firebase domains → `prod`), verifies the token and checks with Firestore that the user is that student or a board teacher. It uses the **user's own token**, so the Security Rules decide. It then returns a **signature** for exactly `public_id = pbl/{env}/{boardId}/{studentId}/{assetId}`.
 4. The browser uploads directly to Cloudinary with that signature. The file never passes through the Worker.
 5. The app writes the `assets` registry entry and the slide's `files` map.
 
@@ -274,6 +272,8 @@ active ──(no use for 90 days, or "Archive now")──► archived (read-only
 
 Purging deletes the Cloudinary folder `pbl/prod/{boardId}/` and all Firestore documents of the board.
 
+- **Who deletes what:** the **Worker** deletes the Cloudinary folder (it has the secret). The **teacher's browser** deletes the Firestore documents in batches, because the rules allow a board teacher to delete an **archived** board. The Worker only has the user's token, so it can't bypass the rules. The CLI can do both with admin credentials.
+
 - Only possible on an **archived** board, and **only after downloading the JSON backup**.
 - To confirm, you type the board name.
 - Available from the dashboard (via the media-api) and from the CLI (`npm run admin -- board purge <id>`).
@@ -297,14 +297,14 @@ An image becomes unused when it's deleted from a slide, replaced as a cover, or 
 
 A small TypeScript tool in `scripts/admin/`, run with `npm run admin -- <command>`. It uses the **Firebase Admin SDK** and the **Cloudinary Admin API**, so it bypasses Security Rules. That's why it only runs on your computer and is never deployed.
 
-| Command                                                          | What it does                                              |
-| ---------------------------------------------------------------- | --------------------------------------------------------- |
-| `setup --email <your personal gmail> --name "…"`                 | Creates you as **admin** (staff + staffEmails). Run once. |
-| `staff add / remove / list`                                      | Manage teachers (before the admin screen in M9)           |
-| `cleanup --board <id> \| --all [--dry-run]`                      | Delete unused images                                      |
-| `board archive <id>` · `board restore <id>` · `board purge <id>` | Lifecycle, same rules as the dashboard                    |
-| `backup <boardId>`                                               | Writes the JSON backup to `backups/` (git-ignored)        |
-| `usage`                                                          | Cloudinary credits + Firestore document counts            |
+| Command                                                          | What it does                                                      |
+| ---------------------------------------------------------------- | ----------------------------------------------------------------- |
+| `setup --email <your personal gmail> --name "…"`                 | Creates `staffEmails/{your gmail}` with role **admin**. Run once. |
+| `staff add / remove / list`                                      | Add / remove teacher emails (before the admin screen in M9)       |
+| `cleanup --board <id> \| --all [--dry-run]`                      | Delete unused images                                              |
+| `board archive <id>` · `board restore <id>` · `board purge <id>` | Lifecycle, same rules as the dashboard                            |
+| `backup <boardId>`                                               | Writes the JSON backup to `backups/` (git-ignored)                |
+| `usage`                                                          | Cloudinary credits + Firestore document counts                    |
 
 **Credentials (git-ignored, never committed):**
 
@@ -327,27 +327,40 @@ If a student joined with the link and you later also import them, the teacher da
 ### Under the hood
 
 - **A:** after login, the app looks for the user's email in `studentEmails` (collection-group query). The rule allows creating `members/{uid}` only if `studentEmails/{token.email}` points to that `studentId` and `email_verified == true`.
+- **Index:** the collection-group query needs a single-field index exemption for `studentEmails.email` (collection group scope) in `firestore.indexes.json`, and a rule `match /{path=**}/studentEmails/{email}` that allows reading only your own email.
 - **B:** the rules allow `get` on `joinCodes/{code}` but not `list`, so codes can't be guessed by listing. The student creates their `students` + `studentEmails` + `members` documents in one batch, validated with `getAfter()`.
 
 ---
 
-## Roles & scaling
+## Roles: who is a teacher?
 
-**`staff` + `staffEmails` documents in Firestore** work both to start and to scale:
+**The app recognizes your role by your email.** Nobody picks a role, and there's nothing to configure at login:
 
-| Stage                  | How teachers are managed                                            |
-| ---------------------- | ------------------------------------------------------------------- |
-| **v1 (only you)**      | `npm run admin -- setup --email <your gmail>` makes you admin       |
-| Next teachers          | `npm run admin -- staff add teacher@uni.edu.co` (1 command)         |
-| **M9 (many teachers)** | `/admin/staff` screen in the app. Same documents, **no migration**. |
-| Co-teaching            | Add another `staffId` to `boards.teacherIds`                        |
+```
+Sign in with Google ──► is staffEmails/{my email} there?
+                           ├─ yes → TEACHER → /teacher (boards, students, presentation)
+                           └─ no  → STUDENT → /  (boards where my email is on the student list)
+```
 
-Alternatives that were rejected:
+- **You (teacher):** your personal Gmail is in `staffEmails` with role `admin`. Sign in with it and the app opens the teacher dashboard.
+- **Students:** sign in with their **Gmail** (any Google account works, including university accounts on Google Workspace). The app matches their email to the student list of each board (see [Joining a board](#joining-a-board)).
+- **Role lookup for students:** the app reads `staffEmails/{my email}` right after login. For a student that document doesn't exist, so the rule must allow `get` by path (`email == request.auth.token.email.lower()`), not by `resource.data`; otherwise the student gets a permission error instead of "not a teacher".
+- **Your two emails:** a board lists its teachers by email. **Use your personal Gmail for teaching in v1.** If you add your university email later (`staff add`), the app adds it to `teacherEmails` of your boards at the same time.
+- **Security:** the same check runs in the Security Rules (`exists(/staffEmails/{token.email})` with `email_verified`). A student can't become a teacher by changing anything in the browser.
 
-- **Hardcoded emails in the rules:** every new teacher would mean editing and redeploying the rules.
-- **Firebase custom claims:** they can only be set with the Admin SDK, so a future admin screen would need a server for every change.
+**How the teacher list is managed**
 
-**Rule helpers:** `staffRole()` = `get(/staffEmails/{token.email}).data.role` (with `email_verified`), plus `isAdmin()`, `isTeacher()`, `isBoardTeacher(boardId)`, `isMember(boardId)`, `myStudentId(boardId)`, `isBoardWritable(boardId)` (status `active` and not past `archiveAfterDays`).
+| Stage                        | How                                                                   |
+| ---------------------------- | --------------------------------------------------------------------- |
+| **v1 (only you)**            | `npm run admin -- setup --email <your gmail>` → 1 document, done once |
+| Your second email (optional) | `npm run admin -- staff add <other email>`                            |
+| Another teacher              | `npm run admin -- staff add teacher@uni.edu.co` (1 command)           |
+| **M9 (many teachers)**       | `/admin/staff` screen. Same documents, **no migration**               |
+| Co-teaching                  | Add the email to `boards.teacherEmails`                               |
+
+**Why one document per email instead of writing your email inside the rules:** adding a teacher is one command, with no rules edit and no redeploy, and it's the same data the future admin screen will use.
+
+**Rule helpers:** `staffRole()` = `get(/staffEmails/{token.email}).data.role` (with `email_verified`), plus `isAdmin()`, `isTeacher()`, `isBoardTeacher(boardId)` (`token.email in board.teacherEmails`), `isMember(boardId)`, `myStudentId(boardId)`, `isBoardWritable(boardId)` (status `active` and not past `archiveAfterDays`).
 
 **Shared quota:** all teachers share the free quotas of the project, and the usage meter shows them.
 
@@ -355,16 +368,16 @@ Alternatives that were rejected:
 
 ## Security Rules (summary)
 
-| Path                                | Read                          | Create / Update                                                                                          | Delete                       |
-| ----------------------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------------- | ---------------------------- |
-| `users/{uid}`                       | signed in                     | self only                                                                                                | ✗                            |
-| `staff/{id}`, `staffEmails/{email}` | self or admin                 | admin (v1: only the admin CLI)                                                                           | admin                        |
-| `boards/{id}`                       | board teacher or member       | create: `isTeacher()` with self in `teacherIds` · update: board teacher · members: only `lastActivityAt` | ✗ (purge = Worker / CLI)     |
-| `joinCodes/{code}`                  | `get` only (no `list`)        | `isTeacher()`                                                                                            | board teacher                |
-| `students`, `studentEmails`         | board teacher · own entry     | board teacher · student: link own uid · invite batch                                                     | board teacher                |
-| `members/{uid}`                     | board teacher or member       | self, linked to a `studentId` proven by email index or invite code                                       | board teacher or self        |
-| `spaces/{studentId}` + `slides`     | board teacher or member       | `myStudentId(boardId) == studentId` and `isBoardWritable(boardId)`; size and shape validation            | the student or board teacher |
-| `assets/{assetId}`                  | board teacher · owner student | owner student (after signed upload) · status changes by owner / board teacher                            | ✗                            |
+| Path                            | Read                          | Create / Update                                                                                                  | Delete                                      |
+| ------------------------------- | ----------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| `users/{uid}`                   | signed in                     | self only                                                                                                        | ✗                                           |
+| `staffEmails/{email}`           | self or admin                 | admin (v1: only the admin CLI)                                                                                   | admin                                       |
+| `boards/{id}`                   | board teacher or member       | create: `isTeacher()` with own email in `teacherEmails` · update: board teacher · members: only `lastActivityAt` | board teacher, only when `archived` (purge) |
+| `joinCodes/{code}`              | `get` only (no `list`)        | `isTeacher()`                                                                                                    | board teacher                               |
+| `students`, `studentEmails`     | board teacher · own entry     | board teacher · student: link own uid · invite batch                                                             | board teacher                               |
+| `members/{uid}`                 | board teacher or member       | self, linked to a `studentId` proven by email index or invite code                                               | board teacher or self                       |
+| `spaces/{studentId}` + `slides` | board teacher or member       | `myStudentId(boardId) == studentId` and `isBoardWritable(boardId)`; size and shape validation                    | the student or board teacher                |
+| `assets/{assetId}`              | board teacher · owner student | owner student (after signed upload) · status changes by owner / board teacher                                    | ✗                                           |
 
 Tested with `@firebase/rules-unit-testing` on the emulator before deploying. **Deadline: the current open rules expire 2026-11-25.**
 
@@ -506,13 +519,21 @@ Each milestone ends with something we can try in the browser, plus a commit.
 
 ### M1 — Auth, i18n base & admin setup
 
-- [ ] Enable the Google provider in the Firebase console
+- [x] **Enable Google sign-in** (done 2026-10-26) (you, Firebase console → Authentication → Sign-in method → Google):
+  - Turn on **Habilitar**
+  - **Correo electrónico de asistencia:** your personal Gmail · **Nombre público:** e.g. "PBL Diplomado"
+  - **Ignore** the SHA-1 notice (Android apps only), "entidades seguras" (optional) and "Configuración del SDK web" (not needed)
+  - **Guardar**
+  - Check **Authentication → Configuración → Dominios autorizados** lists `localhost`, `diplomado-fc679.firebaseapp.com` and `diplomado-fc679.web.app`
 - [ ] `signInWithGoogle` (`prompt: 'select_account'`), `signOut`, `users/{uid}`
 - [ ] `/login`, `RequireAuth`, `UserMenu` (signed in as…, switch account, language, sign out)
 - [ ] i18next setup (**es default**, en), language switch, typed keys
-- [ ] Admin CLI skeleton + `setup` command → **your personal Gmail becomes admin from this console**
+- [x] `.gitignore`: `secrets/`, `backups/` (`.env.admin.local` is already covered by `.env.*`)
+- [ ] Download the Firebase **service account key** (you) → `secrets/service-account.json` — [step by step](#how-to-get-the-firebase-service-account-key)
+- [ ] Admin CLI skeleton + `setup` command → **your personal Gmail becomes the teacher (admin) from this console**
+- [ ] After login: teacher email → `/teacher`; any other email → student home `/`
 - [ ] `useRole()` + `RequireTeacher` / `RequireAdmin`
-- [ ] Rules: `users`, `staff`, `staffEmails` (deny everything else) + tests
+- [ ] Rules: `users`, `staffEmails` (deny everything else) + tests
 
 ### M2 — Boards, students & joining
 
@@ -558,7 +579,8 @@ Each milestone ends with something we can try in the browser, plus a commit.
 ### M8 — Hardening & launch
 
 - [ ] Full rules review + `npm run test:rules`
-- [ ] App Check (reCAPTCHA Enterprise) on Firestore; the Worker accepts only the app origins + valid tokens
+- [ ] App Check with the **reCAPTCHA v3** provider (free, no billing account; reCAPTCHA Enterprise needs billing enabled) on Firestore; the Worker accepts only the app origins + valid tokens
+- [ ] Short **privacy notice** on the login page (the app stores student names and emails; academic use only, data deleted when the board is purged) — Colombian Ley 1581 de 2012 (Habeas Data)
 - [ ] Final `<title>`, `lang="es"`, favicon, Open Graph · deploy Hosting + Worker
 
 ### M9 — More teachers (when needed)
@@ -655,7 +677,7 @@ Done:
 
 ✅ Check: tests pass; from the app, `mediaApi.health()` answers `ok` (we wire a button in M1 when the app has a layout).
 
-### Step 6 — Configuration and secrets (you type the secret) — 🟡 code done, your part pending
+### Step 6 ✅ — Configuration and secrets (you type the secret)
 
 - **Public values** go in `wrangler.jsonc` → `vars`: `FIREBASE_PROJECT_ID`, `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `ALLOWED_ORIGINS`.
 - **The secret, locally:** put it in `services/media-api/.dev.vars` (git-ignored): `CLOUDINARY_API_SECRET=…`
@@ -669,9 +691,9 @@ Done by me: `vars` in `wrangler.jsonc`, `.dev.vars.example`, an empty `.dev.vars
 
 Your part:
 
-- [ ] Open `services/media-api/.dev.vars` and paste the secret after `CLOUDINARY_API_SECRET=`
-- [ ] `npx wrangler secret put CLOUDINARY_API_SECRET` (paste it when asked)
-- [ ] `npx wrangler deploy`
+- [x] Open `services/media-api/.dev.vars` and paste the secret after `CLOUDINARY_API_SECRET=`
+- [x] `npx wrangler secret put CLOUDINARY_API_SECRET` (paste it when asked)
+- [x] `npx wrangler deploy` — verified 2026-10-26: `https://media-api.paradisserossa.workers.dev/health` → `{"ok":true,"config":"ok"}`
 
 ✅ Check: `http://localhost:8787/health` (with `npx wrangler dev`) and `https://media-api.paradisserossa.workers.dev/health` both report `config: ok`. The Worker confirms the secret exists without ever printing it.
 
@@ -704,7 +726,7 @@ Your part:
 npx wrangler deploy
 ```
 
-✅ Check: the production app uploads through `https://media-api.<subdomain>.workers.dev`.
+✅ Check: the production app uploads through `https://media-api.paradisserossa.workers.dev`.
 
 ### Step 11 — Delete, purge, usage (in M7)
 
@@ -717,6 +739,60 @@ npx wrangler deploy
 
 ---
 
+## Review findings (rev. 6)
+
+Full review of the plan for consistency, free-tier limits and security, done before starting M1. All fixes are already applied above.
+
+| #   | Finding                                                                                                            | Risk                                   | Fix                                                                                                               |
+| --- | ------------------------------------------------------------------------------------------------------------------ | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| R1  | Autosave every ~1.5 s could reach ~12K writes/day with a full class drawing at the same time                       | 🔴 hit the 20K writes/day limit        | Save after 3 s idle, max 1 save / 15 s per slide, plus on slide switch / tab hide                                 |
+| R2  | Updating the space document on every slide save makes every open dashboard re-read it                              | 🔴 hit the 50K reads/day limit         | Slide saves don't touch the space doc; `updatedAt` at most every 10 min                                           |
+| R3  | Purge: the Worker uses the user's token, but the rules denied deleting boards                                      | 🟠 purge from the dashboard would fail | Board teacher may delete an **archived** board; the browser deletes Firestore docs, the Worker deletes Cloudinary |
+| R4  | App Check with reCAPTCHA **Enterprise** requires a Google Cloud billing account                                    | 🟠 breaks "100% free"                  | Use the **reCAPTCHA v3** provider                                                                                 |
+| R5  | The collection-group query on `studentEmails` needs an index exemption and a matching rule                         | 🟡 auto-join fails at runtime          | Added to "Joining a board"                                                                                        |
+| R6  | Students reading the nonexistent `staffEmails/{email}` doc get a permission error if the rule uses `resource.data` | 🟡 login error for students            | Rule checks the path, not the document                                                                            |
+| R7  | A teacher with two emails is only teacher of boards that list that email                                           | 🟡 confusion                           | Use your Gmail in v1; `staff add` also updates your boards                                                        |
+| R8  | The Worker needs to know `dev` vs `prod` for Cloudinary folders                                                    | 🟢                                     | Derived from the request origin                                                                                   |
+| R9  | Not every site can be embedded in Excalidraw by default                                                            | 🟢                                     | Extend with `validateEmbeddable`, verify in M5                                                                    |
+| R10 | The app stores student names and emails (personal data)                                                            | 🟢                                     | Privacy notice on the login page (M8)                                                                             |
+
+### Ready to start M1? Remaining setup checklist
+
+| #   | Task                                                                                                                | Who | Status          |
+| --- | ------------------------------------------------------------------------------------------------------------------- | --- | --------------- |
+| 1   | Enable Google sign-in in Firebase                                                                                   | you | ✅              |
+| 2   | Cloudinary secret in `.dev.vars` + `wrangler secret put` + `wrangler deploy` (Step 6)                               | you | ✅ `config: ok` |
+| 3   | Firebase service account key → `secrets/service-account.json` ([how](#how-to-get-the-firebase-service-account-key)) | you | ⬜              |
+| 4   | Everything else (template, Worker, Cloudinary URL builder, env validation)                                          | —   | ✅              |
+
+### How to get the Firebase service account key
+
+**What it is:** a private key file (JSON) that lets the **admin CLI** on your computer act as the project's administrator. The CLI needs it to write the first teacher (your Gmail) to `staffEmails`, which the browser can never do because the rules block it. Later it is also used for cleanup and backups.
+
+**Cost:** free. It's part of every Firebase project on the Spark plan; no billing is involved.
+
+**Treat it like a password:** whoever has this file controls your database. It stays in `secrets/` (already git-ignored), and you never paste its content in the chat or send it to anyone.
+
+**Steps (you, ~2 minutes):**
+
+1. Open **Firebase console → ⚙️ Configuración del proyecto → Cuentas de servicio**
+   (direct link: `https://console.firebase.google.com/project/diplomado-fc679/settings/serviceaccounts/adminsdk`).
+2. On the **SDK de Firebase Admin** tab, leave **Node.js** selected.
+3. Click **Generar nueva clave privada** → confirm **Generar clave**. A file like `diplomado-fc679-firebase-adminsdk-xxxxx.json` downloads.
+4. In the project root, create a folder named **`secrets`** (next to `src`).
+5. Move the downloaded file into it and **rename** it to **`service-account.json`**.
+   Result: `D:\universidad\diplomado_pbl\secrets\service-account.json`
+6. Delete the copy left in your Downloads folder.
+
+✅ **Check (I'll run it):** `git status` doesn't show `secrets/`, and `git check-ignore secrets/service-account.json` confirms it's ignored. I'll only check that the file exists and that its `project_id` is `diplomado-fc679`; I won't print the key.
+
+**If something goes wrong:**
+
+- _"Key creation is disabled by an organization policy"_: tell me. We'd use `gcloud auth application-default login` instead (also free).
+- _The file leaked_ (committed, shared, lost laptop): Google Cloud console → **IAM → Cuentas de servicio** → `firebase-adminsdk-…` → **Claves** → delete that key, then generate a new one. The old one stops working immediately.
+
+---
+
 ## Decisions (all answered ✅)
 
 | #   | Decision               | Answer                                                                                                            |
@@ -724,7 +800,7 @@ npx wrangler deploy
 | D1  | Image storage          | **Cloudinary**, signed uploads via the media-api                                                                  |
 | D2  | Slide editor           | **Excalidraw** canvas per slide (MIT, free, no key, no watermark)                                                 |
 | D3  | Text                   | **Excalidraw's text tool** (font, size, color, align; no inline bold/italic)                                      |
-| D4  | Teacher / admin roles  | **`staff` + `staffEmails`** — v1 via CLI, screen in M9                                                            |
+| D4  | Teacher / admin roles  | **Recognized by email**: `staffEmails/{email}` (you = admin via CLI); everyone else signs in as a student         |
 | D5  | Classmates' spaces     | **Visible read-only**                                                                                             |
 | D6  | Joining a board        | **A: teacher adds students (auto-join) + B: invite link**                                                         |
 | D7  | Language               | **Spanish (default) + English**                                                                                   |
