@@ -32,6 +32,7 @@ export function useMyBoards() {
         if (!cancelled)
           setState({ boards, loading: false, error: null, uid: user.uid })
       } catch (error) {
+        console.error('[membership] auto-join / my boards failed', error)
         if (!cancelled)
           setState({
             boards: [],

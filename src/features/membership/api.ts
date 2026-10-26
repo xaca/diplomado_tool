@@ -44,16 +44,24 @@ async function linkAccount(user: User, boardId: string, studentId: string) {
     status: 'joined',
     joinedAt: serverTimestamp(),
   })
-  await batch.commit()
+  try {
+    await batch.commit()
+  } catch (error) {
+    // Lost a race with another tab/effect that linked this account first: that's success too
+    if (!(await getDoc(doc(db, paths.member(boardId, user.uid)))).exists()) {
+      throw error
+    }
+  }
 
   // Readable only once we're a member; a second account of the same student finds it already there
   const spaceRef = doc(db, paths.space(boardId, studentId))
-  if (!(await getDoc(spaceRef)).exists()) {
-    const student = await getDoc(doc(db, paths.student(boardId, studentId)))
-    const name =
-      (student.data() as StudentDoc | undefined)?.displayName ??
-      user.displayName ??
-      emailOf(user)
+  if ((await getDoc(spaceRef)).exists()) return
+  const student = await getDoc(doc(db, paths.student(boardId, studentId)))
+  const name =
+    (student.data() as StudentDoc | undefined)?.displayName ??
+    user.displayName ??
+    emailOf(user)
+  try {
     await writeBatch(db)
       .set(spaceRef, {
         ...defaultSpace(studentId, name, user.photoURL),
@@ -61,11 +69,28 @@ async function linkAccount(user: User, boardId: string, studentId: string) {
         updatedAt: serverTimestamp(),
       })
       .commit()
+  } catch (error) {
+    // Both accounts of the same student may create it at the same time
+    if (!(await getDoc(spaceRef)).exists()) throw error
   }
 }
 
+// One auto-join at a time per account: React StrictMode runs effects twice in dev, and a
+// student may open two tabs. Concurrent runs would collide on members/{uid} (create vs update).
+const autoJoinInFlight = new Map<string, Promise<number>>()
+
 /** A) Joins every board whose student list contains this account's email. Returns how many it joined. */
-export async function autoJoinFromEmail(user: User) {
+export function autoJoinFromEmail(user: User): Promise<number> {
+  const running = autoJoinInFlight.get(user.uid)
+  if (running) return running
+  const run = autoJoinOnce(user).finally(() =>
+    autoJoinInFlight.delete(user.uid),
+  )
+  autoJoinInFlight.set(user.uid, run)
+  return run
+}
+
+async function autoJoinOnce(user: User) {
   if (!user.email || !user.emailVerified) return 0
   const entries = await getDocs(
     query(

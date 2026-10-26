@@ -21,7 +21,7 @@ export default defineConfig([
   },
   {
     // Admin CLI and rules tests run in Node, not the browser
-    files: ['scripts/**/*.ts', 'tests/**/*.ts'],
+    files: ['scripts/**/*.ts', 'tests/**/*.ts', 'playwright.config.ts'],
     languageOptions: { globals: globals.node },
   },
   {
