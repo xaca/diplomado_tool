@@ -2,3 +2,6 @@ dist
 node_modules
 package-lock.json
 src/components/ui
+services/media-api/.wrangler
+services/media-api/worker-configuration.d.ts
+services/media-api/node_modules
