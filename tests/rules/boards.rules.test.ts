@@ -532,3 +532,144 @@ describe('spaces — editing the card (M3)', () => {
     )
   })
 })
+
+describe('assets + card cover (M4)', () => {
+  const asset = (
+    studentId: string,
+    assetId: string,
+    overrides: Record<string, unknown> = {},
+  ) => ({
+    publicId: `pbl/dev/${BOARD}/${studentId}/${assetId}`,
+    studentId,
+    kind: 'cover',
+    width: 1600,
+    height: 900,
+    format: 'webp',
+    bytes: 250_000,
+    status: 'active',
+    createdAt: serverTimestamp(),
+    ...overrides,
+  })
+
+  const cover = (studentId: string, assetId: string) => ({
+    assetId,
+    publicId: `pbl/dev/${BOARD}/${studentId}/${assetId}`,
+    version: 1730000000,
+    width: 1600,
+    height: 900,
+    format: 'webp',
+  })
+
+  async function joined() {
+    await seed()
+    await autoJoin(as(LAURA), LAURA, 'st_laura')
+  }
+
+  it('the student registers an upload and sets it as their cover', async () => {
+    await joined()
+    const db = as(LAURA)
+    await assertSucceeds(
+      setDoc(doc(db, 'boards', BOARD, 'assets', 'a1'), asset('st_laura', 'a1')),
+    )
+    await assertSucceeds(
+      updateDoc(doc(db, 'boards', BOARD, 'spaces', 'st_laura'), {
+        cover: cover('st_laura', 'a1'),
+        updatedAt: serverTimestamp(),
+      }),
+    )
+    await assertSucceeds(
+      updateDoc(doc(db, 'boards', BOARD, 'spaces', 'st_laura'), {
+        cover: null,
+        updatedAt: serverTimestamp(),
+      }),
+    )
+  })
+
+  it('a cover must be a registered upload in my own folder', async () => {
+    await joined()
+    const ref = doc(as(LAURA), 'boards', BOARD, 'spaces', 'st_laura')
+    // not registered
+    await assertFails(
+      updateDoc(ref, {
+        cover: cover('st_laura', 'ghost'),
+        updatedAt: serverTimestamp(),
+      }),
+    )
+    // someone else's folder
+    await env.withSecurityRulesDisabled(async (context) => {
+      await setDoc(
+        doc(context.firestore(), 'boards', BOARD, 'assets', 'x1'),
+        asset('st_other', 'x1'),
+      )
+    })
+    await assertFails(
+      updateDoc(ref, {
+        cover: cover('st_other', 'x1'),
+        updatedAt: serverTimestamp(),
+      }),
+    )
+  })
+
+  it("cannot register uploads for someone else's space or with a foreign path", async () => {
+    await joined()
+    const db = as(LAURA)
+    await assertFails(
+      setDoc(doc(db, 'boards', BOARD, 'assets', 'a2'), asset('st_other', 'a2')),
+    )
+    await assertFails(
+      setDoc(
+        doc(db, 'boards', BOARD, 'assets', 'a3'),
+        asset('st_laura', 'a3', { publicId: 'somewhere/else/a3' }),
+      ),
+    )
+    await assertFails(
+      setDoc(
+        doc(db, 'boards', BOARD, 'assets', 'a4'),
+        asset('st_laura', 'a4', { bytes: 11 * 1024 * 1024 }),
+      ),
+    )
+  })
+
+  it('reads: the owner and the teacher; not classmates', async () => {
+    await joined()
+    await setDoc(
+      doc(as(LAURA), 'boards', BOARD, 'assets', 'a1'),
+      asset('st_laura', 'a1'),
+    )
+    await assertSucceeds(
+      getDoc(doc(as(LAURA), 'boards', BOARD, 'assets', 'a1')),
+    )
+    await assertSucceeds(
+      getDoc(doc(as(TEACHER), 'boards', BOARD, 'assets', 'a1')),
+    )
+    await assertFails(
+      getDoc(doc(as(STRANGER), 'boards', BOARD, 'assets', 'a1')),
+    )
+  })
+
+  it('status: the owner marks it orphaned; only the teacher marks it deleted', async () => {
+    await joined()
+    await setDoc(
+      doc(as(LAURA), 'boards', BOARD, 'assets', 'a1'),
+      asset('st_laura', 'a1'),
+    )
+    await assertSucceeds(
+      updateDoc(doc(as(LAURA), 'boards', BOARD, 'assets', 'a1'), {
+        status: 'orphaned',
+      }),
+    )
+    await assertFails(
+      updateDoc(doc(as(LAURA), 'boards', BOARD, 'assets', 'a1'), {
+        status: 'deleted',
+      }),
+    )
+    await assertSucceeds(
+      updateDoc(doc(as(TEACHER), 'boards', BOARD, 'assets', 'a1'), {
+        status: 'deleted',
+      }),
+    )
+    await assertFails(
+      updateDoc(doc(as(LAURA), 'boards', BOARD, 'assets', 'a1'), { bytes: 1 }),
+    )
+  })
+})

@@ -20,6 +20,9 @@ export const paths = {
   member: (boardId: string, uid: string) =>
     `${COLLECTIONS.boards}/${boardId}/members/${uid}`,
   spaces: (boardId: string) => `${COLLECTIONS.boards}/${boardId}/spaces`,
+  assets: (boardId: string) => `${COLLECTIONS.boards}/${boardId}/assets`,
+  asset: (boardId: string, assetId: string) =>
+    `${COLLECTIONS.boards}/${boardId}/assets/${assetId}`,
   space: (boardId: string, studentId: string) =>
     `${COLLECTIONS.boards}/${boardId}/spaces/${studentId}`,
   joinCode: (code: string) => `${COLLECTIONS.joinCodes}/${code}`,
@@ -76,9 +79,39 @@ export type SpaceDoc = {
   color: string
   slideOrder: string[]
   slideCount: number
+  /** Card cover image (M4) */
+  cover?: ImageRef | null
   createdAt: unknown
   updatedAt: unknown
 }
+
+/** Reference to an image stored in Cloudinary (never a URL; see lib/cloudinary.ts imageUrl) */
+export type ImageRef = {
+  assetId: string
+  publicId: string
+  version: number
+  width: number
+  height: number
+  format: string
+}
+
+export type AssetKind = 'cover' | 'slide'
+export type AssetStatus = 'active' | 'orphaned' | 'deleted'
+
+/** boards/{boardId}/assets/{assetId}: one per upload (storage usage, cleanup in M7) */
+export type AssetDoc = {
+  publicId: string
+  studentId: string
+  kind: AssetKind
+  width: number
+  height: number
+  format: string
+  bytes: number
+  status: AssetStatus
+  createdAt: unknown
+}
+
+export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 
 export type JoinCodeDoc = {
   boardId: string

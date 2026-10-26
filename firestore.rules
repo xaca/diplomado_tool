@@ -217,10 +217,27 @@ service cloud.firestore {
         return ['#FFFFFF', '#FEF3C7', '#FCE7F3', '#EDE9FE', '#DBEAFE', '#DCFCE7', '#FFEDD5'];
       }
 
+      // Cloudinary public id of an image uploaded for this student (see media-api uploadParams)
+      function studentPublicId(boardId, studentId, assetId) {
+        return 'pbl/(dev|prod)/' + boardId + '/' + studentId + '/' + assetId;
+      }
+
+      function validImageRef(ref, boardId, studentId) {
+        return ref is map
+          && ref.keys().hasOnly(['assetId', 'publicId', 'version', 'width', 'height', 'format'])
+          && ref.assetId is string
+          && ref.publicId is string && ref.publicId.matches(studentPublicId(boardId, studentId, ref.assetId))
+          && ref.version is int && ref.width is int && ref.height is int
+          && ref.format is string
+          // must be a registered upload (written just before, or in the same batch)
+          && existsAfter(/databases/$(database)/documents/boards/$(boardId)/assets/$(ref.assetId));
+      }
+
       function validSpace(studentId) {
         let data = request.resource.data;
         return data.keys().hasOnly(['studentId', 'ownerName', 'ownerPhotoURL', 'title', 'summary', 'color',
-            'slideOrder', 'slideCount', 'createdAt', 'updatedAt'])
+            'slideOrder', 'slideCount', 'cover', 'createdAt', 'updatedAt'])
+          && (!('cover' in data) || data.cover == null || validImageRef(data.cover, boardId, studentId))
           && data.studentId == studentId
           && isString(data.ownerName, 1, 120)
           && (data.ownerPhotoURL == null || isString(data.ownerPhotoURL, 1, 2000))
@@ -253,12 +270,41 @@ service cloud.firestore {
           (isSpaceOwner(boardId, studentId) && boardIsActive(boardId)
             && request.resource.data.updatedAt == request.time
             && request.resource.data.diff(resource.data).affectedKeys()
-                 .hasOnly(['title', 'summary', 'color', 'ownerPhotoURL', 'updatedAt']))
+                 .hasOnly(['title', 'summary', 'color', 'ownerPhotoURL', 'cover', 'updatedAt']))
           // the teacher renames the student → keep the card name in sync
           || (isBoardTeacher(boardId)
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ownerName']))
         );
         allow delete: if isBoardTeacher(boardId);
+      }
+
+      // ---------- assets/{assetId}: registry of every upload (storage usage, cleanup in M7) ----------
+
+      function validNewAsset(boardId, assetId) {
+        let data = request.resource.data;
+        return data.keys().hasOnly(['publicId', 'studentId', 'kind', 'width', 'height', 'format', 'bytes', 'status', 'createdAt'])
+          && data.studentId is string
+          && data.publicId is string && data.publicId.matches(studentPublicId(boardId, data.studentId, assetId))
+          && data.kind in ['cover', 'slide']
+          && data.width is int && data.height is int && data.format is string
+          && data.bytes is int && data.bytes > 0 && data.bytes <= 10 * 1024 * 1024
+          && data.status == 'active'
+          && data.createdAt == request.time;
+      }
+
+      match /assets/{assetId} {
+        allow read: if isBoardTeacher(boardId)
+          || (isMember(boardId) && resource.data.studentId == get(memberPath(boardId, request.auth.uid)).data.studentId);
+        allow create: if validNewAsset(boardId, assetId)
+          && isSpaceOwner(boardId, request.resource.data.studentId)
+          && boardIsActive(boardId);
+        // The owner marks an image unused; the teacher (via cleanup, M7) may also mark it deleted
+        allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'deletedAt'])
+          && (
+            (isSpaceOwner(boardId, resource.data.studentId) && request.resource.data.status in ['active', 'orphaned'])
+            || (isBoardTeacher(boardId) && request.resource.data.status in ['active', 'orphaned', 'deleted'])
+          );
+        allow delete: if false;
       }
     }
 

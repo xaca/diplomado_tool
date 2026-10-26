@@ -1,17 +1,10 @@
 import { env } from '@/lib/env'
+import type { ImageRef } from '@/model'
 
 // Browser-side Cloudinary helpers: URL building only.
 // Uploads are signed by the media-api Worker; the API secret never reaches the app.
 
-/** Reference to an uploaded image, as stored in Firestore (never a full URL). */
-export type ImageRef = {
-  assetId: string
-  publicId: string
-  version: number
-  width: number
-  height: number
-  format: string
-}
+export type { ImageRef } from '@/model'
 
 type ImageSize = {
   w?: number
