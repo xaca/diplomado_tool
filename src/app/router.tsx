@@ -6,6 +6,7 @@ import { EditorRoute } from '@/pages/EditorRoute'
 import { JoinPage } from '@/pages/JoinPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
+import { PresenterPage } from '@/pages/PresenterPage'
 import { SpacePage } from '@/pages/SpacePage'
 import { StudentHomePage } from '@/pages/StudentHomePage'
 import { TeacherBoardPage } from '@/pages/TeacherBoardPage'
@@ -16,6 +17,8 @@ export const router = createBrowserRouter([
   {
     element: <RequireAuth />,
     children: [
+      // Full screen, without the app header
+      { path: 'b/:boardId/present/:studentId?', element: <PresenterPage /> },
       {
         element: <AppShell />,
         children: [

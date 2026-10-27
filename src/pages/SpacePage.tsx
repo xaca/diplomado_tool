@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, Pencil, Presentation } from 'lucide-react'
+import { ArrowLeft, Pencil, Play, Presentation } from 'lucide-react'
 import { doc } from 'firebase/firestore'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -17,11 +17,13 @@ import { IMAGE_SIZES, imageUrl } from '@/lib/cloudinary'
 import { initials } from '@/lib/initials'
 import { formatRelative, toDate } from '@/lib/time'
 import { paths, type SpaceDoc } from '@/model'
+import { isTeacherRole, useAuth } from '@/providers/auth-context'
 
 /** One student's space: the card and its slides (read-only for classmates and the teacher). */
 export function SpacePage() {
   const { t, i18n } = useTranslation()
   const { boardId, studentId } = useParams()
+  const { role } = useAuth()
   const board = useBoard(boardId)
   const me = useMyStudentId(boardId)
   const ref =
@@ -47,6 +49,7 @@ export function SpacePage() {
   }
 
   const isMine = me.studentId === space.data.id
+  const teacher = isTeacherRole(role)
   const canEdit = isMine && board.data?.status === 'active'
 
   return (
@@ -113,15 +116,27 @@ export function SpacePage() {
         <h2 className="font-semibold">
           {t('space.slides', { count: space.data.slideCount })}
         </h2>
-        {canEdit && (
-          <Button
-            nativeButton={false}
-            render={<Link to={`/b/${boardId}/s/${space.data.id}/edit`} />}
-          >
-            <Presentation />
-            {t('slides.edit')}
-          </Button>
-        )}
+        <div className="flex gap-2">
+          {(isMine || teacher) && space.data.slideCount > 0 && (
+            <Button
+              variant="outline"
+              nativeButton={false}
+              render={<Link to={`/b/${boardId}/present/${space.data.id}`} />}
+            >
+              <Play />
+              {t('presenter.present')}
+            </Button>
+          )}
+          {canEdit && (
+            <Button
+              nativeButton={false}
+              render={<Link to={`/b/${boardId}/s/${space.data.id}/edit`} />}
+            >
+              <Presentation />
+              {t('slides.edit')}
+            </Button>
+          )}
+        </div>
       </div>
 
       {slides.data.length === 0 && !slides.loading ? (

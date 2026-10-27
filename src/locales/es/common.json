@@ -226,5 +226,24 @@
       "error": "No se pudo guardar. Reintentando…",
       "tooLarge": "Diapositiva demasiado grande: quita elementos o divídela"
     }
+  },
+  "presenter": {
+    "present": "Presentar",
+    "presentAll": "Presentar tablero",
+    "controls": "Controles de la presentación",
+    "exit": "Salir (Esc)",
+    "prevSlide": "Diapositiva anterior (←)",
+    "nextSlide": "Diapositiva siguiente (→)",
+    "prevStudent": "Estudiante anterior (↑)",
+    "nextStudent": "Estudiante siguiente (↓)",
+    "overview": "Vista general (O)",
+    "closeOverview": "Cerrar vista general",
+    "goTo": "Ir a la diapositiva {{number}}",
+    "pickStudent": "Elegir estudiante",
+    "fullscreen": "Pantalla completa (F)",
+    "exitFullscreen": "Salir de pantalla completa (F)",
+    "studentOf": "Estudiante {{current}} de {{total}}",
+    "noSlides": "Este espacio aún no tiene diapositivas.",
+    "nobody": "Todavía nadie tiene diapositivas para presentar."
   }
 }

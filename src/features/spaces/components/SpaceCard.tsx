@@ -1,6 +1,6 @@
 import { Link } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import { ArrowUpRight, Pencil } from 'lucide-react'
+import { ArrowUpRight, Pencil, Presentation } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -14,10 +14,18 @@ type Props = {
   space: Space
   isMine: boolean
   onEdit?: () => void
+  /** The teacher presents this student's slides (M6) */
+  canPresent?: boolean
 }
 
 /** One student's card on the board (Padlet-like). */
-export function SpaceCard({ boardId, space, isMine, onEdit }: Props) {
+export function SpaceCard({
+  boardId,
+  space,
+  isMine,
+  onEdit,
+  canPresent = false,
+}: Props) {
   const { t, i18n } = useTranslation()
   const updated = formatRelative(
     toDate(space.updatedAt),
@@ -92,6 +100,18 @@ export function SpaceCard({ boardId, space, isMine, onEdit }: Props) {
           >
             <Pencil />
             {t('space.edit')}
+          </Button>
+        )}
+        {canPresent && space.slideCount > 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            nativeButton={false}
+            className="text-neutral-700"
+            render={<Link to={`/b/${boardId}/present/${space.id}`} />}
+          >
+            <Presentation />
+            {t('presenter.present')}
           </Button>
         )}
         <Button

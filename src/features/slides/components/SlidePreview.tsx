@@ -11,16 +11,20 @@ import type { SlideDoc } from '@/model'
 export function SlidePreview({
   slide,
   large = false,
+  present = false,
   className,
 }: {
   slide: Pick<SlideDoc, 'content' | 'files'>
   large?: boolean
+  /** Full-screen presentation (implies large, with bigger images) */
+  present?: boolean
   className?: string
 }) {
   const { t } = useTranslation()
   const { svg, error } = useSlideSvg(slide, {
-    embeds: large,
-    inlineFonts: large,
+    embeds: large || present,
+    inlineFonts: large || present,
+    present,
   })
 
   if (error) {

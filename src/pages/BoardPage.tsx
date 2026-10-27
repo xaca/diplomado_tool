@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import { Settings, Users } from 'lucide-react'
+import { Presentation, Settings, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useBoard } from '@/features/boards/hooks'
@@ -88,6 +88,16 @@ export function BoardPage() {
                 {t('dashboard.editMine')}
               </Button>
             )}
+            {teacher && spaces.data.some((space) => space.slideCount > 0) && (
+              <Button
+                variant="secondary"
+                nativeButton={false}
+                render={<Link to={`/b/${boardId}/present`} />}
+              >
+                <Presentation />
+                {t('presenter.presentAll')}
+              </Button>
+            )}
             {teacher && (
               <Button
                 variant="secondary"
@@ -138,6 +148,7 @@ export function BoardPage() {
                 boardId={boardId}
                 space={space}
                 isMine={space.id === me.studentId}
+                canPresent={teacher}
                 onEdit={
                   board.data!.status === 'active'
                     ? () => setEditingId(space.id)

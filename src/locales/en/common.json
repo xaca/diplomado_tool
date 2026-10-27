@@ -226,5 +226,24 @@
       "error": "Couldn't save. Retrying…",
       "tooLarge": "Slide too large: remove some elements or split it"
     }
+  },
+  "presenter": {
+    "present": "Present",
+    "presentAll": "Present board",
+    "controls": "Presentation controls",
+    "exit": "Exit (Esc)",
+    "prevSlide": "Previous slide (←)",
+    "nextSlide": "Next slide (→)",
+    "prevStudent": "Previous student (↑)",
+    "nextStudent": "Next student (↓)",
+    "overview": "Overview (O)",
+    "closeOverview": "Close overview",
+    "goTo": "Go to slide {{number}}",
+    "pickStudent": "Choose student",
+    "fullscreen": "Full screen (F)",
+    "exitFullscreen": "Exit full screen (F)",
+    "studentOf": "Student {{current}} of {{total}}",
+    "noSlides": "This space has no slides yet.",
+    "nobody": "Nobody has slides to present yet."
   }
 }

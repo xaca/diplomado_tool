@@ -89,16 +89,21 @@ type RenderOptions = {
   embeds?: boolean
   /** Embed the font subset in the SVG (crisp text without loading the editor) */
   inlineFonts?: boolean
+  /** Full-screen presentation: bigger images */
+  present?: boolean
 }
 
 /** Renders exactly the slide frame as an SVG string (viewer, presenter, thumbnails). */
 export async function renderSlideSvg(
   slide: Pick<SlideDoc, 'content' | 'files'>,
-  { embeds = false, inlineFonts = false }: RenderOptions = {},
+  { embeds = false, inlineFonts = false, present = false }: RenderOptions = {},
 ) {
   const { elements, background } = loadElements(slide.content)
   const files = Object.fromEntries(
-    toBinaryFiles(slide.files ?? {}).map((file) => [file.id, file]),
+    toBinaryFiles(
+      slide.files ?? {},
+      present ? IMAGE_SIZES.present : IMAGE_SIZES.slide,
+    ).map((file) => [file.id, file]),
   )
   const svg = await exportToSvg({
     elements: elements.filter((element) => !element.isDeleted),
