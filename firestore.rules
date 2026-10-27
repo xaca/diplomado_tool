@@ -244,7 +244,8 @@ service cloud.firestore {
           && isString(data.title, 0, 120)
           && isString(data.summary, 0, 1000)
           && data.color in spaceColors()
-          && data.slideOrder is list && data.slideCount is int;
+          && data.slideOrder is list && data.slideOrder.size() <= 50
+          && data.slideCount == data.slideOrder.size();
       }
 
       function isSpaceOwner(boardId, studentId) {
@@ -266,16 +267,43 @@ service cloud.firestore {
               && request.resource.data.slideOrder == [] && request.resource.data.slideCount == 0)
         );
         allow update: if validSpace(studentId) && (
-          // the student edits their card (slides arrive in M5)
+          // the student edits their card and the order of their slides
           (isSpaceOwner(boardId, studentId) && boardIsActive(boardId)
             && request.resource.data.updatedAt == request.time
             && request.resource.data.diff(resource.data).affectedKeys()
-                 .hasOnly(['title', 'summary', 'color', 'ownerPhotoURL', 'cover', 'updatedAt']))
+                 .hasOnly(['title', 'summary', 'color', 'ownerPhotoURL', 'cover', 'slideOrder', 'slideCount', 'updatedAt']))
           // the teacher renames the student → keep the card name in sync
           || (isBoardTeacher(boardId)
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ownerName']))
         );
         allow delete: if isBoardTeacher(boardId);
+
+        // ---------- slides/{slideId}: one Excalidraw scene per slide (M5) ----------
+        // Saving a slide never touches the space document (dashboards listen to spaces).
+        // Rules can't loop over `files`, so each image ref isn't checked like the cover is;
+        // the M7 cleanup only trusts the asset registry (folder + studentId) before deleting.
+
+        function validSlide() {
+          let data = request.resource.data;
+          return data.keys().hasOnly(['engine', 'content', 'files', 'assetIds', 'bytes', 'schemaVersion', 'updatedAt'])
+            && data.engine == 'excalidraw'
+            && data.content is string && data.content.size() <= 900000
+            && data.files is map && data.files.size() <= 30
+            && data.assetIds is list && data.assetIds.size() <= data.files.size()
+            && data.bytes is int && data.bytes >= 0 && data.bytes <= 900000
+            && data.schemaVersion == 1
+            && data.updatedAt == request.time;
+        }
+
+        match /slides/{slideId} {
+          allow read: if isBoardTeacher(boardId) || isMember(boardId);
+          // A new slide must be listed in the space's slide order (same batch)
+          allow create: if validSlide() && isSpaceOwner(boardId, studentId) && boardIsActive(boardId)
+            && slideId in getAfter(/databases/$(database)/documents/boards/$(boardId)/spaces/$(studentId)).data.slideOrder;
+          allow update: if validSlide() && isSpaceOwner(boardId, studentId) && boardIsActive(boardId);
+          allow delete: if isBoardTeacher(boardId)
+            || (isSpaceOwner(boardId, studentId) && boardIsActive(boardId));
+        }
       }
 
       // ---------- assets/{assetId}: registry of every upload (storage usage, cleanup in M7) ----------

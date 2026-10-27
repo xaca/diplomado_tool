@@ -41,3 +41,6 @@ secrets/
 backups/
 test-results
 playwright-report
+
+# Excalidraw fonts, copied by vite.config.ts
+public/excalidraw-assets/

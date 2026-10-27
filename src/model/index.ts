@@ -25,6 +25,10 @@ export const paths = {
     `${COLLECTIONS.boards}/${boardId}/assets/${assetId}`,
   space: (boardId: string, studentId: string) =>
     `${COLLECTIONS.boards}/${boardId}/spaces/${studentId}`,
+  slides: (boardId: string, studentId: string) =>
+    `${COLLECTIONS.boards}/${boardId}/spaces/${studentId}/slides`,
+  slide: (boardId: string, studentId: string, slideId: string) =>
+    `${COLLECTIONS.boards}/${boardId}/spaces/${studentId}/slides/${slideId}`,
   joinCode: (code: string) => `${COLLECTIONS.joinCodes}/${code}`,
 }
 
@@ -94,6 +98,27 @@ export type ImageRef = {
   height: number
   format: string
 }
+
+/** boards/{boardId}/spaces/{studentId}/slides/{slideId}: one Excalidraw scene per slide (M5) */
+export type SlideDoc = {
+  engine: 'excalidraw'
+  /** JSON string of the scene (elements + background); never image data */
+  content: string
+  /** Excalidraw file id → Cloudinary image */
+  files: Record<string, ImageRef>
+  /** Same images as asset ids (unused-image detection in M7) */
+  assetIds: string[]
+  /** Size of `content` in bytes (Firestore documents are limited to 1 MiB) */
+  bytes: number
+  schemaVersion: 1
+  updatedAt: unknown
+}
+
+export const MAX_SLIDES = 50
+export const MAX_IMAGES_PER_SLIDE = 30
+/** Hard limit enforced by the rules; the editor warns from SLIDE_WARN_BYTES */
+export const MAX_SLIDE_BYTES = 900_000
+export const SLIDE_WARN_BYTES = 800_000
 
 export type AssetKind = 'cover' | 'slide'
 export type AssetStatus = 'active' | 'orphaned' | 'deleted'

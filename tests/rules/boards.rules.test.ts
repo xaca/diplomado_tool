@@ -673,3 +673,147 @@ describe('assets + card cover (M4)', () => {
     )
   })
 })
+
+describe('slides (M5)', () => {
+  const SEB = { uid: 'seb', email: 'seb@gmail.com' }
+  const spaceRef = (db: Firestore) =>
+    doc(db, 'boards', BOARD, 'spaces', 'st_laura')
+  const slideRef = (db: Firestore, slideId: string, studentId = 'st_laura') =>
+    doc(db, 'boards', BOARD, 'spaces', studentId, 'slides', slideId)
+
+  const slide = (overrides: Record<string, unknown> = {}) => ({
+    engine: 'excalidraw',
+    content: '{"elements":[]}',
+    files: {},
+    assetIds: [],
+    bytes: 15,
+    schemaVersion: 1,
+    updatedAt: serverTimestamp(),
+    ...overrides,
+  })
+
+  /** What the editor does: create the slide and list it in the space, in one batch */
+  function addSlide(db: Firestore, slideId: string, order: string[]) {
+    const batch = writeBatch(db)
+    batch.set(slideRef(db, slideId), slide())
+    batch.update(spaceRef(db), {
+      slideOrder: order,
+      slideCount: order.length,
+      updatedAt: serverTimestamp(),
+    })
+    return batch.commit()
+  }
+
+  async function joined() {
+    await seed()
+    await autoJoin(as(LAURA), LAURA, 'st_laura')
+  }
+
+  async function withClassmate() {
+    await env.withSecurityRulesDisabled(async (context) => {
+      const db = context.firestore()
+      await setDoc(
+        doc(db, 'boards', BOARD, 'students', 'st_seb'),
+        student([SEB.email]),
+      )
+      await setDoc(doc(db, 'boards', BOARD, 'studentEmails', SEB.email), {
+        email: SEB.email,
+        studentId: 'st_seb',
+      })
+    })
+    await autoJoin(as(SEB), SEB, 'st_seb')
+  }
+
+  it('the student adds a slide (listed in the slide order) and saves it', async () => {
+    await joined()
+    await assertSucceeds(addSlide(as(LAURA), 's1', ['s1']))
+    await assertSucceeds(
+      setDoc(
+        slideRef(as(LAURA), 's1'),
+        slide({ content: '{"elements":[1]}', bytes: 16 }),
+      ),
+    )
+  })
+
+  it('a slide that is not in the slide order cannot be created', async () => {
+    await joined()
+    await assertFails(setDoc(slideRef(as(LAURA), 's1'), slide()))
+  })
+
+  it('slideCount must match the slide order, max 50 slides', async () => {
+    await joined()
+    const db = as(LAURA)
+    const batch = writeBatch(db)
+    batch.set(slideRef(db, 's1'), slide())
+    batch.update(spaceRef(db), {
+      slideOrder: ['s1'],
+      slideCount: 3,
+      updatedAt: serverTimestamp(),
+    })
+    await assertFails(batch.commit())
+    const many = Array.from({ length: 51 }, (_, i) => `s${i}`)
+    await assertFails(addSlide(db, 's0', many))
+  })
+
+  it('reordering and deleting own slides', async () => {
+    await joined()
+    const db = as(LAURA)
+    await addSlide(db, 's1', ['s1'])
+    await addSlide(db, 's2', ['s1', 's2'])
+    await assertSucceeds(
+      updateDoc(spaceRef(db), {
+        slideOrder: ['s2', 's1'],
+        slideCount: 2,
+        updatedAt: serverTimestamp(),
+      }),
+    )
+    const batch = writeBatch(db)
+    batch.delete(slideRef(db, 's1'))
+    batch.update(spaceRef(db), {
+      slideOrder: ['s2'],
+      slideCount: 1,
+      updatedAt: serverTimestamp(),
+    })
+    await assertSucceeds(batch.commit())
+  })
+
+  it('rejects wrong shape, other engines, oversized scenes and client timestamps', async () => {
+    await joined()
+    const db = as(LAURA)
+    await addSlide(db, 's1', ['s1'])
+    const ref = slideRef(db, 's1')
+    await assertFails(setDoc(ref, slide({ engine: 'tldraw' })))
+    await assertFails(setDoc(ref, slide({ extra: true })))
+    await assertFails(setDoc(ref, slide({ content: 'x'.repeat(900_001) })))
+    await assertFails(setDoc(ref, slide({ schemaVersion: 2 })))
+    // more asset ids than images on the slide
+    await assertFails(setDoc(ref, slide({ assetIds: ['a1'] })))
+    await assertFails(setDoc(ref, slide({ updatedAt: new Date(2030, 0, 1) })))
+  })
+
+  it('classmates and the teacher read slides; nobody else writes them', async () => {
+    await joined()
+    await addSlide(as(LAURA), 's1', ['s1'])
+    await withClassmate()
+    await assertSucceeds(getDoc(slideRef(as(SEB), 's1')))
+    await assertSucceeds(getDoc(slideRef(as(TEACHER), 's1')))
+    await assertFails(getDoc(slideRef(as(STRANGER), 's1')))
+    await assertFails(setDoc(slideRef(as(SEB), 's1'), slide()))
+    await assertFails(setDoc(slideRef(as(TEACHER), 's1'), slide()))
+    await assertFails(deleteDoc(slideRef(as(SEB), 's1')))
+    await assertSucceeds(deleteDoc(slideRef(as(TEACHER), 's1')))
+  })
+
+  it('no slide edits when the board is locked', async () => {
+    await joined()
+    await addSlide(as(LAURA), 's1', ['s1'])
+    await env.withSecurityRulesDisabled((context) =>
+      updateDoc(doc(context.firestore(), 'boards', BOARD), {
+        status: 'locked',
+      }),
+    )
+    await assertFails(setDoc(slideRef(as(LAURA), 's1'), slide()))
+    await assertFails(deleteDoc(slideRef(as(LAURA), 's1')))
+    await assertSucceeds(getDoc(slideRef(as(LAURA), 's1')))
+  })
+})

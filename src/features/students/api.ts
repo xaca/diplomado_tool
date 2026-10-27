@@ -3,6 +3,7 @@ import {
   collection,
   doc,
   getDoc,
+  getDocs,
   serverTimestamp,
   writeBatch,
   type WriteBatch,
@@ -123,9 +124,20 @@ export async function updateStudent(
   await batch.commit()
 }
 
+/** Deletes a space's slides (a deleted document keeps its subcollections in Firestore). */
+async function deleteSlides(
+  batch: WriteBatch,
+  boardId: string,
+  studentId: string,
+) {
+  const slides = await getDocs(collection(db, paths.slides(boardId, studentId)))
+  for (const slide of slides.docs) batch.delete(slide.ref)
+}
+
 /** Deletes the student, their email index, linked accounts and their space. */
 export async function removeStudent(boardId: string, student: Student) {
   const batch = writeBatch(db)
+  await deleteSlides(batch, boardId, student.id)
   batch.delete(doc(db, paths.student(boardId, student.id)))
   for (const email of student.emails)
     batch.delete(doc(db, paths.studentEmail(boardId, email)))
@@ -169,15 +181,21 @@ export async function mergeStudents(
     batch.update(doc(db, paths.member(boardId, uid)), { studentId: keep.id })
 
   if (removeSpace.exists() && !keepSpace.exists()) {
+    // Only the card text moves: images live in the other student's Cloudinary folder
+    // and slides are recreated by the student (merges happen right after joining).
     const space = removeSpace.data()
     batch.set(doc(db, paths.space(boardId, keep.id)), {
       ...space,
       studentId: keep.id,
       ownerName: keep.displayName,
+      cover: null,
+      slideOrder: [],
+      slideCount: 0,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     })
   }
+  await deleteSlides(batch, boardId, remove.id)
   batch.delete(doc(db, paths.space(boardId, remove.id)))
   batch.delete(doc(db, paths.student(boardId, remove.id)))
   await batch.commit()
