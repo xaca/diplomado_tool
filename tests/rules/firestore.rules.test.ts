@@ -98,6 +98,22 @@ describe('users/{uid}', () => {
     )
   })
 
+  it('profile name and photo are bounded; the photo must be https (M8 review)', async () => {
+    const ref = doc(as(STUDENT), 'users', STUDENT.uid)
+    await assertFails(
+      setDoc(ref, { ...profile(STUDENT.email), displayName: 'x'.repeat(201) }),
+    )
+    await assertFails(
+      setDoc(ref, { ...profile(STUDENT.email), photoURL: 'data:image/png,xx' }),
+    )
+    await assertSucceeds(
+      setDoc(ref, {
+        ...profile(STUDENT.email),
+        photoURL: 'https://lh3.googleusercontent.com/a/x',
+      }),
+    )
+  })
+
   it('signed-out visitors read nothing', async () => {
     await assertFails(
       getDoc(

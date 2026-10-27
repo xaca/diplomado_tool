@@ -956,3 +956,62 @@ describe('lifecycle: archive, activity, purge, restore (M7)', () => {
     await assertFails(setDoc(slideRef(db, 's1'), slide()))
   })
 })
+
+describe('rules review (M8)', () => {
+  const MALLORY = { uid: 'mallory', email: 'mallory@gmail.com' }
+
+  it('nobody can attach their account to a student who joined with the invite link', async () => {
+    await seed()
+    // The victim joins with the invite link (student st_stranger, source "invite")
+    await assertSucceeds(joinWithInvite(as(STRANGER), STRANGER, CODE))
+    const db = as(MALLORY)
+    const batch = writeBatch(db)
+    batch.set(doc(db, 'boards', BOARD, 'studentEmails', MALLORY.email), {
+      email: MALLORY.email,
+      studentId: `st_${STRANGER.uid}`,
+    })
+    batch.set(doc(db, 'boards', BOARD, 'members', MALLORY.uid), {
+      uid: MALLORY.uid,
+      studentId: `st_${STRANGER.uid}`,
+      email: MALLORY.email,
+      joinedAt: serverTimestamp(),
+    })
+    await assertFails(batch.commit())
+    // …and so can't edit the victim's card
+    await assertFails(
+      updateDoc(doc(db, 'boards', BOARD, 'spaces', `st_${STRANGER.uid}`), {
+        title: 'Hijacked',
+        updatedAt: serverTimestamp(),
+      }),
+    )
+  })
+
+  it('the invite link stops working once the board is auto-archived', async () => {
+    await seed({
+      boardOverrides: {
+        lastActivityAt: Timestamp.fromMillis(
+          Date.now() - 100 * 24 * 3600 * 1000,
+        ),
+      },
+    })
+    await assertFails(joinWithInvite(as(STRANGER), STRANGER, CODE))
+  })
+
+  it('the card photo must be an https URL', async () => {
+    await seed()
+    await autoJoin(as(LAURA), LAURA, 'st_laura')
+    const card = doc(as(LAURA), 'boards', BOARD, 'spaces', 'st_laura')
+    await assertFails(
+      updateDoc(card, {
+        ownerPhotoURL: 'javascript:alert(1)',
+        updatedAt: serverTimestamp(),
+      }),
+    )
+    await assertSucceeds(
+      updateDoc(card, {
+        ownerPhotoURL: 'https://lh3.googleusercontent.com/a/photo',
+        updatedAt: serverTimestamp(),
+      }),
+    )
+  })
+})

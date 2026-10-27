@@ -59,6 +59,11 @@ service cloud.firestore {
       return value is string && value.size() >= min && value.size() <= max;
     }
 
+    // Images shown to other people (profile photos): https only, bounded size
+    function isHttpsUrl(value) {
+      return isString(value, 9, 2000) && value.matches('https://.+');
+    }
+
     function validEmails(emails) {
       return emails is list && emails.size() >= 1 && emails.size() <= 5;
     }
@@ -69,6 +74,8 @@ service cloud.firestore {
       let data = request.resource.data;
       return data.keys().hasOnly(['displayName', 'email', 'photoURL', 'locale', 'createdAt', 'lastLoginAt'])
         && data.email == myEmail()
+        && (!('displayName' in data) || data.displayName == null || isString(data.displayName, 0, 200))
+        && (!('photoURL' in data) || data.photoURL == null || isHttpsUrl(data.photoURL))
         && (!('locale' in data) || data.locale in ['es', 'en']);
     }
 
@@ -154,6 +161,7 @@ service cloud.firestore {
         return verified()
           && board.joinCodeEnabled == true
           && board.status == 'active'
+          && board.lastActivityAt + duration.value(board.archiveAfterDays, 'd') > request.time
           && data.source == 'invite'
           && data.inviteCode == board.joinCode
           && data.emails == [myEmail()]
@@ -193,9 +201,13 @@ service cloud.firestore {
         allow list: if isBoardTeacher(boardId);
         allow create: if validStudentEmail(email) && (
           isBoardTeacher(boardId)
-          // invite batch: my own email, pointing to the student I'm creating in the same batch
+          // invite batch: my own email, pointing to the student I'm creating in this same batch
+          // (a NEW student whose only email and account are mine: never someone else's entry)
           || (verified() && email == myEmail()
+              && !exists(studentPath(boardId, request.resource.data.studentId))
               && getAfter(studentPath(boardId, request.resource.data.studentId)).data.source == 'invite'
+              && getAfter(studentPath(boardId, request.resource.data.studentId)).data.emails == [myEmail()]
+              && getAfter(studentPath(boardId, request.resource.data.studentId)).data.linkedUids == [request.auth.uid]
               && getAfter(memberPath(boardId, request.auth.uid)).data.studentId == request.resource.data.studentId)
         );
         allow update: if validStudentEmail(email) && isBoardTeacher(boardId);
@@ -248,7 +260,7 @@ service cloud.firestore {
           && (!('cover' in data) || data.cover == null || validImageRef(data.cover, boardId, studentId))
           && data.studentId == studentId
           && isString(data.ownerName, 1, 120)
-          && (data.ownerPhotoURL == null || isString(data.ownerPhotoURL, 1, 2000))
+          && (data.ownerPhotoURL == null || isHttpsUrl(data.ownerPhotoURL))
           && isString(data.title, 0, 120)
           && isString(data.summary, 0, 1000)
           && data.color in spaceColors()
