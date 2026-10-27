@@ -10,7 +10,7 @@ Status legend: `[ ]` to do · `[x]` done
 
 - **Phase 1 — Template setup:** ✅ done (2026-10-26), commit `8f20758`
 - **Plan review (rev. 6, 2026-10-26):** ✅ consistency + free-tier review done, see [Review findings](#review-findings-rev-6)
-- **Phase 2 — "Padlet for PBL" app:** 🚧 in progress — Google sign-in enabled · M4 Steps 1–6 done (`/health` → `config: ok`) · service account key ready · **M1 ✅** · **Loop 1 (M2) ✅** ([report](reports/loop-01-m2.md)) · **Loop 2 (M3) ✅** ([report](reports/loop-02-m3.md)) · **Loop 3 (M4) ✅ code done** ([report](reports/loop-03-m4.md)) · **Loop 4 (M5) ✅ code done** ([report](reports/loop-04-m5.md)) — waiting for you: `npm run worker:deploy` + `npm run deploy:rules` (covers M2–M5) + one real upload, **before 2026-11-25** (Worker live at `https://media-api.paradisserossa.workers.dev`)
+- **Phase 2 — "Padlet for PBL" app:** 🚧 in progress — Google sign-in enabled · M4 Steps 1–6 done (`/health` → `config: ok`) · service account key ready · **M1 ✅** · **Loop 1 (M2) ✅** ([report](reports/loop-01-m2.md)) · **Loop 2 (M3) ✅** ([report](reports/loop-02-m3.md)) · **Loop 3 (M4) ✅ code done** ([report](reports/loop-03-m4.md)) · **Loop 4 (M5) ✅ code done** ([report](reports/loop-04-m5.md)) · **Loop 5 (M6) ✅ code done** ([report](reports/loop-05-m6.md)) — waiting for you: `npm run worker:deploy` + `npm run deploy:rules` (covers M2–M5) + one real upload, **before 2026-11-25** (Worker live at `https://media-api.paradisserossa.workers.dev`)
 
 ---
 
@@ -585,7 +585,7 @@ Saved as `reports/loop-NN-<milestone>.md` (committed) and summarized in the chat
 | 2 ✅ | **M3** Dashboard                          | Padlet-like board view, live cards, space profile (no cover yet)                                                                                                    | `npm run deploy:rules` · acceptance test                                                     |
 | 3 ✅ | **M4** Uploads (Worker Steps 7–12)        | token check, permission check, signed uploads, cover image, asset registry, rules                                                                                   | `npx wrangler deploy` · upload a real image · `npm run deploy:rules`                         |
 | 4 ✅ | **M5** Excalidraw slides                  | editor, autosave (throttled), images via Cloudinary, viewer, self-hosted fonts                                                                                      | `npm run deploy:rules` · acceptance test                                                     |
-| 5    | **M6** Presentation                       | full screen, keyboard, next student, GSAP transitions                                                                                                               | acceptance test                                                                              |
+| 5 ✅ | **M6** Presentation                       | full screen, keyboard, next student, GSAP transitions                                                                                                               | acceptance test                                                                              |
 | 6    | **M7** Lifecycle & backups                | archived projects, cleanup, purge, JSON backup/restore, CLI commands, Worker delete/usage                                                                           | `npx wrangler deploy` · `npm run deploy:rules` · try cleanup on a test board                 |
 | 7    | **M8** Hardening & launch                 | App Check code, final rules review, privacy notice, metadata                                                                                                        | create a reCAPTCHA v3 key + register App Check (console) · `npm run deploy` (hosting)        |
 | —    | **M9** More teachers                      | when you need it                                                                                                                                                    | —                                                                                            |
@@ -665,8 +665,10 @@ Each milestone ends with something we can try in the browser, plus a commit.
 
 ### M6 — Presentation mode
 
-- [ ] Fullscreen, ←/→ slides, ↑/↓ students, Esc, student picker, overview
-- [ ] Preload the next slide, GSAP transitions (`prefers-reduced-motion`)
+- [x] Fullscreen (F), ←/→ slides (+ PageUp/PageDown clickers, Space), ↑/↓ students, Home/End, Esc, student picker, overview (O), touch swipes, auto-hiding controls
+- [x] Preload the next slides and the next student (SVG + 1920 px images), GSAP transitions (off with `prefers-reduced-motion`)
+- [x] "Presentar" on cards (teacher, from M3), "Presentar tablero", and on the space page (teacher or owner) · 6 unit + 4 e2e tests (31 e2e total)
+- [ ] **Acceptance test** (you): [checklist](reports/loop-05-m6.md#5-acceptance-test)
 
 ### M7 — Data lifecycle & backups
 
