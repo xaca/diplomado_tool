@@ -19,7 +19,7 @@
     "seed": "tsx scripts/seed.ts",
     "test": "vitest run --project unit",
     "test:e2e": "firebase emulators:exec --only auth,firestore --project demo-pbl \"playwright test\"",
-    "check": "npm run typecheck && npm run lint && prettier --check . && npm test && npm run test:worker && npm run test:rules && npm run test:e2e && npm run test:worker-integration && npm run build",
+    "check": "npm run typecheck && npm run lint && prettier --check . && npm test && npm run test:worker && npm run test:rules && npm run test:e2e && npm run test:worker-integration && npm run test:admin && npm run build",
     "emulators:free": "tsx scripts/free-emulator-ports.ts",
     "pretest:rules": "npm run emulators:free",
     "pretest:e2e": "npm run emulators:free",
@@ -29,7 +29,9 @@
     "test:worker": "npm --prefix services/media-api run typecheck && npm --prefix services/media-api run test -- --run",
     "worker:dev": "npm --prefix services/media-api run dev",
     "worker:dev:emulators": "npm --prefix services/media-api run dev:emulators",
-    "worker:deploy": "npm --prefix services/media-api run deploy"
+    "worker:deploy": "npm --prefix services/media-api run deploy",
+    "test:admin": "firebase emulators:exec --only auth,firestore --project demo-pbl \"tsx tests/integration/admin-cli.ts\"",
+    "pretest:admin": "npm run emulators:free"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

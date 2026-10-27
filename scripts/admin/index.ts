@@ -1,4 +1,16 @@
+import { createInterface } from 'node:readline/promises'
 import { Command, Option } from 'commander'
+import { formatBytes } from '@/features/storage/analysis'
+import {
+  archiveBoard,
+  backupBoard,
+  boardCounts,
+  cleanupBoard,
+  listBoards,
+  purgeBoard,
+  restoreBoard,
+} from './boards.ts'
+import { cloudinaryUsage } from './cloudinary.ts'
 import { projectId } from './firebase.ts'
 import { addStaff, listStaff, removeStaff, setupAdmin } from './staff.ts'
 
@@ -70,6 +82,130 @@ staff
   .action(async (email: string) => {
     const removed = await removeStaff(email)
     console.log(`✔ ${removed} removed`)
+  })
+
+// ---------- M7: lifecycle, cleanup, backups, usage ----------
+
+const board = program
+  .command('board')
+  .description('Board lifecycle: archive, restore, purge')
+
+board
+  .command('archive <boardId>')
+  .description('Archive now: read-only, listed under "Proyectos archivados"')
+  .action(async (boardId: string) => {
+    await archiveBoard(boardId)
+    console.log(`✔ ${boardId} archived`)
+  })
+
+board
+  .command('restore <boardId>')
+  .description('Back to active (counts as activity)')
+  .action(async (boardId: string) => {
+    await restoreBoard(boardId)
+    console.log(`✔ ${boardId} restored`)
+  })
+
+board
+  .command('purge <boardId>')
+  .description(
+    'Delete an ARCHIVED board forever: writes a backup to backups/ first, then images and data',
+  )
+  .option('--yes', 'skip the confirmation (scripts and tests)')
+  .option('--backup-dir <dir>', 'where to write the backup')
+  .action(
+    async (
+      boardId: string,
+      { yes, backupDir }: { yes?: boolean; backupDir?: string },
+    ) => {
+      const [info] = (await listBoards()).filter((b) => b.id === boardId)
+      if (!info) throw new Error(`Board not found: ${boardId}`)
+      if (!yes) {
+        const prompt = createInterface({
+          input: process.stdin,
+          output: process.stdout,
+        })
+        const answer = await prompt.question(
+          `Type the board title to purge "${info.title}" forever: `,
+        )
+        prompt.close()
+        if (answer.trim() !== info.title)
+          throw new Error('Title does not match: nothing was deleted')
+      }
+      const result = await purgeBoard(boardId, backupDir)
+      console.log(`✔ Backup: ${result.backup}`)
+      console.log(
+        `✔ ${boardId} purged: ${result.images} images, ${result.documents} documents`,
+      )
+    },
+  )
+
+program
+  .command('backup <boardId>')
+  .description(
+    'Write the board backup (JSON, same as the dashboard) to backups/',
+  )
+  .option('--dir <dir>', 'output folder')
+  .action(async (boardId: string, { dir }: { dir?: string }) => {
+    console.log(`✔ ${await backupBoard(boardId, dir)}`)
+  })
+
+program
+  .command('cleanup')
+  .description(
+    'Delete unused images (not in any slide or cover, older than 24 h)',
+  )
+  .option('--board <boardId>', 'one board')
+  .option('--all', 'every board')
+  .option('--dry-run', 'only list what would be deleted')
+  .action(
+    async ({
+      board: boardId,
+      all,
+      dryRun = false,
+    }: {
+      board?: string
+      all?: boolean
+      dryRun?: boolean
+    }) => {
+      if (!boardId === !all) throw new Error('Use --board <id> or --all')
+      const ids = all ? (await listBoards()).map((b) => b.id) : [boardId!]
+      for (const id of ids) {
+        const { unused, deleted } = await cleanupBoard(id, dryRun)
+        const bytes = unused.reduce((sum, asset) => sum + asset.bytes, 0)
+        if (dryRun) {
+          console.log(
+            `${id}: ${unused.length} unused images (${formatBytes(bytes, 'en')})`,
+          )
+          for (const asset of unused)
+            console.log(
+              `  - ${asset.publicId} (${asset.kind}, ${asset.status})`,
+            )
+        } else {
+          console.log(
+            `✔ ${id}: ${deleted} of ${unused.length} unused images deleted`,
+          )
+        }
+      }
+    },
+  )
+
+program
+  .command('usage')
+  .description('Cloudinary credits this month + Firestore documents per board')
+  .action(async () => {
+    try {
+      const usage = await cloudinaryUsage()
+      console.log(
+        `Cloudinary: ${usage.used} of ${usage.limit} credits (${Math.round(usage.percent)} %), ` +
+          `${formatBytes(usage.storageBytes, 'en')} stored, ${formatBytes(usage.bandwidthBytes, 'en')} served`,
+      )
+    } catch (error) {
+      console.log(
+        `Cloudinary: unavailable (${error instanceof Error ? error.message : String(error)})`,
+      )
+    }
+    console.table(await boardCounts())
   })
 
 program.parseAsync().catch((error: unknown) => {

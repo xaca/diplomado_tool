@@ -20,7 +20,7 @@ const ID_PATTERN = /^[A-Za-z0-9_-]{1,128}$/;
 const DAY_MS = 24 * 60 * 60 * 1000;
 /** Free Workers plan: 50 outgoing requests per call → 40 asset reads + board + Cloudinary */
 export const MAX_DELETE_BATCH = 40;
-/** Purge: at most this many Cloudinary pages (1000 images each) per call; the app calls again */
+/** Purge: at most this many Cloudinary calls (1000 images each) per request; the app calls again */
 const MAX_PURGE_PAGES = 5;
 
 class HttpError extends Error {
@@ -189,14 +189,18 @@ const routes: Record<string, Handler> = {
 		const board = await assertBoardTeacher(caller, boardId, deps);
 		if (board.status !== 'archived') throw new HttpError(409, 'only archived boards can be purged');
 
-		const prefix = `pbl/${environmentOf(request)}/${boardId}/`;
+		// Both environment folders: images uploaded while testing from localhost belong to the board too
 		let deleted = 0;
-		for (let page = 0; page < MAX_PURGE_PAGES; page++) {
-			const result = await cloudinaryCall(() => deps.cloudinary.deleteByPrefix(prefix));
-			deleted += result.deleted;
-			if (!result.partial) return json({ deleted, complete: true });
+		let pages = 0;
+		for (const prefix of [`pbl/prod/${boardId}/`, `pbl/dev/${boardId}/`]) {
+			for (;;) {
+				if (pages++ >= MAX_PURGE_PAGES) return json({ deleted, complete: false });
+				const result = await cloudinaryCall(() => deps.cloudinary.deleteByPrefix(prefix));
+				deleted += result.deleted;
+				if (!result.partial) break;
+			}
 		}
-		return json({ deleted, complete: false });
+		return json({ deleted, complete: true });
 	},
 
 	/** Cloudinary credits used this month (teacher dashboard meter). Any teacher. */

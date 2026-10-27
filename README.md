@@ -41,25 +41,47 @@ npm run worker:dev           # http://localhost:8787 — set VITE_MEDIA_API_URL=
 
 ## Scripts
 
-| Script                            | What it does                                                    |
-| --------------------------------- | --------------------------------------------------------------- |
-| `npm run dev`                     | Dev server (real Firebase project)                              |
-| `npm run dev:emulators`           | Dev server against the local emulators                          |
-| `npm run emulators` / `seed`      | Start Auth + Firestore emulators / load demo data               |
-| `npm run build`                   | Type-check + production build to `dist/`                        |
-| `npm run lint` / `npm run format` | ESLint / Prettier                                               |
-| `npm test`                        | Unit tests                                                      |
-| `npm run test:rules`              | Firestore Security Rules tests (emulator)                       |
-| `npm run test:e2e`                | Playwright end-to-end tests (emulators)                         |
-| `npm run test:worker`             | Worker type-check + offline tests                               |
-| `npm run test:worker-integration` | Real Worker + emulators + rules                                 |
-| `npm run check`                   | Full quality gate (all of the above + build)                    |
-| `npm run worker:dev`              | Run the media-api Worker locally                                |
-| `npm run worker:deploy`           | Deploy the media-api Worker to Cloudflare                       |
-| `npm run deploy:rules`            | Deploy Firestore rules + indexes                                |
-| `npm run deploy`                  | Build and deploy Hosting + Firestore rules                      |
-| `npm run admin`                   | Admin CLI (staff emails) — needs `secrets/service-account.json` |
-| `npm run emulators:free`          | Stop leftover emulator/test processes holding the ports         |
+| Script                            | What it does                                            |
+| --------------------------------- | ------------------------------------------------------- |
+| `npm run dev`                     | Dev server (real Firebase project)                      |
+| `npm run dev:emulators`           | Dev server against the local emulators                  |
+| `npm run emulators` / `seed`      | Start Auth + Firestore emulators / load demo data       |
+| `npm run build`                   | Type-check + production build to `dist/`                |
+| `npm run lint` / `npm run format` | ESLint / Prettier                                       |
+| `npm test`                        | Unit tests                                              |
+| `npm run test:rules`              | Firestore Security Rules tests (emulator)               |
+| `npm run test:e2e`                | Playwright end-to-end tests (emulators)                 |
+| `npm run test:worker`             | Worker type-check + offline tests                       |
+| `npm run test:worker-integration` | Real Worker + emulators + rules                         |
+| `npm run test:admin`              | Real admin CLI + Firestore emulator + fake Cloudinary   |
+| `npm run check`                   | Full quality gate (all of the above + build)            |
+| `npm run worker:dev`              | Run the media-api Worker locally                        |
+| `npm run worker:deploy`           | Deploy the media-api Worker to Cloudflare               |
+| `npm run deploy:rules`            | Deploy Firestore rules + indexes                        |
+| `npm run deploy`                  | Build and deploy Hosting + Firestore rules              |
+| `npm run admin`                   | Admin CLI — see below                                   |
+| `npm run emulators:free`          | Stop leftover emulator/test processes holding the ports |
+
+## Admin CLI
+
+Runs only on your computer, with admin credentials (it bypasses the Security Rules):
+`secrets/service-account.json` for Firebase, and `.env.admin.local` for Cloudinary:
+
+```bash
+CLOUDINARY_CLOUD_NAME=syqkgwws
+CLOUDINARY_API_KEY=...
+CLOUDINARY_API_SECRET=...
+```
+
+| Command                                                        | What it does                                                |
+| -------------------------------------------------------------- | ----------------------------------------------------------- |
+| `npm run admin -- setup --email <gmail>`                       | First admin (once)                                          |
+| `npm run admin -- staff list \| add <email> \| remove <email>` | Teacher list                                                |
+| `npm run admin -- board archive <id>` / `board restore <id>`   | Archive now / back to active                                |
+| `npm run admin -- board purge <id>`                            | Archived boards only: backup to `backups/`, then delete all |
+| `npm run admin -- backup <id>`                                 | Board backup (same JSON as the dashboard) to `backups/`     |
+| `npm run admin -- cleanup --board <id> \| --all [--dry-run]`   | Delete unused images (Cloudinary + registry)                |
+| `npm run admin -- usage`                                       | Cloudinary credits + documents per board                    |
 
 ## Structure
 

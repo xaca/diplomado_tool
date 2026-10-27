@@ -275,15 +275,16 @@ describe('POST /assets/delete', () => {
 });
 
 describe('POST /boards/purge', () => {
-	it('deletes the whole board folder of an archived board, page by page', async () => {
+	it('deletes both folders (prod and dev) of an archived board, page by page', async () => {
 		const calls: CloudinaryCalls = { deleteByIds: [], deleteByPrefix: [], usage: 0 };
 		const response = await handle(
-			post('/boards/purge', { boardId: BOARD }, { origin: 'https://diplomado-fc679.web.app' }),
+			post('/boards/purge', { boardId: BOARD }),
 			env,
 			deps(teacherBoard('archived'), fakeCloudinary(calls, { partialPages: 2 })),
 		);
-		expect(await response.json()).toEqual({ deleted: 2003, complete: true });
-		expect(calls.deleteByPrefix).toEqual(Array(3).fill(`pbl/prod/${BOARD}/`));
+		// prod: 2 full pages + the rest; then dev (images from local testing)
+		expect(await response.json()).toEqual({ deleted: 2006, complete: true });
+		expect(calls.deleteByPrefix).toEqual([...Array(3).fill(`pbl/prod/${BOARD}/`), `pbl/dev/${BOARD}/`]);
 	});
 
 	it('stops after a few pages and asks to be called again', async () => {

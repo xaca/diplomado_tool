@@ -20,8 +20,20 @@ function loadServiceAccount(): ServiceAccount & { project_id: string } {
   return JSON.parse(readFileSync(KEY_PATH, 'utf8'))
 }
 
-const serviceAccount = loadServiceAccount()
+// Emulator mode (tests): set by `firebase emulators:exec`. Only "demo-*" projects, which can't
+// reach production even by mistake.
+const emulatorProject = process.env.FIRESTORE_EMULATOR_HOST
+  ? (process.env.GCLOUD_PROJECT ?? 'demo-pbl')
+  : null
+if (emulatorProject && !emulatorProject.startsWith('demo-'))
+  throw new Error(
+    `Emulator mode needs a demo-* project, got ${emulatorProject}`,
+  )
 
-export const projectId = serviceAccount.project_id
-export const app = initializeApp({ credential: cert(serviceAccount) })
+const serviceAccount = emulatorProject ? null : loadServiceAccount()
+
+export const projectId = emulatorProject ?? serviceAccount!.project_id
+export const app = emulatorProject
+  ? initializeApp({ projectId: emulatorProject })
+  : initializeApp({ credential: cert(serviceAccount!) })
 export const db = getFirestore(app)

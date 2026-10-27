@@ -281,10 +281,15 @@ try {
   check(
     purged.status === 200 &&
       purged.body.complete === true &&
-      decodeURIComponent(cloudinaryRequests.at(-1)!.url).includes(
-        `prefix=pbl/dev/${DEMO.boardId}/`,
-      ),
-    "purging an archived board deletes its whole folder (the board's own prefix)",
+      cloudinaryRequests
+        .slice(-2)
+        .map((request) => decodeURIComponent(request.url))
+        .every((url, index) =>
+          url.includes(
+            `prefix=pbl/${index === 0 ? 'prod' : 'dev'}/${DEMO.boardId}/`,
+          ),
+        ),
+    'purging an archived board deletes its prod and dev folders',
   )
   check(
     (
