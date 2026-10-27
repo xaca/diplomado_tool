@@ -4,7 +4,12 @@ import {
   fitWithin,
   needsResize,
 } from '@/features/assets/prepare-image'
-import { toImageRef, UploadError } from '@/features/assets/upload'
+import {
+  cloudinaryError,
+  registerError,
+  toImageRef,
+  UploadError,
+} from '@/features/assets/upload'
 
 const MB = 1024 * 1024
 
@@ -71,9 +76,40 @@ describe('toImageRef', () => {
     })
   })
 
-  it('rejects an answer for a different upload', () => {
+  it('rejects an answer for a different upload, keeping both ids for the log', () => {
     expect(() => toImageRef(signed, { public_id: 'other' })).toThrow(
       UploadError,
     )
+    try {
+      toImageRef(signed, { public_id: 'other' })
+    } catch (error) {
+      expect(error).toMatchObject({ reason: 'network', stage: 'response' })
+      expect((error as Error).cause).toEqual({
+        expected: 'pbl/dev/b/s/a1',
+        received: { public_id: 'other' },
+      })
+    }
+  })
+})
+
+describe('upload failures say which step failed', () => {
+  it('keeps Cloudinary’s explanation', () => {
+    const error = cloudinaryError(400, {
+      error: { message: 'Invalid Signature abc' },
+    })
+    expect(error).toMatchObject({ reason: 'network', stage: 'cloudinary' })
+    expect(error.cause).toBe('400 Invalid Signature abc')
+    expect(cloudinaryError(500, null).cause).toBe('500')
+  })
+
+  it('a registry write denied by the rules is "forbidden", anything else "network"', () => {
+    expect(registerError({ code: 'permission-denied' })).toMatchObject({
+      reason: 'forbidden',
+      stage: 'register',
+    })
+    expect(registerError(new Error('offline'))).toMatchObject({
+      reason: 'network',
+      stage: 'register',
+    })
   })
 })

@@ -9,11 +9,24 @@ import { checkFile, prepareImage } from '@/features/assets/prepare-image'
 
 export class UploadError extends Error {
   readonly reason: 'type' | 'tooLarge' | 'forbidden' | 'network'
+  /** Which step failed (logged, so a failure can be traced without guessing) */
+  readonly stage: 'check' | 'sign' | 'cloudinary' | 'response' | 'register'
 
-  constructor(reason: UploadError['reason']) {
-    super(reason)
+  constructor(
+    reason: UploadError['reason'],
+    stage: UploadError['stage'] = 'check',
+    options?: ErrorOptions,
+  ) {
+    super(`${reason} at ${stage}`, options)
     this.reason = reason
+    this.stage = stage
   }
+}
+
+/** Logs why an upload failed (the toast only shows a short message). */
+export function logUploadFailure(error: unknown) {
+  const stage = error instanceof UploadError ? error.stage : 'unknown'
+  console.error(`[upload] failed at ${stage}`, error)
 }
 
 type CloudinaryResponse = {
@@ -39,7 +52,9 @@ export function toImageRef(
     typeof body.format !== 'string' ||
     typeof body.bytes !== 'number'
   ) {
-    throw new UploadError('network')
+    throw new UploadError('network', 'response', {
+      cause: { expected: signed.params.public_id, received: response },
+    })
   }
   return {
     assetId: signed.assetId,
@@ -50,6 +65,25 @@ export function toImageRef(
     format: body.format,
     bytes: body.bytes,
   }
+}
+
+/** Cloudinary rejected the upload: keep its explanation (`{ error: { message } }`) for the log. */
+export function cloudinaryError(status: number, body: unknown) {
+  const message = (body as { error?: { message?: unknown } } | null)?.error
+    ?.message
+  return new UploadError('network', 'cloudinary', {
+    cause: `${status} ${typeof message === 'string' ? message : ''}`.trim(),
+  })
+}
+
+/** The asset registry write failed: the rules said no, or Firestore couldn't be reached. */
+export function registerError(error: unknown) {
+  const code = (error as { code?: unknown } | null)?.code
+  return new UploadError(
+    code === 'permission-denied' ? 'forbidden' : 'network',
+    'register',
+    { cause: error },
+  )
 }
 
 function sendToCloudinary(
@@ -79,8 +113,9 @@ function sendToCloudinary(
     xhr.onload = () =>
       xhr.status >= 200 && xhr.status < 300
         ? resolve(xhr.response)
-        : reject(new UploadError('network'))
-    xhr.onerror = () => reject(new UploadError('network'))
+        : reject(cloudinaryError(xhr.status, xhr.response))
+    xhr.onerror = () =>
+      reject(new UploadError('network', 'cloudinary', { cause: 'no response' }))
     xhr.send(form)
   })
 }
@@ -110,6 +145,8 @@ export async function uploadImage(options: {
     const status = (error as { status?: number }).status
     throw new UploadError(
       status === 401 || status === 403 ? 'forbidden' : 'network',
+      'sign',
+      { cause: error },
     )
   }
 
@@ -118,16 +155,22 @@ export async function uploadImage(options: {
     await sendToCloudinary(signed, prepared, onProgress),
   )
 
-  await setDoc(doc(db, paths.asset(boardId, ref.assetId)), {
-    publicId: ref.publicId,
-    studentId,
-    kind,
-    width: ref.width,
-    height: ref.height,
-    format: ref.format,
-    bytes,
-    status: 'active',
-    createdAt: serverTimestamp(),
-  })
+  try {
+    await setDoc(doc(db, paths.asset(boardId, ref.assetId)), {
+      publicId: ref.publicId,
+      studentId,
+      kind,
+      width: ref.width,
+      height: ref.height,
+      format: ref.format,
+      bytes,
+      status: 'active',
+      createdAt: serverTimestamp(),
+    })
+  } catch (error) {
+    // The image is already in Cloudinary but not in the registry: name it in the log
+    console.error(`[upload] untracked image in Cloudinary: ${ref.publicId}`)
+    throw registerError(error)
+  }
   return ref
 }

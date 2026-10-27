@@ -4,7 +4,11 @@ import { ImagePlus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { ACCEPTED_TYPES } from '@/features/assets/prepare-image'
-import { uploadImage, UploadError } from '@/features/assets/upload'
+import {
+  logUploadFailure,
+  uploadImage,
+  UploadError,
+} from '@/features/assets/upload'
 import { recordBoardActivity } from '@/features/boards/api'
 import { setSpaceCover, type Space } from '@/features/spaces/api'
 import { IMAGE_SIZES, imageUrl } from '@/lib/cloudinary'
@@ -36,6 +40,7 @@ export function CoverPicker({
       void recordBoardActivity(boardId)
       toast.success(t('cover.saved'))
     } catch (error) {
+      logUploadFailure(error)
       toast.error(
         t(
           `cover.errors.${error instanceof UploadError ? error.reason : 'network'}`,

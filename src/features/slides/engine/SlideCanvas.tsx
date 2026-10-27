@@ -19,7 +19,7 @@ import type {
   BinaryFiles,
   ExcalidrawImperativeAPI,
 } from '@excalidraw/excalidraw/types'
-import { uploadImage } from '@/features/assets/upload'
+import { logUploadFailure, uploadImage } from '@/features/assets/upload'
 import { saveSlide, type Slide } from '@/features/slides/api'
 import {
   createAutosave,
@@ -228,6 +228,7 @@ export default function SlideCanvas({
         return ref
       })
       .catch((error: unknown) => {
+        logUploadFailure(error)
         removeImages([fileId])
         callbacks.current.onImageError(error)
         return null
