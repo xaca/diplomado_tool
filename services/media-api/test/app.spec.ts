@@ -139,6 +139,12 @@ describe('verifyIdToken (emulator mode)', () => {
 		await expect(verifyIdToken(token, realProject)).rejects.toThrow(AuthError);
 	});
 
+	it('rejects malformed tokens with an auth error (→ 401, not 500)', async () => {
+		const emulatorEnv = { ...env, AUTH_MODE: 'emulator', FIREBASE_PROJECT_ID: 'demo-pbl' };
+		await expect(verifyIdToken('not-a-token', emulatorEnv)).rejects.toThrow(AuthError);
+		await expect(verifyIdToken('not-a-token', env)).rejects.toThrow(AuthError);
+	});
+
 	it('rejects unverified emails', async () => {
 		const emulatorEnv = { ...env, AUTH_MODE: 'emulator', FIREBASE_PROJECT_ID: 'demo-pbl' };
 		const token = unsigned({ sub: 'u1', aud: 'demo-pbl', email: 'a@gmail.com', email_verified: false });

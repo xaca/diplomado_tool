@@ -4,12 +4,14 @@ import { execFileSync } from 'node:child_process'
 // it exits, and the next run fails with "port taken". This stops ONLY leftover Firebase emulator
 // processes on the emulator ports; any other program on those ports is reported, never killed.
 
-const PORTS = [8080, 9099, 4000, 4400, 4500, 9150]
+// 8788 = the Worker started by tests/integration/worker.ts (your own `wrangler dev` uses 8787)
+const PORTS = [8080, 9099, 4000, 4400, 4500, 9150, 8788]
 const EMULATOR_HINTS = [
   'cloud-firestore-emulator',
   'firebase-tools',
   'firebase\\emulators',
   'firebase/emulators',
+  'workerd',
 ]
 
 function listeners(): { port: number; pid: number; command: string }[] {
@@ -67,7 +69,7 @@ for (const { port, pid, command } of listeners()) {
   if (EMULATOR_HINTS.some((hint) => command.toLowerCase().includes(hint))) {
     process.kill(pid)
     console.log(
-      `✔ stopped leftover Firebase emulator (pid ${pid}, port ${port})`,
+      `✔ stopped leftover emulator/test process (pid ${pid}, port ${port})`,
     )
   } else {
     console.warn(

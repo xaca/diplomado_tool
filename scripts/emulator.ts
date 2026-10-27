@@ -21,14 +21,15 @@ export const emulatorAuth = getAuth(app)
 export async function resetEmulators() {
   const firestore = `http://${process.env.FIRESTORE_EMULATOR_HOST}/emulator/v1/projects/${EMULATOR_PROJECT_ID}/databases/(default)/documents`
   const auth = `http://${process.env.FIREBASE_AUTH_EMULATOR_HOST}/emulator/v1/projects/${EMULATOR_PROJECT_ID}/accounts`
-  const responses = await Promise.all([
-    fetch(firestore, { method: 'DELETE' }),
-    fetch(auth, { method: 'DELETE' }),
-  ])
-  for (const response of responses) {
-    if (!response.ok)
-      throw new Error(
-        `Emulator reset failed: ${response.status} ${response.url}`,
-      )
+  for (const url of [firestore, auth]) {
+    // 409 = the emulator is still busy with the previous test's writes: wait and retry
+    for (let attempt = 1; ; attempt++) {
+      const response = await fetch(url, { method: 'DELETE' })
+      if (response.ok) break
+      if (response.status !== 409 || attempt === 10) {
+        throw new Error(`Emulator reset failed: ${response.status} ${url}`)
+      }
+      await new Promise((resolve) => setTimeout(resolve, 300 * attempt))
+    }
   }
 }

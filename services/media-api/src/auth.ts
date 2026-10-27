@@ -28,7 +28,12 @@ export async function verifyIdToken(token: string, env: Env): Promise<Caller> {
 	// Local emulators issue unsigned tokens. Accepted ONLY for "demo-*" projects, which can't exist in production.
 	if (env.AUTH_MODE === 'emulator') {
 		if (!env.FIREBASE_PROJECT_ID.startsWith('demo-')) throw new AuthError('emulator mode requires a demo-* project');
-		const payload = decodeJwt(token);
+		let payload: ReturnType<typeof decodeJwt>;
+		try {
+			payload = decodeJwt(token);
+		} catch {
+			throw new AuthError('malformed token');
+		}
 		if (payload.aud !== env.FIREBASE_PROJECT_ID) throw new AuthError('wrong project');
 		return toCaller(payload, token);
 	}
