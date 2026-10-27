@@ -188,6 +188,23 @@ test.describe('M5 · slides', () => {
       .doc(`boards/${DEMO.boardId}/assets/asset1`)
       .get()
     expect(asset.data()).toMatchObject({ kind: 'slide', status: 'active' })
+
+    // Dragging the uploaded image only moves it: saved again, no error, no second upload
+    const canvas = page.locator('canvas.excalidraw__canvas.interactive')
+    const box = (await canvas.boundingBox())!
+    const [x, y] = [box.x + box.width / 2, box.y + box.height / 2]
+    await page.mouse.move(x, y)
+    await page.mouse.down()
+    for (let step = 1; step <= 10; step++)
+      await page.mouse.move(x + step * 15, y + step * 8)
+    await page.mouse.up()
+    await expect(page.getByTestId('save-status')).toHaveText('Guardado', {
+      timeout: 20_000,
+    })
+    await expect(page.locator('[data-sonner-toast]')).toHaveCount(0)
+    expect(fakes.signRequests).toHaveLength(1)
+    const moved = await savedSlides('st_laura')
+    expect(moved.slides.get(moved.order[0])!.assetIds).toEqual(['asset1'])
   })
 
   test('classmates and the teacher see the slides read-only', async ({
