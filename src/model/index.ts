@@ -48,6 +48,8 @@ export type BoardDoc = {
   createdAt: unknown
   updatedAt: unknown
   lastActivityAt: unknown
+  /** Set by "archive now" (M7) */
+  archivedAt?: unknown
 }
 
 export type StudentSource = 'import' | 'manual' | 'invite'

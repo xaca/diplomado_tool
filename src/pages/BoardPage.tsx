@@ -5,6 +5,7 @@ import { Presentation, Settings, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useBoard } from '@/features/boards/hooks'
+import { isWritable, lifecycleOf } from '@/features/boards/lifecycle'
 import { SpaceCard } from '@/features/spaces/components/SpaceCard'
 import { SpaceProfileDialog } from '@/features/spaces/components/SpaceProfileDialog'
 import { useMyStudentId, useSpaces } from '@/features/spaces/hooks'
@@ -58,6 +59,7 @@ export function BoardPage() {
   }
 
   const teacher = isTeacherRole(role)
+  const writable = isWritable(lifecycleOf(board.data))
   const mySpace = spaces.data.find((space) => space.id === me.studentId)
   const editing = spaces.data.find((space) => space.id === editingId)
 
@@ -83,7 +85,7 @@ export function BoardPage() {
             )}
           </div>
           <div className="flex gap-2">
-            {mySpace && board.data.status === 'active' && (
+            {mySpace && writable && (
               <Button onClick={() => setEditingId(mySpace.id)}>
                 {t('dashboard.editMine')}
               </Button>
@@ -111,7 +113,7 @@ export function BoardPage() {
           </div>
         </header>
 
-        {board.data.status !== 'active' && (
+        {!writable && (
           <p className="rounded-lg bg-white/80 p-3 text-sm">
             {t('dashboard.readOnly')}
           </p>
@@ -149,11 +151,7 @@ export function BoardPage() {
                 space={space}
                 isMine={space.id === me.studentId}
                 canPresent={teacher}
-                onEdit={
-                  board.data!.status === 'active'
-                    ? () => setEditingId(space.id)
-                    : undefined
-                }
+                onEdit={writable ? () => setEditingId(space.id) : undefined}
               />
             ))}
           </div>

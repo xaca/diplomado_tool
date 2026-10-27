@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { ACCEPTED_TYPES } from '@/features/assets/prepare-image'
 import { uploadImage, UploadError } from '@/features/assets/upload'
+import { recordBoardActivity } from '@/features/boards/api'
 import { setSpaceCover, type Space } from '@/features/spaces/api'
 import { IMAGE_SIZES, imageUrl } from '@/lib/cloudinary'
 
@@ -32,6 +33,7 @@ export function CoverPicker({
         onProgress: setProgress,
       })
       await setSpaceCover(boardId, space.id, ref, space.cover)
+      void recordBoardActivity(boardId)
       toast.success(t('cover.saved'))
     } catch (error) {
       toast.error(

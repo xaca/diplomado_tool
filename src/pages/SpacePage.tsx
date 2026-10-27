@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useBoard } from '@/features/boards/hooks'
+import { isWritable, lifecycleOf } from '@/features/boards/lifecycle'
 import { SlidePreview } from '@/features/slides/components/SlidePreview'
 import { useSlides } from '@/features/slides/hooks'
 import { SpaceProfileDialog } from '@/features/spaces/components/SpaceProfileDialog'
@@ -50,7 +51,7 @@ export function SpacePage() {
 
   const isMine = me.studentId === space.data.id
   const teacher = isTeacherRole(role)
-  const canEdit = isMine && board.data?.status === 'active'
+  const canEdit = isMine && !!board.data && isWritable(lifecycleOf(board.data))
 
   return (
     <section className="mx-auto flex max-w-3xl flex-col gap-4 p-4 sm:p-6">

@@ -17,7 +17,9 @@ import {
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { UploadError } from '@/features/assets/upload'
+import { recordBoardActivity } from '@/features/boards/api'
 import { useBoard } from '@/features/boards/hooks'
+import { isWritable, lifecycleOf } from '@/features/boards/lifecycle'
 import {
   addSlide,
   deleteSlide,
@@ -83,7 +85,11 @@ export function EditorPage() {
     )
   }
   // Only the owner edits, only while the board is active; everyone else gets the viewer
-  if (me.studentId !== studentId || board.data?.status !== 'active') {
+  if (
+    me.studentId !== studentId ||
+    !board.data ||
+    !isWritable(lifecycleOf(board.data))
+  ) {
     return <Navigate to={`/b/${boardId}/s/${studentId}`} replace />
   }
 
@@ -142,6 +148,7 @@ export function EditorPage() {
 
   const onStatus = (value: SaveStatus, error?: unknown) => {
     setStatus({ value, error })
+    if (value === 'saved') void recordBoardActivity(boardId)
     const saved = latest.current.space
     if (
       value === 'saved' &&

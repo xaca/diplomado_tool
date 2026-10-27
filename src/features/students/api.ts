@@ -8,6 +8,7 @@ import {
   writeBatch,
   type WriteBatch,
 } from 'firebase/firestore'
+import { recordBoardActivity } from '@/features/boards/api'
 import { db } from '@/lib/firebase'
 import type { WithId } from '@/lib/firestore-hooks'
 import {
@@ -86,6 +87,7 @@ export async function addStudent(
   const batch = writeBatch(db)
   const id = setNewStudent(batch, boardId, input, 'manual')
   await batch.commit()
+  void recordBoardActivity(boardId)
   return id
 }
 
@@ -122,6 +124,7 @@ export async function updateStudent(
       batch.update(space, { ownerName: input.name })
   }
   await batch.commit()
+  void recordBoardActivity(boardId)
 }
 
 /** Deletes a space's slides (a deleted document keeps its subcollections in Firestore). */
@@ -145,6 +148,7 @@ export async function removeStudent(boardId: string, student: Student) {
     batch.delete(doc(db, paths.member(boardId, uid)))
   batch.delete(doc(db, paths.space(boardId, student.id)))
   await batch.commit()
+  void recordBoardActivity(boardId)
 }
 
 /**
@@ -199,6 +203,7 @@ export async function mergeStudents(
   batch.delete(doc(db, paths.space(boardId, remove.id)))
   batch.delete(doc(db, paths.student(boardId, remove.id)))
   await batch.commit()
+  void recordBoardActivity(boardId)
 }
 
 /** Applies an import preview in batches of ≤ 450 writes (Firestore limit is 500). */
@@ -250,5 +255,6 @@ export async function importStudents(
     onProgress?.(done)
   }
   await flush()
+  void recordBoardActivity(boardId)
   return done
 }

@@ -245,5 +245,30 @@
     "studentOf": "Student {{current}} of {{total}}",
     "noSlides": "This space has no slides yet.",
     "nobody": "Nobody has slides to present yet."
+  },
+  "lifecycle": {
+    "title": "Lifecycle",
+    "archivedProjects": "Archived projects",
+    "archivedTeacherHint": "Boards not used recently or archived by you. They can be viewed and presented, but not edited. Open one to restore it.",
+    "archivedStudentHint": "Finished boards: you can view them, but not edit them anymore.",
+    "archivedBadge": "Archived",
+    "considerPurgeShort": "Consider purging",
+    "archivedSince": "Archived since {{date}}. It can be viewed and presented, but not edited.",
+    "autoArchive": "If nobody uses it, it moves to “Archived projects” on {{date}}.",
+    "locked": "Locked board: read-only.",
+    "considerPurge": "Archived for more than a year. If you no longer need it, download the backup and purge it in Storage.",
+    "after": "Archive automatically after",
+    "days_one": "{{count}} day without use",
+    "days_other": "{{count}} days without use",
+    "archiveNow": "Archive now",
+    "restore": "Restore",
+    "archiveTitle": "Archive “{{title}}”?",
+    "archiveHint": "It moves to “Archived projects”: your students can view and present it, but not edit it. You can restore it any time.",
+    "archived": "Board archived",
+    "restored": "Board restored",
+    "saved": "Change saved"
+  },
+  "storage": {
+    "title": "Storage"
   }
 }

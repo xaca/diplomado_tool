@@ -17,6 +17,7 @@ import {
   query,
   serverTimestamp,
   setDoc,
+  Timestamp,
   updateDoc,
   where,
   writeBatch,
@@ -815,5 +816,143 @@ describe('slides (M5)', () => {
     await assertFails(setDoc(slideRef(as(LAURA), 's1'), slide()))
     await assertFails(deleteDoc(slideRef(as(LAURA), 's1')))
     await assertSucceeds(getDoc(slideRef(as(LAURA), 's1')))
+  })
+})
+
+describe('lifecycle: archive, activity, purge, restore (M7)', () => {
+  const boardRef = (db: Firestore) => doc(db, 'boards', BOARD)
+  const slideRef = (db: Firestore, slideId: string) =>
+    doc(db, 'boards', BOARD, 'spaces', 'st_laura', 'slides', slideId)
+  const slide = () => ({
+    engine: 'excalidraw',
+    content: '{"elements":[]}',
+    files: {},
+    assetIds: [],
+    bytes: 15,
+    schemaVersion: 1,
+    updatedAt: serverTimestamp(),
+  })
+  const daysAgo = (days: number) =>
+    Timestamp.fromMillis(Date.now() - days * 24 * 3600 * 1000)
+
+  async function joined(boardOverrides: Record<string, unknown> = {}) {
+    await seed({ boardOverrides })
+    await autoJoin(as(LAURA), LAURA, 'st_laura')
+  }
+
+  async function setBoard(fields: Record<string, unknown>) {
+    await env.withSecurityRulesDisabled((context) =>
+      updateDoc(doc(context.firestore(), 'boards', BOARD), fields),
+    )
+  }
+
+  it('members record activity, and nothing else on the board', async () => {
+    await joined()
+    await assertSucceeds(
+      updateDoc(boardRef(as(LAURA)), { lastActivityAt: serverTimestamp() }),
+    )
+    await assertFails(
+      updateDoc(boardRef(as(LAURA)), {
+        lastActivityAt: serverTimestamp(),
+        title: 'Hacked',
+      }),
+    )
+    await assertFails(
+      updateDoc(boardRef(as(LAURA)), { lastActivityAt: daysAgo(-30) }),
+    )
+    await assertFails(
+      updateDoc(boardRef(as(STRANGER)), { lastActivityAt: serverTimestamp() }),
+    )
+  })
+
+  it('a board unused for longer than archiveAfterDays is read-only (auto-archived)', async () => {
+    await joined()
+    await setBoard({ lastActivityAt: daysAgo(91) })
+    const db = as(LAURA)
+    await assertFails(
+      updateDoc(doc(db, 'boards', BOARD, 'spaces', 'st_laura'), {
+        title: 'Nuevo',
+        updatedAt: serverTimestamp(),
+      }),
+    )
+    // activity can't revive it either: the teacher restores it
+    await assertFails(
+      updateDoc(boardRef(db), { lastActivityAt: serverTimestamp() }),
+    )
+    await assertSucceeds(getDoc(doc(db, 'boards', BOARD, 'spaces', 'st_laura')))
+    // a shorter delay is respected too
+    await setBoard({ lastActivityAt: daysAgo(10), archiveAfterDays: 7 })
+    await assertFails(
+      updateDoc(doc(db, 'boards', BOARD, 'spaces', 'st_laura'), {
+        title: 'Nuevo',
+        updatedAt: serverTimestamp(),
+      }),
+    )
+  })
+
+  it('the teacher archives and restores a board', async () => {
+    await joined()
+    await assertSucceeds(
+      updateDoc(boardRef(as(TEACHER)), {
+        status: 'archived',
+        archivedAt: serverTimestamp(),
+      }),
+    )
+    await assertFails(
+      updateDoc(doc(as(LAURA), 'boards', BOARD, 'spaces', 'st_laura'), {
+        title: 'Nuevo',
+        updatedAt: serverTimestamp(),
+      }),
+    )
+    await assertFails(updateDoc(boardRef(as(LAURA)), { status: 'active' }))
+    await assertSucceeds(
+      updateDoc(boardRef(as(TEACHER)), {
+        status: 'active',
+        lastActivityAt: serverTimestamp(),
+      }),
+    )
+  })
+
+  it('purge: only an archived board, only by its teacher', async () => {
+    await joined()
+    await env.withSecurityRulesDisabled((context) =>
+      setDoc(doc(context.firestore(), 'boards', BOARD, 'assets', 'a1'), {
+        publicId: `pbl/dev/${BOARD}/st_laura/a1`,
+        studentId: 'st_laura',
+        status: 'active',
+      }),
+    )
+    const asset = (db: Firestore) => doc(db, 'boards', BOARD, 'assets', 'a1')
+    await assertFails(deleteDoc(boardRef(as(TEACHER))))
+    await assertFails(deleteDoc(asset(as(TEACHER))))
+    await setBoard({ status: 'archived' })
+    await assertFails(deleteDoc(asset(as(LAURA))))
+    await assertFails(deleteDoc(boardRef(as(LAURA))))
+    await assertFails(deleteDoc(boardRef(as(OTHER_TEACHER))))
+    await assertSucceeds(deleteDoc(asset(as(TEACHER))))
+    await assertSucceeds(deleteDoc(boardRef(as(TEACHER))))
+  })
+
+  it('restoring a backup: the teacher creates slides listed in the space, but never edits them', async () => {
+    await joined()
+    const db = as(TEACHER)
+    const batch = writeBatch(db)
+    batch.set(slideRef(db, 's1'), slide())
+    batch.update(doc(db, 'boards', BOARD, 'spaces', 'st_laura'), {
+      ownerName: 'Laura Nataly',
+    })
+    // not listed in slideOrder → refused
+    await assertFails(batch.commit())
+    await env.withSecurityRulesDisabled((context) =>
+      updateDoc(
+        doc(context.firestore(), 'boards', BOARD, 'spaces', 'st_laura'),
+        {
+          slideOrder: ['s1'],
+          slideCount: 1,
+        },
+      ),
+    )
+    await assertSucceeds(setDoc(slideRef(db, 's1'), slide()))
+    await assertFails(setDoc(slideRef(db, 's1'), slide()))
   })
 })

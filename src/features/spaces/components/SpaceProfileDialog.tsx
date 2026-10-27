@@ -14,6 +14,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { recordBoardActivity } from '@/features/boards/api'
 import { updateSpaceProfile, type Space } from '@/features/spaces/api'
 import { CoverPicker } from '@/features/spaces/components/CoverPicker'
 import { cn } from '@/lib/utils'
@@ -55,6 +56,7 @@ export function SpaceProfileDialog({
     setSaving(true)
     try {
       await updateSpaceProfile(boardId, space.id, { title, summary, color })
+      void recordBoardActivity(boardId)
       toast.success(t('space.saved'))
       onOpenChange(false)
     } catch {

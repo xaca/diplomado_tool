@@ -1,5 +1,6 @@
 import {
   collection,
+  deleteField,
   doc,
   getDoc,
   query,
@@ -10,6 +11,8 @@ import {
 } from 'firebase/firestore'
 import { COLLECTIONS, normalizeEmail } from '@/lib/collections'
 import { db } from '@/lib/firebase'
+import { shouldRecordActivity } from '@/features/boards/lifecycle'
+import { toDate } from '@/lib/time'
 import { boardInputSchema, newJoinCode, paths, type BoardInput } from '@/model'
 
 export const boardsQueryFor = (email: string) =>
@@ -83,4 +86,51 @@ export function setInviteEnabled(boardId: string, enabled: boolean) {
 
 export function inviteUrl(code: string) {
   return `${window.location.origin}/join/${code}`
+}
+
+/** "Archive now" (e.g. at the end of the semester): read-only, listed under "Proyectos archivados". */
+export function archiveBoard(boardId: string) {
+  return updateDoc(boardRef(boardId), {
+    status: 'archived',
+    archivedAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  })
+}
+
+/** Back to active; counts as activity, so it isn't auto-archived again right away. */
+export function restoreBoard(boardId: string) {
+  return updateDoc(boardRef(boardId), {
+    status: 'active',
+    archivedAt: deleteField(),
+    lastActivityAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  })
+}
+
+export function setArchiveAfterDays(boardId: string, days: number) {
+  return updateDoc(boardRef(boardId), {
+    archiveAfterDays: days,
+    updatedAt: serverTimestamp(),
+  })
+}
+
+// Checked at most once an hour per board and browser session (no extra reads while editing)
+const activityChecked = new Map<string, number>()
+
+/**
+ * Records that the board is in use (any edit by a student or the teacher), at most once an hour.
+ * Best effort: a failure never blocks the edit that triggered it.
+ */
+export async function recordBoardActivity(boardId: string, now = Date.now()) {
+  if (!shouldRecordActivity(new Date(activityChecked.get(boardId) ?? 0), now))
+    return
+  activityChecked.set(boardId, now)
+  try {
+    const board = await getDoc(boardRef(boardId))
+    if (!board.exists()) return
+    if (shouldRecordActivity(toDate(board.data().lastActivityAt), now))
+      await updateDoc(boardRef(boardId), { lastActivityAt: serverTimestamp() })
+  } catch (error) {
+    console.warn('[boards] activity not recorded', error)
+  }
 }

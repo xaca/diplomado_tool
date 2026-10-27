@@ -245,5 +245,30 @@
     "studentOf": "Estudiante {{current}} de {{total}}",
     "noSlides": "Este espacio aún no tiene diapositivas.",
     "nobody": "Todavía nadie tiene diapositivas para presentar."
+  },
+  "lifecycle": {
+    "title": "Ciclo de vida",
+    "archivedProjects": "Proyectos archivados",
+    "archivedTeacherHint": "Tableros sin uso reciente o archivados por ti. Se pueden ver y presentar, pero no editar. Ábrelos para restaurarlos.",
+    "archivedStudentHint": "Tableros que ya terminaron: puedes verlos, pero ya no editarlos.",
+    "archivedBadge": "Archivado",
+    "considerPurgeShort": "Considera purgar",
+    "archivedSince": "Archivado desde el {{date}}. Se puede ver y presentar, pero no editar.",
+    "autoArchive": "Si nadie lo usa, pasará a «Proyectos archivados» el {{date}}.",
+    "locked": "Tablero cerrado: solo lectura.",
+    "considerPurge": "Lleva más de un año archivado. Si ya no lo necesitas, descarga la copia de seguridad y púrgalo en Almacenamiento.",
+    "after": "Archivar automáticamente tras",
+    "days_one": "{{count}} día sin uso",
+    "days_other": "{{count}} días sin uso",
+    "archiveNow": "Archivar ahora",
+    "restore": "Restaurar",
+    "archiveTitle": "¿Archivar «{{title}}»?",
+    "archiveHint": "Pasará a «Proyectos archivados»: tus estudiantes podrán verlo y presentarlo, pero no editarlo. Puedes restaurarlo cuando quieras.",
+    "archived": "Tablero archivado",
+    "restored": "Tablero restaurado",
+    "saved": "Cambio guardado"
+  },
+  "storage": {
+    "title": "Almacenamiento"
   }
 }

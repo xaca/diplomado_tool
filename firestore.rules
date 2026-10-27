@@ -121,9 +121,17 @@ service cloud.firestore {
       // The teacher dashboard queries `teacherEmails array-contains <my email>`
       allow list: if verified() && myEmail() in resource.data.teacherEmails;
       allow create: if isTeacher() && validBoard() && request.resource.data.status == 'active';
-      allow update: if verified() && myEmail() in resource.data.teacherEmails && validBoard()
-        && request.resource.data.joinCode == resource.data.joinCode;
-      allow delete: if false; // purge arrives in M7
+      allow update: if (verified() && myEmail() in resource.data.teacherEmails && validBoard()
+          && request.resource.data.joinCode == resource.data.joinCode)
+        // members record activity (throttled in the app) while the board is writable
+        || (isMember(boardId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['lastActivityAt'])
+          && request.resource.data.lastActivityAt == request.time
+          && resource.data.status == 'active'
+          && resource.data.lastActivityAt + duration.value(resource.data.archiveAfterDays, 'd') > request.time);
+      // Purge (M7): only archived boards, by their teacher; the board doc is deleted last
+      allow delete: if verified() && myEmail() in resource.data.teacherEmails
+        && resource.data.status == 'archived';
 
       // ---------- students: one doc per person, 1..n emails ----------
 
@@ -252,8 +260,11 @@ service cloud.firestore {
         return isMember(boardId) && get(memberPath(boardId, request.auth.uid)).data.studentId == studentId;
       }
 
+      // Same as isWritable() in src/features/boards/lifecycle.ts: active and not auto-archived
       function boardIsActive(boardId) {
-        return get(boardPath(boardId)).data.status == 'active';
+        let board = get(boardPath(boardId)).data;
+        return board.status == 'active'
+          && board.lastActivityAt + duration.value(board.archiveAfterDays, 'd') > request.time;
       }
 
       match /spaces/{studentId} {
@@ -298,7 +309,10 @@ service cloud.firestore {
         match /slides/{slideId} {
           allow read: if isBoardTeacher(boardId) || isMember(boardId);
           // A new slide must be listed in the space's slide order (same batch)
-          allow create: if validSlide() && isSpaceOwner(boardId, studentId) && boardIsActive(boardId)
+          allow create: if validSlide()
+            && ((isSpaceOwner(boardId, studentId) && boardIsActive(boardId))
+              // the teacher restoring a backup into a new board (M7)
+              || isBoardTeacher(boardId))
             && slideId in getAfter(/databases/$(database)/documents/boards/$(boardId)/spaces/$(studentId)).data.slideOrder;
           allow update: if validSlide() && isSpaceOwner(boardId, studentId) && boardIsActive(boardId);
           allow delete: if isBoardTeacher(boardId)
@@ -332,7 +346,8 @@ service cloud.firestore {
             (isSpaceOwner(boardId, resource.data.studentId) && request.resource.data.status in ['active', 'orphaned'])
             || (isBoardTeacher(boardId) && request.resource.data.status in ['active', 'orphaned', 'deleted'])
           );
-        allow delete: if false;
+        // Purge (M7): the registry goes with the archived board
+        allow delete: if isBoardTeacher(boardId) && get(boardPath(boardId)).data.status == 'archived';
       }
     }
 

@@ -5,6 +5,7 @@ import { ArrowLeft, Download, ExternalLink, UserPlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { InvitePanel } from '@/features/boards/components/InvitePanel'
+import { LifecyclePanel } from '@/features/boards/components/LifecyclePanel'
 import { useBoard } from '@/features/boards/hooks'
 import { ImportDialog } from '@/features/students/components/ImportDialog'
 import { StudentFormDialog } from '@/features/students/components/StudentFormDialog'
@@ -72,6 +73,8 @@ export function TeacherBoardPage() {
       </div>
 
       <InvitePanel board={board.data} />
+
+      <LifecyclePanel board={board.data} />
 
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
