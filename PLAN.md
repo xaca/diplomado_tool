@@ -10,7 +10,7 @@ Status legend: `[ ]` to do · `[x]` done
 
 - **Phase 1 — Template setup:** ✅ done (2026-10-26), commit `8f20758`
 - **Plan review (rev. 6, 2026-10-26):** ✅ consistency + free-tier review done, see [Review findings](#review-findings-rev-6)
-- **Phase 2 — "Padlet for PBL" app:** 🚧 in progress — Google sign-in enabled · M4 Steps 1–6 done (`/health` → `config: ok`) · service account key ready · **M1 ✅** · **Loop 1 (M2) ✅** ([report](reports/loop-01-m2.md)) · **Loop 2 (M3) ✅** ([report](reports/loop-02-m3.md)) · **Loop 3 (M4) ✅ code done** — waiting for you: `npm run worker:deploy` + `npm run deploy:rules` + one real upload ([report](reports/loop-03-m4.md)) (Worker live at `https://media-api.paradisserossa.workers.dev`, 2026-10-26)
+- **Phase 2 — "Padlet for PBL" app:** 🚧 in progress — Google sign-in enabled · M4 Steps 1–6 done (`/health` → `config: ok`) · service account key ready · **M1 ✅** · **Loop 1 (M2) ✅** ([report](reports/loop-01-m2.md)) · **Loop 2 (M3) ✅** ([report](reports/loop-02-m3.md)) · **Loop 3 (M4) ✅ code done** ([report](reports/loop-03-m4.md)) · **Loop 4 (M5) ✅ code done** ([report](reports/loop-04-m5.md)) — waiting for you: `npm run worker:deploy` + `npm run deploy:rules` (covers M2–M5) + one real upload, **before 2026-11-25** (Worker live at `https://media-api.paradisserossa.workers.dev`)
 
 ---
 
@@ -192,7 +192,7 @@ joinCodes/{code}
 ### How it works
 
 - **One Excalidraw canvas per slide.** Each slide is a small, independent scene, so saves are small and fast.
-- **Fixed 16:9 slide (1920 × 1080):** each slide has one Excalidraw **frame** of 1920 × 1080, and the editor keeps the view centered on it. The viewer and presenter export **only that frame**, so a slide looks the same everywhere.
+- **Fixed 16:9 slide (960 × 540 scene units, Loop 4):** each slide has one locked Excalidraw **frame** of 960 × 540 (at 1920 × 1080 Excalidraw's largest font looked tiny when presented; the SVG scales to any screen), and the editor keeps the view centered on it. The viewer and presenter export **only that frame**, so a slide looks the same everywhere.
 - **"Basic edition" UI:** `UIOptions` and props hide what we don't need (library, collaboration, export, save/load, theme switch). The toolbar keeps select, hand, rectangle, ellipse, arrow, line, draw, **text**, **image**, eraser, **embed** and **link**.
 - **Text (D3):** Excalidraw's text tool gives font family (hand-drawn, normal, code), size (S/M/L/XL), color and alignment.
   - It has **no bold or italic inside a text box**. For an academic slide that's usually enough. Accepted as "simple text".
@@ -584,7 +584,7 @@ Saved as `reports/loop-NN-<milestone>.md` (committed) and summarized in the chat
 | 1 ✅ | **Infra + M2** Boards, students & joining | emulator seed, Playwright setup, `npm test`; teacher dashboard, create board, students table, JSON import + quick add, auto-join, invite link, merge, rules + tests | `npm run deploy:rules` (rules + indexes) · acceptance test                                   |
 | 2 ✅ | **M3** Dashboard                          | Padlet-like board view, live cards, space profile (no cover yet)                                                                                                    | `npm run deploy:rules` · acceptance test                                                     |
 | 3 ✅ | **M4** Uploads (Worker Steps 7–12)        | token check, permission check, signed uploads, cover image, asset registry, rules                                                                                   | `npx wrangler deploy` · upload a real image · `npm run deploy:rules`                         |
-| 4    | **M5** Excalidraw slides                  | editor, autosave (throttled), images via Cloudinary, viewer, self-hosted fonts                                                                                      | `npm run deploy:rules` · acceptance test                                                     |
+| 4 ✅ | **M5** Excalidraw slides                  | editor, autosave (throttled), images via Cloudinary, viewer, self-hosted fonts                                                                                      | `npm run deploy:rules` · acceptance test                                                     |
 | 5    | **M6** Presentation                       | full screen, keyboard, next student, GSAP transitions                                                                                                               | acceptance test                                                                              |
 | 6    | **M7** Lifecycle & backups                | archived projects, cleanup, purge, JSON backup/restore, CLI commands, Worker delete/usage                                                                           | `npx wrangler deploy` · `npm run deploy:rules` · try cleanup on a test board                 |
 | 7    | **M8** Hardening & launch                 | App Check code, final rules review, privacy notice, metadata                                                                                                        | create a reCAPTCHA v3 key + register App Check (console) · `npm run deploy` (hosting)        |
@@ -656,10 +656,12 @@ Each milestone ends with something we can try in the browser, plus a commit.
 
 ### M5 — Slides with Excalidraw
 
-- [ ] Engine adapter: `ExcalidrawSlideEditor` (basic UI, 16:9 frame, image files ↔ Cloudinary, self-hosted fonts, es/en) + `renderSlideSvg`
-- [ ] Editor page: slide sidebar (add / duplicate / delete / reorder), debounced autosave, save status, size guard
-- [ ] Space viewer page
-- [ ] Rules + tests for `spaces`, `slides`
+- [x] Engine adapter: `SlideCanvas` (basic UI, locked 16:9 frame fitted to view, image files ↔ Cloudinary, self-hosted fonts, es/en, allow-listed embeds) + `renderSlideSvg` (sandboxed embeds)
+- [x] Editor page: slide sidebar (add / duplicate / delete / drag or keyboard reorder), throttled autosave (3 s idle, ≤ 1 / 15 s), save status, size guard (warn 800 KB, max 900 KB), max 50 slides / 30 images per slide
+- [x] Space viewer (on the space page), card date refreshed by slide saves at most every 10 min
+- [x] Rules + tests for `spaces.slideOrder`, `slides` (49 rules tests) · 6 e2e flows (27 e2e total)
+- [ ] **Deploy rules + indexes** (you): `npm run deploy:rules`
+- [ ] **Acceptance test** (you): [checklist](reports/loop-04-m5.md#5-acceptance-test)
 
 ### M6 — Presentation mode
 
@@ -913,4 +915,4 @@ Full review of the plan for consistency, free-tier limits and security, done bef
 | Q4  | Default language       | **Spanish**                                                                                                       |
 | Q5  | Admin email            | **Your personal Gmail**                                                                                           |
 
-**Next step:** start **M1** (Google login, Spanish/English, admin setup from the console).
+**Next step:** see the Phase 2 status line at the top and the latest loop report.
