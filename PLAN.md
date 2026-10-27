@@ -10,7 +10,7 @@ Status legend: `[ ]` to do · `[x]` done
 
 - **Phase 1 — Template setup:** ✅ done (2026-10-26), commit `8f20758`
 - **Plan review (rev. 6, 2026-10-26):** ✅ consistency + free-tier review done, see [Review findings](#review-findings-rev-6)
-- **Phase 2 — "Padlet for PBL" app:** 🚧 in progress — Google sign-in enabled · M4 Steps 1–6 done (`/health` → `config: ok`) · service account key ready · **M1 ✅** · **Loop 1 (M2) ✅** ([report](reports/loop-01-m2.md)) · **Loop 2 (M3) ✅** ([report](reports/loop-02-m3.md)) · **Loop 3 (M4) ✅ code done** ([report](reports/loop-03-m4.md)) · **Loop 4 (M5) ✅ code done** ([report](reports/loop-04-m5.md)) · **Loop 5 (M6) ✅ code done** ([report](reports/loop-05-m6.md)) — waiting for you: `npm run worker:deploy` + `npm run deploy:rules` (covers M2–M5) + one real upload, **before 2026-11-25** (Worker live at `https://media-api.paradisserossa.workers.dev`)
+- **Phase 2 — "Padlet for PBL" app:** 🚧 in progress — Google sign-in enabled · M4 Steps 1–6 done (`/health` → `config: ok`) · service account key ready · **M1 ✅** · **Loop 1 (M2) ✅** ([report](reports/loop-01-m2.md)) · **Loop 2 (M3) ✅** ([report](reports/loop-02-m3.md)) · **Loop 3 (M4) ✅ code done** ([report](reports/loop-03-m4.md)) · **Loop 4 (M5) ✅ code done** ([report](reports/loop-04-m5.md)) · **Loop 5 (M6) ✅ code done** ([report](reports/loop-05-m6.md)) · **Loop 6 (M7) ✅ code done** ([report](reports/loop-06-m7.md)) — waiting for you: `npm run worker:deploy` + `npm run deploy:rules` (covers M2–M5) + one real upload, **before 2026-11-25** (Worker live at `https://media-api.paradisserossa.workers.dev`)
 
 ---
 
@@ -586,7 +586,7 @@ Saved as `reports/loop-NN-<milestone>.md` (committed) and summarized in the chat
 | 3 ✅ | **M4** Uploads (Worker Steps 7–12)        | token check, permission check, signed uploads, cover image, asset registry, rules                                                                                   | `npx wrangler deploy` · upload a real image · `npm run deploy:rules`                         |
 | 4 ✅ | **M5** Excalidraw slides                  | editor, autosave (throttled), images via Cloudinary, viewer, self-hosted fonts                                                                                      | `npm run deploy:rules` · acceptance test                                                     |
 | 5 ✅ | **M6** Presentation                       | full screen, keyboard, next student, GSAP transitions                                                                                                               | acceptance test                                                                              |
-| 6    | **M7** Lifecycle & backups                | archived projects, cleanup, purge, JSON backup/restore, CLI commands, Worker delete/usage                                                                           | `npx wrangler deploy` · `npm run deploy:rules` · try cleanup on a test board                 |
+| 6 ✅ | **M7** Lifecycle & backups                | archived projects, cleanup, purge, JSON backup/restore, CLI commands, Worker delete/usage                                                                           | `npx wrangler deploy` · `npm run deploy:rules` · try cleanup on a test board                 |
 | 7    | **M8** Hardening & launch                 | App Check code, final rules review, privacy notice, metadata                                                                                                        | create a reCAPTCHA v3 key + register App Check (console) · `npm run deploy` (hosting)        |
 | —    | **M9** More teachers                      | when you need it                                                                                                                                                    | —                                                                                            |
 
@@ -647,7 +647,8 @@ Each milestone ends with something we can try in the browser, plus a commit.
 ### M4 — Media API (Cloudflare Worker) + Cloudinary — **baby steps below**
 
 - [x] Steps 1–9 and 12 of the [Worker walkthrough](#m4-walkthrough-cloudflare-worker--cloudinary-baby-steps) (Step 11 is M7)
-- [ ] **Step 10 (you):** `npm run worker:deploy`, then upload one real image
+- [x] **Step 10 (you):** `npm run worker:deploy` — Loop 3 Worker verified live 2026-10-27 (`/me` answers 401)
+- [ ] One real image upload (you), and redeploy the Worker for M7 (`npm run worker:deploy`)
 - [x] Cover image upload in the space profile (resize/WebP in the browser, signed upload with progress, registry, orphan marking)
 - [x] Rules + tests for `assets` and `spaces.cover` (42 rules tests)
 - [x] Worker: 19 offline tests + **real integration test** (`npm run test:worker-integration`: real Worker + emulators + rules)
@@ -672,12 +673,14 @@ Each milestone ends with something we can try in the browser, plus a commit.
 
 ### M7 — Data lifecycle & backups
 
-- [ ] `lastActivityAt` (throttled) + **"Proyectos archivados"** (auto after `archiveAfterDays`), archive now / restore
-- [ ] Asset status tracking + orphan detection
-- [ ] Worker: `POST /assets/delete`, `POST /boards/:id/purge`, `GET /usage`
-- [ ] Storage page: usage meter, **clean up unused images**, purge (archived + backup first)
-- [ ] Board backup / template JSON export + restore into a new board
-- [ ] CLI: `cleanup`, `board archive|restore|purge`, `backup`, `usage`
+- [x] `lastActivityAt` (hourly, from student and teacher edits) + **"Proyectos archivados"** (auto after `archiveAfterDays`, configurable), archive now / restore — the rules apply the same date check to every student write
+- [x] Asset status tracking + orphan detection (registry minus slides and covers, 24 h grace)
+- [x] Worker: `POST /assets/delete` (40 per call: free plan's 50 subrequests), `POST /boards/purge` (prod + dev folders, resumable), `GET /usage`
+- [x] Storage page: usage meter (warning at 70 %), **clean up unused images**, purge (archived + backup downloaded + type the name)
+- [x] Board backup / template JSON export + restore into a new board ("Restaurar desde archivo")
+- [x] CLI: `cleanup`, `board archive|restore|purge`, `backup`, `usage` (+ `npm run test:admin`)
+- [ ] **Deploy** (you): `npm run deploy:rules` + `npm run worker:deploy` · create `.env.admin.local` for the CLI
+- [ ] **Acceptance test** (you): [checklist](reports/loop-06-m7.md#5-acceptance-test)
 
 ### M8 — Hardening & launch
 
@@ -831,7 +834,7 @@ npx wrangler deploy
 
 ✅ Check: the production app uploads through `https://media-api.paradisserossa.workers.dev`.
 
-### Step 11 — Delete, purge, usage (in M7)
+### Step 11 ✅ — Delete, purge, usage (M7, Loop 6)
 
 `POST /assets/delete` (board teacher only, ids must be under `pbl/{env}/{boardId}/`), `POST /boards/:id/purge` (archived board only) and `GET /usage` all follow the same pattern as Step 9.
 
