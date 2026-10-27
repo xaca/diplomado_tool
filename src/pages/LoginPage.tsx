@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { Navigate, useLocation } from 'react-router'
+import { Link, Navigate, useLocation } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import {
@@ -61,7 +61,10 @@ export function LoginPage() {
             {t('auth.hint')}
           </p>
           <p className="text-center text-xs text-muted-foreground">
-            {t('auth.privacy')}
+            {t('auth.privacy')}{' '}
+            <Link to="/privacidad" className="underline">
+              {t('auth.privacyLink')}
+            </Link>
           </p>
           <div className="flex justify-center gap-2 text-sm">
             {SUPPORTED_LANGUAGES.map((lng) => (

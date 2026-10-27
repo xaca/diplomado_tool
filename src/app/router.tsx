@@ -7,14 +7,19 @@ import { JoinPage } from '@/pages/JoinPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { PresenterPage } from '@/pages/PresenterPage'
+import { PrivacyPage } from '@/pages/PrivacyPage'
 import { SpacePage } from '@/pages/SpacePage'
-import { StoragePage } from '@/pages/StoragePage'
 import { StudentHomePage } from '@/pages/StudentHomePage'
-import { TeacherBoardPage } from '@/pages/TeacherBoardPage'
-import { TeacherHomePage } from '@/pages/TeacherHomePage'
+import {
+  StorageRoute,
+  TeacherBoardRoute,
+  TeacherHomeRoute,
+} from '@/pages/TeacherRoutes'
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
+  // Public: linked from the login page (Ley 1581 de 2012)
+  { path: '/privacidad', element: <PrivacyPage /> },
   {
     element: <RequireAuth />,
     children: [
@@ -37,14 +42,14 @@ export const router = createBrowserRouter([
           {
             element: <RequireTeacher />,
             children: [
-              { path: 'teacher', element: <TeacherHomePage /> },
+              { path: 'teacher', element: <TeacherHomeRoute /> },
               {
                 path: 'teacher/boards/:boardId',
-                element: <TeacherBoardPage />,
+                element: <TeacherBoardRoute />,
               },
               {
                 path: 'teacher/boards/:boardId/storage',
-                element: <StoragePage />,
+                element: <StorageRoute />,
               },
             ],
           },

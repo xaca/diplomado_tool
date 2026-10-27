@@ -24,9 +24,10 @@
     "switchAccount": "Switch account",
     "signedInAs": "Signed in as",
     "hint": "Use your Gmail or university account.",
-    "privacy": "Academic use: we store your name and email only for the course.",
+    "privacy": "By continuing you allow the use of your name, email and what you publish, for the course's academic purposes only.",
     "error": "Couldn't sign in. Please try again.",
-    "profileError": "Couldn't load your profile. Check your connection and try again."
+    "profileError": "Couldn't load your profile. Check your connection and try again.",
+    "privacyLink": "Privacy notice"
   },
   "roles": {
     "admin": "Teacher (admin)",
@@ -324,5 +325,65 @@
     "confirm": "Create board",
     "done": "Board “{{title}}” created",
     "error": "The file couldn't be restored."
+  },
+  "footer": {
+    "privacy": "Privacy"
+  },
+  "privacy": {
+    "title": "Privacy notice",
+    "updated": "Updated: October 27, 2026",
+    "intro": "{{app}} is an academic tool to document and present course projects (project-based learning). This notice explains which personal data it uses and how, under Colombian Law 1581 of 2012 and Decree 1377 of 2013.",
+    "sections": [
+      {
+        "title": "Who is responsible",
+        "body": [
+          "The course teacher, who manages the tool and their class boards."
+        ]
+      },
+      {
+        "title": "Which data we use",
+        "body": [
+          "From your Google account: name, email and profile photo. Your teacher also registers your name and emails to add you to the board.",
+          "What you publish: your card's title and summary, your slides and the images you upload.",
+          "Technical security data: Google reCAPTCHA checks that requests come from this app."
+        ]
+      },
+      {
+        "title": "What for",
+        "body": [
+          "Only for the course: signing you in, showing your work to your teacher and to classmates on the same board, and presenting it in class. It is not sold, not used for advertising and not shared with anyone else."
+        ]
+      },
+      {
+        "title": "Who can see it",
+        "body": [
+          "Your teacher and classmates on your board (read-only). Images are served through hard-to-guess links, but anyone with a link can see that image."
+        ]
+      },
+      {
+        "title": "Where it is stored",
+        "body": [
+          "With third-party services that have their own security measures: Google Firebase (sign-in, database and website), Cloudinary (images) and Cloudflare (service that authorizes image uploads). Their servers may be outside Colombia (e.g. in the United States); by using the tool you authorize that transfer."
+        ]
+      },
+      {
+        "title": "For how long",
+        "body": [
+          "As long as the course board exists. Unused boards move to “Archived projects” and the teacher can purge them: then your data, work and images are deleted."
+        ]
+      },
+      {
+        "title": "Your rights",
+        "body": [
+          "You can access, update, correct and ask to delete your data, and revoke this authorization, by writing to your teacher. If you get no answer, you can contact Colombia's Superintendencia de Industria y Comercio (SIC)."
+        ]
+      }
+    ],
+    "contactTitle": "Contact",
+    "contact": "Write to {{contact}}.",
+    "contactTeacher": "Write to your course teacher's email.",
+    "recaptcha": "This site is protected by reCAPTCHA; the Google Privacy Policy and Terms of Service apply.",
+    "googlePrivacy": "Google Privacy Policy",
+    "googleTerms": "Google Terms"
   }
 }

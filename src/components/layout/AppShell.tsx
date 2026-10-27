@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router'
+import { Link, Outlet } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { UserMenu } from '@/components/layout/UserMenu'
 
@@ -14,6 +14,11 @@ export function AppShell() {
       <main className="flex-1">
         <Outlet />
       </main>
+      <footer className="border-t px-4 py-2 text-center text-xs text-muted-foreground">
+        <Link to="/privacidad" className="hover:underline">
+          {t('footer.privacy')}
+        </Link>
+      </footer>
     </div>
   )
 }

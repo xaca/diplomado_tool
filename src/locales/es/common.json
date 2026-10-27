@@ -24,9 +24,10 @@
     "switchAccount": "Cambiar de cuenta",
     "signedInAs": "Sesión iniciada como",
     "hint": "Usa tu cuenta de Gmail o la de la universidad.",
-    "privacy": "Uso académico: guardamos tu nombre y correo solo para el curso.",
+    "privacy": "Al continuar autorizas el uso de tu nombre, correo y lo que publiques, solo para fines académicos del curso.",
     "error": "No se pudo iniciar sesión. Inténtalo de nuevo.",
-    "profileError": "No se pudo cargar tu perfil. Revisa tu conexión e inténtalo de nuevo."
+    "profileError": "No se pudo cargar tu perfil. Revisa tu conexión e inténtalo de nuevo.",
+    "privacyLink": "Aviso de privacidad"
   },
   "roles": {
     "admin": "Docente (admin)",
@@ -324,5 +325,65 @@
     "confirm": "Crear tablero",
     "done": "Tablero «{{title}}» creado",
     "error": "No se pudo restaurar el archivo."
+  },
+  "footer": {
+    "privacy": "Privacidad"
+  },
+  "privacy": {
+    "title": "Aviso de privacidad",
+    "updated": "Actualizado: 27 de octubre de 2026",
+    "intro": "{{app}} es una herramienta académica para documentar y presentar proyectos del curso (aprendizaje basado en proyectos). Este aviso explica qué datos personales usa y cómo, conforme a la Ley 1581 de 2012 y el Decreto 1377 de 2013 de Colombia.",
+    "sections": [
+      {
+        "title": "Quién es responsable",
+        "body": [
+          "El docente del curso, que administra la herramienta y los tableros de su clase."
+        ]
+      },
+      {
+        "title": "Qué datos usamos",
+        "body": [
+          "De tu cuenta de Google: nombre, correo y foto de perfil. Tu docente también registra tu nombre y tus correos para agregarte al tablero.",
+          "Lo que publicas: el título y resumen de tu tarjeta, tus diapositivas y las imágenes que subes.",
+          "Datos técnicos de seguridad: Google reCAPTCHA comprueba que las solicitudes vienen de esta aplicación."
+        ]
+      },
+      {
+        "title": "Para qué",
+        "body": [
+          "Solo para el curso: identificarte al iniciar sesión, mostrar tu trabajo a tu docente y a tus compañeros del mismo tablero, y presentarlo en clase. No se venden, no se usan para publicidad y no se comparten con otras personas."
+        ]
+      },
+      {
+        "title": "Quién puede verlos",
+        "body": [
+          "Tu docente y los compañeros de tu mismo tablero (solo lectura). Las imágenes se sirven con enlaces difíciles de adivinar, pero quien tenga el enlace puede verlas."
+        ]
+      },
+      {
+        "title": "Dónde se guardan",
+        "body": [
+          "En servicios de terceros con sus propias medidas de seguridad: Google Firebase (inicio de sesión, base de datos y sitio web), Cloudinary (imágenes) y Cloudflare (servicio que autoriza la subida de imágenes). Sus servidores pueden estar fuera de Colombia (por ejemplo, en Estados Unidos); al usar la herramienta autorizas esa transferencia."
+        ]
+      },
+      {
+        "title": "Por cuánto tiempo",
+        "body": [
+          "Mientras exista el tablero del curso. Los tableros sin uso pasan a «Proyectos archivados» y el docente puede purgarlos: entonces se borran tus datos, tu trabajo y tus imágenes."
+        ]
+      },
+      {
+        "title": "Tus derechos",
+        "body": [
+          "Puedes conocer, actualizar, rectificar y pedir que se supriman tus datos, y revocar esta autorización, escribiendo a tu docente. Si no recibes respuesta, puedes acudir a la Superintendencia de Industria y Comercio (SIC)."
+        ]
+      }
+    ],
+    "contactTitle": "Contacto",
+    "contact": "Escribe a {{contact}}.",
+    "contactTeacher": "Escribe al correo de tu docente del curso.",
+    "recaptcha": "Este sitio está protegido por reCAPTCHA; aplican la Política de privacidad y las Condiciones del servicio de Google.",
+    "googlePrivacy": "Política de privacidad de Google",
+    "googleTerms": "Condiciones de Google"
   }
 }

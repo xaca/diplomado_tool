@@ -13,6 +13,8 @@ const envSchema = z.object({
   VITE_RECAPTCHA_SITE_KEY: z.string().default(''),
   // Local development only: the debug token registered in Firebase console → App Check
   VITE_APPCHECK_DEBUG_TOKEN: z.string().default(''),
+  // Privacy notice contact (optional; otherwise "write to your teacher")
+  VITE_PRIVACY_CONTACT: z.string().default(''),
   VITE_USE_EMULATORS: z
     .enum(['true', 'false'])
     .default('false')
