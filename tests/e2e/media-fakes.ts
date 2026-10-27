@@ -1,0 +1,86 @@
+import type { Page } from '@playwright/test'
+
+// The Worker and Cloudinary faked at the network level (no real uploads, no secrets).
+
+export const PNG_1x1 = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==',
+  'base64',
+)
+
+export type Fakes = {
+  signRequests: { authorization: string | null; body: unknown }[]
+}
+
+export async function fakeMediaServices(
+  page: Page,
+  options: { signStatus?: number } = {},
+): Promise<Fakes> {
+  const fakes: Fakes = { signRequests: [] }
+  let counter = 0
+
+  await page.route('http://localhost:8787/uploads/sign', async (route) => {
+    const request = route.request()
+    if (request.method() === 'OPTIONS')
+      return route.fulfill({ status: 204, headers: cors() })
+    const body = request.postDataJSON() as {
+      boardId: string
+      studentId: string
+    }
+    fakes.signRequests.push({
+      authorization: await request.headerValue('authorization'),
+      body,
+    })
+    if (options.signStatus)
+      return route.fulfill({
+        status: options.signStatus,
+        headers: cors(),
+        json: { error: 'x' },
+      })
+    counter += 1
+    const assetId = `asset${counter}`
+    await route.fulfill({
+      headers: cors(),
+      json: {
+        assetId,
+        cloudName: 'syqkgwws',
+        apiKey: 'test-key',
+        signature: 'test-signature',
+        params: {
+          public_id: `pbl/dev/${body.boardId}/${body.studentId}/${assetId}`,
+          timestamp: 1,
+        },
+      },
+    })
+  })
+
+  await page.route(
+    'https://api.cloudinary.com/v1_1/syqkgwws/image/upload',
+    async (route) => {
+      const form = route.request().postData() ?? ''
+      const publicId = /name="public_id"\r\n\r\n([^\r]+)/.exec(form)?.[1]
+      await route.fulfill({
+        json: {
+          public_id: publicId,
+          version: 1730000000,
+          width: 1,
+          height: 1,
+          format: 'png',
+          bytes: PNG_1x1.length,
+        },
+      })
+    },
+  )
+
+  await page.route('https://res.cloudinary.com/**', (route) =>
+    route.fulfill({ body: PNG_1x1, contentType: 'image/png' }),
+  )
+  return fakes
+}
+
+function cors() {
+  return {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Authorization, Content-Type',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  }
+}

@@ -95,7 +95,9 @@ test.describe('M3 · board dashboard', () => {
     await expect(page.getByTestId('space-detail')).toContainText(
       'App de rastreo',
     )
-    await expect(page.getByRole('button', { name: 'Editar' })).toBeVisible()
+    await expect(
+      page.getByRole('button', { name: 'Editar', exact: true }),
+    ).toBeVisible()
   })
 
   test("renaming a student updates the card's name", async ({ page }) => {
