@@ -77,6 +77,66 @@ export async function fakeMediaServices(
   return fakes
 }
 
+export type AdminFakes = {
+  deleteRequests: { boardId: string; assetIds: string[] }[]
+  purgeRequests: { boardId: string }[]
+}
+
+/**
+ * M7 Worker routes (cleanup, purge, usage), faked: the real permission checks run in the Worker
+ * tests and the integration test; here we check what the app sends and does with the answers.
+ */
+export async function fakeAdminServices(
+  page: Page,
+  options: { usagePercent?: number; purgePages?: number } = {},
+): Promise<AdminFakes> {
+  const fakes: AdminFakes = { deleteRequests: [], purgeRequests: [] }
+  let purgePages = options.purgePages ?? 1
+
+  await page.route('http://localhost:8787/**', async (route) => {
+    const request = route.request()
+    const path = new URL(request.url()).pathname
+    if (request.method() === 'OPTIONS')
+      return route.fulfill({ status: 204, headers: cors() })
+    if (path === '/assets/delete') {
+      const body = request.postDataJSON() as AdminFakes['deleteRequests'][0]
+      fakes.deleteRequests.push(body)
+      return route.fulfill({
+        headers: cors(),
+        json: {
+          results: Object.fromEntries(
+            body.assetIds.map((id) => [id, 'deleted']),
+          ),
+        },
+      })
+    }
+    if (path === '/boards/purge') {
+      fakes.purgeRequests.push(request.postDataJSON() as { boardId: string })
+      purgePages -= 1
+      return route.fulfill({
+        headers: cors(),
+        json: { deleted: 1000, complete: purgePages <= 0 },
+      })
+    }
+    if (path === '/usage') {
+      const percent = options.usagePercent ?? 16
+      return route.fulfill({
+        headers: cors(),
+        json: {
+          credits: { used: (25 * percent) / 100, limit: 25, percent },
+          storageBytes: 300 * 1024 * 1024,
+          bandwidthBytes: 2 * 1024 * 1024 * 1024,
+          transformations: 120,
+          images: 80,
+          updatedAt: null,
+        },
+      })
+    }
+    return route.fallback()
+  })
+  return fakes
+}
+
 function cors() {
   return {
     'Access-Control-Allow-Origin': '*',
