@@ -10,7 +10,7 @@ Status legend: `[ ]` to do · `[x]` done
 
 - **Phase 1 — Template setup:** ✅ done (2026-10-26), commit `8f20758`
 - **Plan review (rev. 6, 2026-10-26):** ✅ consistency + free-tier review done, see [Review findings](#review-findings-rev-6)
-- **Phase 2 — "Padlet for PBL" app:** 🚧 in progress — Google sign-in enabled · M4 Steps 1–6 done (`/health` → `config: ok`) · service account key ready · **M1 ✅** · **Loop 1 (M2) ✅** ([report](reports/loop-01-m2.md)) · **Loop 2 (M3) ✅ code done** — waiting for you: `npm run deploy:rules` + acceptance test ([report](reports/loop-02-m3.md)) (Worker live at `https://media-api.paradisserossa.workers.dev`, 2026-10-26)
+- **Phase 2 — "Padlet for PBL" app:** 🚧 in progress — Google sign-in enabled · M4 Steps 1–6 done (`/health` → `config: ok`) · service account key ready · **M1 ✅** · **Loop 1 (M2) ✅** ([report](reports/loop-01-m2.md)) · **Loop 2 (M3) ✅** ([report](reports/loop-02-m3.md)) · **Loop 3 (M4) ✅ code done** — waiting for you: `npm run worker:deploy` + `npm run deploy:rules` + one real upload ([report](reports/loop-03-m4.md)) (Worker live at `https://media-api.paradisserossa.workers.dev`, 2026-10-26)
 
 ---
 
@@ -583,7 +583,7 @@ Saved as `reports/loop-NN-<milestone>.md` (committed) and summarized in the chat
 | 0 ✅ | **M1 finish**                             | —                                                                                                                                                                   | `npm run admin -- setup --email paradisserossa@gmail.com` · log in as teacher and as student |
 | 1 ✅ | **Infra + M2** Boards, students & joining | emulator seed, Playwright setup, `npm test`; teacher dashboard, create board, students table, JSON import + quick add, auto-join, invite link, merge, rules + tests | `npm run deploy:rules` (rules + indexes) · acceptance test                                   |
 | 2 ✅ | **M3** Dashboard                          | Padlet-like board view, live cards, space profile (no cover yet)                                                                                                    | `npm run deploy:rules` · acceptance test                                                     |
-| 3    | **M4** Uploads (Worker Steps 7–12)        | token check, permission check, signed uploads, cover image, asset registry, rules                                                                                   | `npx wrangler deploy` · upload a real image · `npm run deploy:rules`                         |
+| 3 ✅ | **M4** Uploads (Worker Steps 7–12)        | token check, permission check, signed uploads, cover image, asset registry, rules                                                                                   | `npx wrangler deploy` · upload a real image · `npm run deploy:rules`                         |
 | 4    | **M5** Excalidraw slides                  | editor, autosave (throttled), images via Cloudinary, viewer, self-hosted fonts                                                                                      | `npm run deploy:rules` · acceptance test                                                     |
 | 5    | **M6** Presentation                       | full screen, keyboard, next student, GSAP transitions                                                                                                               | acceptance test                                                                              |
 | 6    | **M7** Lifecycle & backups                | archived projects, cleanup, purge, JSON backup/restore, CLI commands, Worker delete/usage                                                                           | `npx wrangler deploy` · `npm run deploy:rules` · try cleanup on a test board                 |
@@ -646,9 +646,13 @@ Each milestone ends with something we can try in the browser, plus a commit.
 
 ### M4 — Media API (Cloudflare Worker) + Cloudinary — **baby steps below**
 
-- [ ] Steps 1–12 of the [Worker walkthrough](#m4-walkthrough-cloudflare-worker--cloudinary-baby-steps)
-- [ ] Cover image upload in the space profile
-- [ ] Rules + tests for `assets`
+- [x] Steps 1–9 and 12 of the [Worker walkthrough](#m4-walkthrough-cloudflare-worker--cloudinary-baby-steps) (Step 11 is M7)
+- [ ] **Step 10 (you):** `npm run worker:deploy`, then upload one real image
+- [x] Cover image upload in the space profile (resize/WebP in the browser, signed upload with progress, registry, orphan marking)
+- [x] Rules + tests for `assets` and `spaces.cover` (42 rules tests)
+- [x] Worker: 19 offline tests + **real integration test** (`npm run test:worker-integration`: real Worker + emulators + rules)
+- [x] Auto-join now runs right after login, so direct links to a board work on the first login
+- [ ] **Deploy rules** (you): `npm run deploy:rules`
 
 ### M5 — Slides with Excalidraw
 
@@ -792,7 +796,7 @@ Your part:
 
 ✅ Check: `http://localhost:8787/health` (with `npx wrangler dev`) and `https://media-api.paradisserossa.workers.dev/health` both report `config: ok`. The Worker confirms the secret exists without ever printing it.
 
-### Step 7 — Who is calling? Verify the Firebase ID token (I write, we test together)
+### Step 7 ✅ — Who is calling? Verify the Firebase ID token (I write, we test together)
 
 - The app sends `Authorization: Bearer <idToken>`.
 - The Worker verifies it with `jose` against Google's public keys. It checks issuer `https://securetoken.google.com/diplomado-fc679`, audience `diplomado-fc679`, expiry and `email_verified`.
@@ -800,14 +804,14 @@ Your part:
 
 ✅ Check: signed in → `/me` shows your email. Signed out or with a fake token → `401`.
 
-### Step 8 — May this user upload here? (I write, you review)
+### Step 8 ✅ — May this user upload here? (I write, you review)
 
 - Helper `firestoreGet(path, idToken)`: it calls the Firestore REST API **with the user's own token**, so the Security Rules decide, exactly as in the app.
 - An upload for `{ boardId, studentId }` is allowed only if `members/{uid}.studentId == studentId`, or if the user is a board teacher.
 
 ✅ Check: your own space → allowed; another student's space → `403`.
 
-### Step 9 — Sign uploads (I write, we test together)
+### Step 9 ✅ — Sign uploads (I write, we test together)
 
 - `POST /uploads/sign` → creates an `assetId`, builds `public_id = pbl/{env}/{boardId}/{studentId}/{assetId}` plus a timestamp and tags, and signs them. The signature is SHA-1 of the sorted parameters + the API secret, using `crypto.subtle`, which is built into Workers.
 - It returns `{ signature, timestamp, apiKey, publicId, ... }`.
@@ -827,7 +831,7 @@ npx wrangler deploy
 
 `POST /assets/delete` (board teacher only, ids must be under `pbl/{env}/{boardId}/`), `POST /boards/:id/purge` (archived board only) and `GET /usage` all follow the same pattern as Step 9.
 
-### Step 12 — Scripts and docs
+### Step 12 ✅ — Scripts and docs
 
 - Root `package.json` scripts: `worker:dev`, `worker:deploy`.
 - README section: "media-api — local setup".
