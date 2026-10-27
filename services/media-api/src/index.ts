@@ -4,7 +4,7 @@
  */
 
 import { handle } from './app';
-import { verifyIdToken } from './auth';
+import { verifyAppCheck, verifyIdToken } from './auth';
 import { createCloudinaryAdmin } from './cloudinary-admin';
 import { createFirestoreReader } from './firestore';
 
@@ -12,6 +12,7 @@ export default {
 	fetch(request, env): Promise<Response> {
 		return handle(request, env, {
 			verifyIdToken: (token) => verifyIdToken(token, env),
+			verifyAppCheck: (token) => verifyAppCheck(token, env),
 			readDoc: createFirestoreReader(env),
 			cloudinary: createCloudinaryAdmin(env),
 			now: () => Date.now(),

@@ -9,6 +9,10 @@ const envSchema = z.object({
   VITE_FIREBASE_APP_ID: z.string().min(1),
   VITE_CLOUDINARY_CLOUD_NAME: z.string().min(1),
   VITE_MEDIA_API_URL: z.url(),
+  // App Check (M8): reCAPTCHA v3 site key (public). Empty → App Check off (e.g. before setup).
+  VITE_RECAPTCHA_SITE_KEY: z.string().default(''),
+  // Local development only: the debug token registered in Firebase console → App Check
+  VITE_APPCHECK_DEBUG_TOKEN: z.string().default(''),
   VITE_USE_EMULATORS: z
     .enum(['true', 'false'])
     .default('false')

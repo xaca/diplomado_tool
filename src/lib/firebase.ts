@@ -1,4 +1,9 @@
 import { initializeApp } from 'firebase/app'
+import {
+  getToken,
+  initializeAppCheck,
+  ReCaptchaV3Provider,
+} from 'firebase/app-check'
 import { connectAuthEmulator, getAuth } from 'firebase/auth'
 import {
   connectFirestoreEmulator,
@@ -19,6 +24,39 @@ export const app = initializeApp({
   messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: env.VITE_FIREBASE_APP_ID,
 })
+
+declare global {
+  var FIREBASE_APPCHECK_DEBUG_TOKEN: boolean | string | undefined
+}
+
+/**
+ * App Check (PLAN.md → M8): proves requests come from this app, not a script reusing the
+ * public config. reCAPTCHA v3 (free, no billing). Off until VITE_RECAPTCHA_SITE_KEY is set,
+ * and always off on the emulators. On localhost it uses a debug token instead of reCAPTCHA.
+ */
+export const appCheck =
+  env.VITE_RECAPTCHA_SITE_KEY && !env.VITE_USE_EMULATORS
+    ? (() => {
+        if (import.meta.env.DEV)
+          globalThis.FIREBASE_APPCHECK_DEBUG_TOKEN =
+            env.VITE_APPCHECK_DEBUG_TOKEN || true
+        return initializeAppCheck(app, {
+          provider: new ReCaptchaV3Provider(env.VITE_RECAPTCHA_SITE_KEY),
+          isTokenAutoRefreshEnabled: true,
+        })
+      })()
+    : null
+
+/** Current App Check token for the media-api Worker (null when App Check is off). */
+export async function appCheckToken() {
+  if (!appCheck) return null
+  try {
+    return (await getToken(appCheck)).token
+  } catch (error) {
+    console.warn('[app-check] no token', error)
+    return null
+  }
+}
 
 export const auth = getAuth(app)
 // Offline cache shared across tabs: fewer repeated reads (free-tier budget) and resilient editing

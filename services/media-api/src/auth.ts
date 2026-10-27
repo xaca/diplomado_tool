@@ -3,7 +3,13 @@ import { createRemoteJWKSet, decodeJwt, jwtVerify } from 'jose';
 // Who is calling? Verifies the Firebase ID token the app sends as `Authorization: Bearer <token>`
 // (PLAN.md → M4 walkthrough, Step 7).
 
-export type Caller = { uid: string; email: string; token: string };
+export type Caller = {
+	uid: string;
+	email: string;
+	token: string;
+	/** App Check token of the request, forwarded to Firestore (needed once App Check is enforced) */
+	appCheck?: string;
+};
 
 export class AuthError extends Error {}
 
@@ -48,5 +54,26 @@ export async function verifyIdToken(token: string, env: Env): Promise<Caller> {
 	} catch (error) {
 		if (error instanceof AuthError) throw error;
 		throw new AuthError('invalid token');
+	}
+}
+
+// ---------- App Check (PLAN.md → M8) ----------
+
+const APP_CHECK_KEYS = createRemoteJWKSet(new URL('https://firebaseappcheck.googleapis.com/v1/jwks'));
+
+export class AppCheckError extends Error {}
+
+/** Verifies the `X-Firebase-AppCheck` token: signed by Firebase App Check for this project. */
+export async function verifyAppCheck(token: string, env: Env): Promise<void> {
+	try {
+		const { payload } = await jwtVerify(token, APP_CHECK_KEYS, {
+			audience: `projects/${env.FIREBASE_PROJECT_ID}`,
+			algorithms: ['RS256'],
+		});
+		if (typeof payload.iss !== 'string' || !payload.iss.startsWith('https://firebaseappcheck.googleapis.com/'))
+			throw new AppCheckError('wrong issuer');
+	} catch (error) {
+		if (error instanceof AppCheckError) throw error;
+		throw new AppCheckError('invalid app check token');
 	}
 }

@@ -1,5 +1,5 @@
 import { env } from '@/lib/env'
-import { auth } from '@/lib/firebase'
+import { appCheckToken, auth } from '@/lib/firebase'
 
 // Typed client for the media-api Worker (services/media-api).
 // Features call these functions; components never fetch the Worker directly.
@@ -54,6 +54,8 @@ async function request<T>(
     const token = await auth.currentUser?.getIdToken()
     if (!token) throw new MediaApiError(401, path)
     headers.set('Authorization', `Bearer ${token}`)
+    const appCheck = await appCheckToken()
+    if (appCheck) headers.set('X-Firebase-AppCheck', appCheck)
   }
   const response = await fetch(`${env.VITE_MEDIA_API_URL}${path}`, {
     ...init,

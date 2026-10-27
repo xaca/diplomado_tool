@@ -1,7 +1,7 @@
 import { env } from 'cloudflare:test';
 import { describe, expect, it } from 'vitest';
 import { handle, MAX_DELETE_BATCH, type Deps } from '../src/app';
-import { AuthError, verifyIdToken } from '../src/auth';
+import { AppCheckError, AuthError, verifyIdToken } from '../src/auth';
 import { signParams, uploadParams } from '../src/cloudinary';
 import { CloudinaryError, createCloudinaryAdmin, type CloudinaryAdmin } from '../src/cloudinary-admin';
 import { createFirestoreReader, PermissionError, type FirestoreDoc } from '../src/firestore';
@@ -39,15 +39,23 @@ function fakeCloudinary(calls: CloudinaryCalls, options: { partialPages?: number
 	};
 }
 
+const GOOD_APP_CHECK = 'app-check-ok';
+// Firestore reads, with the App Check token they were given (forwarding check)
+const reads: { path: string; appCheck?: string }[] = [];
+
 function deps(docs: Docs = {}, cloudinary?: CloudinaryAdmin): Deps {
 	return {
+		verifyAppCheck: async (token) => {
+			if (token !== GOOD_APP_CHECK) throw new AppCheckError('bad app check');
+		},
 		verifyIdToken: async (token) => {
 			if (token === LAURA.token) return LAURA;
 			if (token === TEACHER.token) return TEACHER;
 			throw new AuthError('bad token');
 		},
 		cloudinary: cloudinary ?? fakeCloudinary({ deleteByIds: [], deleteByPrefix: [], usage: 0 }),
-		readDoc: async (path) => {
+		readDoc: async (path, _token, appCheck) => {
+			reads.push({ path, appCheck });
 			const doc = docs[path];
 			if (doc === 'forbidden') throw new PermissionError(path);
 			return doc ?? null;
@@ -339,5 +347,59 @@ describe('cloudinary admin client', () => {
 		// no ids → no request
 		expect(await admin.deleteByIds([])).toEqual({});
 		expect(requests).toHaveLength(3);
+	});
+});
+
+// ---------- M8: App Check ----------
+
+describe('App Check', () => {
+	const me = (headers: Record<string, string> = {}) =>
+		new Request('https://media-api.test/me', { headers: { Authorization: `Bearer ${LAURA.token}`, ...headers } });
+	const withMode = (mode: string) => ({ ...env, APP_CHECK: mode });
+
+	it('enforce: requests without a valid App Check token are rejected', async () => {
+		expect((await handle(me(), withMode('enforce'), deps())).status).toBe(401);
+		expect((await handle(me({ 'X-Firebase-AppCheck': 'forged' }), withMode('enforce'), deps())).status).toBe(401);
+		expect((await handle(me({ 'X-Firebase-AppCheck': GOOD_APP_CHECK }), withMode('enforce'), deps())).status).toBe(200);
+	});
+
+	it('monitor: only logs; off: not checked; emulators: always off', async () => {
+		expect((await handle(me(), withMode('monitor'), deps())).status).toBe(200);
+		expect((await handle(me({ 'X-Firebase-AppCheck': 'forged' }), withMode('off'), deps())).status).toBe(200);
+		const emulator = { ...env, APP_CHECK: 'enforce', AUTH_MODE: 'emulator', FIREBASE_PROJECT_ID: 'demo-pbl' };
+		const unsigned = `${btoa('{"alg":"none"}')}.${btoa(JSON.stringify({ sub: 'u', aud: 'demo-pbl', email: 'a@gmail.com', email_verified: true }))}.`;
+		const request = new Request('https://media-api.test/me', { headers: { Authorization: `Bearer ${unsigned.replaceAll('=', '')}` } });
+		// real verifyIdToken in emulator mode (deps only fakes the rest)
+		const response = await handle(request, emulator, { ...deps(), verifyIdToken: (token) => verifyIdToken(token, emulator) });
+		expect(response.status).toBe(200);
+	});
+
+	it("forwards the caller's App Check token to Firestore (works once Firestore enforces it)", async () => {
+		reads.length = 0;
+		await handle(
+			new Request('https://media-api.test/uploads/sign', {
+				method: 'POST',
+				headers: {
+					Authorization: `Bearer ${LAURA.token}`,
+					'X-Firebase-AppCheck': GOOD_APP_CHECK,
+					Origin: 'http://localhost:5173',
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ boardId: BOARD, studentId: 'st_laura' }),
+			}),
+			withMode('enforce'),
+			deps(joinedLaura),
+		);
+		expect(reads.length).toBeGreaterThan(0);
+		expect(reads.every((read) => read.appCheck === GOOD_APP_CHECK)).toBe(true);
+	});
+
+	it('the browser may send the App Check header (CORS)', async () => {
+		const preflight = new Request('https://media-api.test/uploads/sign', {
+			method: 'OPTIONS',
+			headers: { Origin: 'http://localhost:5173' },
+		});
+		const response = await handle(preflight, env, deps());
+		expect(response.headers.get('Access-Control-Allow-Headers')).toContain('X-Firebase-AppCheck');
 	});
 });

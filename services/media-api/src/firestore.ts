@@ -3,7 +3,7 @@
 
 export type FirestoreDoc = Record<string, unknown>;
 
-export type FirestoreReader = (path: string, idToken: string) => Promise<FirestoreDoc | null>;
+export type FirestoreReader = (path: string, idToken: string, appCheck?: string) => Promise<FirestoreDoc | null>;
 
 type Value = {
 	stringValue?: string;
@@ -34,9 +34,12 @@ export class PermissionError extends Error {}
 
 export function createFirestoreReader(env: Env, fetchImpl: typeof fetch = fetch): FirestoreReader {
 	const base = env.FIRESTORE_HOST || 'https://firestore.googleapis.com';
-	return async (path, idToken) => {
+	return async (path, idToken, appCheck) => {
 		const url = `${base}/v1/projects/${env.FIREBASE_PROJECT_ID}/databases/(default)/documents/${path}`;
-		const response = await fetchImpl(url, { headers: { Authorization: `Bearer ${idToken}` } });
+		const headers: Record<string, string> = { Authorization: `Bearer ${idToken}` };
+		// Firestore with App Check enforced needs the app's token too (the caller's, forwarded)
+		if (appCheck) headers['X-Firebase-AppCheck'] = appCheck;
+		const response = await fetchImpl(url, { headers });
 		if (response.status === 404) return null;
 		if (response.status === 403 || response.status === 401) throw new PermissionError(path);
 		if (!response.ok) throw new Error(`Firestore ${response.status} for ${path}`);

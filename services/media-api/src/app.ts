@@ -1,4 +1,4 @@
-import { AuthError, bearerToken, type Caller } from './auth';
+import { AppCheckError, AuthError, bearerToken, type Caller } from './auth';
 import { signParams, uploadParams } from './cloudinary';
 import { CloudinaryError, type CloudinaryAdmin } from './cloudinary-admin';
 import { PermissionError, type FirestoreDoc, type FirestoreReader } from './firestore';
@@ -8,6 +8,7 @@ import { PermissionError, type FirestoreDoc, type FirestoreReader } from './fire
 
 export type Deps = {
 	verifyIdToken: (token: string) => Promise<Caller>;
+	verifyAppCheck: (token: string) => Promise<void>;
 	readDoc: FirestoreReader;
 	cloudinary: CloudinaryAdmin;
 	now: () => number;
@@ -32,12 +33,34 @@ class HttpError extends Error {
 	}
 }
 
-async function authenticate(request: Request, deps: Deps) {
+async function authenticate(request: Request, env: Env, deps: Deps): Promise<Caller> {
+	let caller: Caller;
 	try {
-		return await deps.verifyIdToken(bearerToken(request));
+		caller = await deps.verifyIdToken(bearerToken(request));
 	} catch (error) {
 		if (error instanceof AuthError) throw new HttpError(401, 'unauthenticated');
 		throw error;
+	}
+	return { ...caller, appCheck: await checkAppCheck(request, env, deps) };
+}
+
+/**
+ * App Check (M8): `enforce` rejects requests without a valid token from the app; `monitor` only
+ * logs them (to try it before enforcing); `off` skips it. Always off with the local emulators.
+ */
+async function checkAppCheck(request: Request, env: Env, deps: Deps) {
+	const mode = env.AUTH_MODE === 'emulator' ? 'off' : (env.APP_CHECK ?? 'off');
+	if (mode === 'off') return undefined;
+	const token = request.headers.get('X-Firebase-AppCheck') ?? '';
+	try {
+		if (!token) throw new AppCheckError('missing app check token');
+		await deps.verifyAppCheck(token);
+		return token;
+	} catch (error) {
+		if (!(error instanceof AppCheckError)) throw error;
+		if (mode === 'enforce') throw new HttpError(401, 'app check required');
+		console.warn(`[app-check] ${error.message} (monitor mode: allowed)`);
+		return token || undefined;
 	}
 }
 
@@ -67,16 +90,16 @@ function isWritable(board: FirestoreDoc, now: number) {
 /** May this user upload into this student's space? Asked to Firestore with the user's own token. */
 async function assertCanUpload(caller: Caller, boardId: string, studentId: string, deps: Deps) {
 	await asCaller(async () => {
-		const member = await deps.readDoc(`boards/${boardId}/members/${caller.uid}`, caller.token);
+		const member = await deps.readDoc(`boards/${boardId}/members/${caller.uid}`, caller.token, caller.appCheck);
 		if (!member || member.studentId !== studentId) throw new HttpError(403, 'not your space');
-		const board = await deps.readDoc(`boards/${boardId}`, caller.token);
+		const board = await deps.readDoc(`boards/${boardId}`, caller.token, caller.appCheck);
 		if (!board || !isWritable(board, deps.now())) throw new HttpError(403, 'board is not active');
 	});
 }
 
 /** The caller must be one of the board's teachers. Returns the board. */
 async function assertBoardTeacher(caller: Caller, boardId: string, deps: Deps) {
-	const board = await asCaller(() => deps.readDoc(`boards/${boardId}`, caller.token));
+	const board = await asCaller(() => deps.readDoc(`boards/${boardId}`, caller.token, caller.appCheck));
 	const teachers = Array.isArray(board?.teacherEmails) ? board.teacherEmails : [];
 	if (!board || !teachers.includes(caller.email)) throw new HttpError(403, 'not a teacher of this board');
 	return board;
@@ -117,13 +140,13 @@ const routes: Record<string, Handler> = {
 			config: env.CLOUDINARY_API_SECRET ? 'ok' : 'missing CLOUDINARY_API_SECRET',
 		}),
 
-	'GET /me': async (request, _env, deps) => {
-		const caller = await authenticate(request, deps);
+	'GET /me': async (request, env, deps) => {
+		const caller = await authenticate(request, env, deps);
 		return json({ uid: caller.uid, email: caller.email });
 	},
 
 	'POST /uploads/sign': async (request, env, deps) => {
-		const caller = await authenticate(request, deps);
+		const caller = await authenticate(request, env, deps);
 		const body = (await request.json().catch(() => null)) as { boardId?: unknown; studentId?: unknown } | null;
 		const boardId = typeof body?.boardId === 'string' ? body.boardId : '';
 		const studentId = typeof body?.studentId === 'string' ? body.studentId : '';
@@ -153,8 +176,8 @@ const routes: Record<string, Handler> = {
 	 * Cleanup (M7): deletes unused images of a board from Cloudinary. Only the board's teacher, and
 	 * only images the app already marked "orphaned" in the registry (read with the teacher's token).
 	 */
-	'POST /assets/delete': async (request, _env, deps) => {
-		const caller = await authenticate(request, deps);
+	'POST /assets/delete': async (request, env, deps) => {
+		const caller = await authenticate(request, env, deps);
 		const body = await readBody(request);
 		const boardId = boardIdFrom(body);
 		const assetIds: unknown[] = Array.isArray(body.assetIds) ? body.assetIds : [];
@@ -167,7 +190,7 @@ const routes: Record<string, Handler> = {
 		const ids = assetIds as string[];
 
 		await assertBoardTeacher(caller, boardId, deps);
-		const assets = await asCaller(() => Promise.all(ids.map((id) => deps.readDoc(`boards/${boardId}/assets/${id}`, caller.token))));
+		const assets = await asCaller(() => Promise.all(ids.map((id) => deps.readDoc(`boards/${boardId}/assets/${id}`, caller.token, caller.appCheck))));
 
 		const results: Record<string, 'deleted' | 'not_found' | 'skipped'> = {};
 		const toDelete = new Map<string, string>(); // publicId → assetId
@@ -183,8 +206,8 @@ const routes: Record<string, Handler> = {
 	},
 
 	/** Purge (M7): deletes every image of an archived board. Call again while `complete` is false. */
-	'POST /boards/purge': async (request, _env, deps) => {
-		const caller = await authenticate(request, deps);
+	'POST /boards/purge': async (request, env, deps) => {
+		const caller = await authenticate(request, env, deps);
 		const boardId = boardIdFrom(await readBody(request));
 		const board = await assertBoardTeacher(caller, boardId, deps);
 		if (board.status !== 'archived') throw new HttpError(409, 'only archived boards can be purged');
@@ -204,10 +227,10 @@ const routes: Record<string, Handler> = {
 	},
 
 	/** Cloudinary credits used this month (teacher dashboard meter). Any teacher. */
-	'GET /usage': async (request, _env, deps) => {
-		const caller = await authenticate(request, deps);
+	'GET /usage': async (request, env, deps) => {
+		const caller = await authenticate(request, env, deps);
 		// staffEmails/{my email} is readable only by myself: it exists → I'm a teacher
-		const staff = await asCaller(() => deps.readDoc(`staffEmails/${caller.email}`, caller.token));
+		const staff = await asCaller(() => deps.readDoc(`staffEmails/${caller.email}`, caller.token, caller.appCheck));
 		if (!staff) throw new HttpError(403, 'teachers only');
 		return json(await cloudinaryCall(() => deps.cloudinary.usage()));
 	},
@@ -247,7 +270,7 @@ function withCors(response: Response, origin: string | null) {
 	const headers = new Headers(response.headers);
 	headers.set('Access-Control-Allow-Origin', origin);
 	headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-	headers.set('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+	headers.set('Access-Control-Allow-Headers', 'Authorization, Content-Type, X-Firebase-AppCheck');
 	headers.set('Access-Control-Max-Age', '86400');
 	headers.set('Vary', 'Origin');
 	return new Response(response.body, { status: response.status, headers });
