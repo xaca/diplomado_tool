@@ -34,18 +34,22 @@ export const FRAME_RENDERING = {
 
 /** The fixed 16:9 slide area: a locked frame the student can't move or delete. */
 export function createSlideFrame() {
-  return convertToExcalidrawElements([
-    {
-      type: 'frame',
-      id: FRAME_ID,
-      x: 0,
-      y: 0,
-      width: SLIDE_WIDTH,
-      height: SLIDE_HEIGHT,
-      children: [],
-      locked: true,
-    },
-  ])[0] as ExcalidrawFrameElement
+  return convertToExcalidrawElements(
+    [
+      {
+        type: 'frame',
+        id: FRAME_ID,
+        x: 0,
+        y: 0,
+        width: SLIDE_WIDTH,
+        height: SLIDE_HEIGHT,
+        children: [],
+        locked: true,
+      },
+      // Keep FRAME_ID: the editor and the export find the slide frame by it
+    ],
+    { regenerateIds: false },
+  )[0] as ExcalidrawFrameElement
 }
 
 export function findFrame(elements: readonly ExcalidrawElement[]) {

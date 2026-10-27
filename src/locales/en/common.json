@@ -181,8 +181,7 @@
       "orange": "Orange"
     },
     "saved": "Card saved",
-    "notFound": "We couldn't find this space, or you don't have access.",
-    "slidesSoon": "The slides of the process will appear here (coming in M5)."
+    "notFound": "We couldn't find this space, or you don't have access."
   },
   "cover": {
     "label": "Cover image",
@@ -197,6 +196,35 @@
       "tooLarge": "The image is too large (30 MB max).",
       "forbidden": "You can't upload images to this space (is the board closed?).",
       "network": "Couldn't upload the image. Check your connection and try again."
+    }
+  },
+  "slides": {
+    "edit": "Edit slides",
+    "editorTitle": "My slides",
+    "view": "View",
+    "list": "Slides",
+    "add": "New",
+    "addFirst": "Create the first slide",
+    "empty": "Document your process: each slide is a canvas with text, images, drawings, links and videos.",
+    "open": "Open slide {{number}}",
+    "drag": "Move slide {{number}}",
+    "duplicate": "Duplicate slide {{number}}",
+    "delete": "Delete slide {{number}}",
+    "deleteTitle": "Delete slide {{number}}?",
+    "deleteHint": "This can't be undone.",
+    "deleteConfirm": "Delete",
+    "max": "Up to {{count}} slides per space.",
+    "tooManyImages": "Up to 30 images per slide.",
+    "nearLimit": "Slide almost full: split it in two",
+    "none": "No slides yet.",
+    "noneMine": "You have no slides yet. Tap “Edit slides” to start.",
+    "renderError": "This slide couldn't be shown",
+    "status": {
+      "dirty": "Unsaved changes",
+      "saving": "Saving…",
+      "saved": "Saved",
+      "error": "Couldn't save. Retrying…",
+      "tooLarge": "Slide too large: remove some elements or split it"
     }
   }
 }

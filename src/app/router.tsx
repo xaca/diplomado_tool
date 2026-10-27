@@ -2,6 +2,7 @@ import { createBrowserRouter } from 'react-router'
 import { HomeRedirect, RequireAuth, RequireTeacher } from '@/app/guards'
 import { AppShell } from '@/components/layout/AppShell'
 import { BoardPage } from '@/pages/BoardPage'
+import { EditorRoute } from '@/pages/EditorRoute'
 import { JoinPage } from '@/pages/JoinPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
@@ -25,6 +26,10 @@ export const router = createBrowserRouter([
           { path: 'join/:code', element: <JoinPage /> },
           { path: 'b/:boardId', element: <BoardPage /> },
           { path: 'b/:boardId/s/:studentId', element: <SpacePage /> },
+          {
+            path: 'b/:boardId/s/:studentId/edit',
+            element: <EditorRoute />,
+          },
           {
             element: <RequireTeacher />,
             children: [

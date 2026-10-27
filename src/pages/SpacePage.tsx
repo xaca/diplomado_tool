@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, Pencil } from 'lucide-react'
+import { ArrowLeft, Pencil, Presentation } from 'lucide-react'
 import { doc } from 'firebase/firestore'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useBoard } from '@/features/boards/hooks'
+import { SlidePreview } from '@/features/slides/components/SlidePreview'
+import { useSlides } from '@/features/slides/hooks'
 import { SpaceProfileDialog } from '@/features/spaces/components/SpaceProfileDialog'
 import { useMyStudentId } from '@/features/spaces/hooks'
 import { db } from '@/lib/firebase'
@@ -16,7 +18,7 @@ import { initials } from '@/lib/initials'
 import { formatRelative, toDate } from '@/lib/time'
 import { paths, type SpaceDoc } from '@/model'
 
-/** One student's space. The slides (viewer) arrive in M5. */
+/** One student's space: the card and its slides (read-only for classmates and the teacher). */
 export function SpacePage() {
   const { t, i18n } = useTranslation()
   const { boardId, studentId } = useParams()
@@ -25,6 +27,7 @@ export function SpacePage() {
   const ref =
     boardId && studentId ? doc(db, paths.space(boardId, studentId)) : null
   const space = useLiveDoc<SpaceDoc>(ref, `space:${boardId}:${studentId}`)
+  const slides = useSlides(boardId, studentId, space.data?.slideOrder)
   const [editing, setEditing] = useState(false)
 
   if (space.loading || board.loading) {
@@ -106,7 +109,41 @@ export function SpacePage() {
         )}
       </article>
 
-      <p className="rounded-lg bg-muted p-4 text-sm">{t('space.slidesSoon')}</p>
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="font-semibold">
+          {t('space.slides', { count: space.data.slideCount })}
+        </h2>
+        {canEdit && (
+          <Button
+            nativeButton={false}
+            render={<Link to={`/b/${boardId}/s/${space.data.id}/edit`} />}
+          >
+            <Presentation />
+            {t('slides.edit')}
+          </Button>
+        )}
+      </div>
+
+      {slides.data.length === 0 && !slides.loading ? (
+        <p className="rounded-lg bg-muted p-4 text-sm">
+          {canEdit ? t('slides.noneMine') : t('slides.none')}
+        </p>
+      ) : (
+        <ol className="flex flex-col gap-4" data-testid="slides-viewer">
+          {slides.data.map((slide, index) => (
+            <li key={slide.id} className="flex flex-col gap-1">
+              <span className="text-xs text-muted-foreground">
+                {index + 1} / {slides.data.length}
+              </span>
+              <SlidePreview
+                slide={slide}
+                large
+                className="rounded-xl border shadow-sm"
+              />
+            </li>
+          ))}
+        </ol>
+      )}
 
       {editing && (
         <SpaceProfileDialog

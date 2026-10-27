@@ -10,6 +10,10 @@ export const SLIDE_HEIGHT = 540
 export const FRAME_ID = 'slide-frame'
 export const DEFAULT_BACKGROUND = '#ffffff'
 
+// Errors the editor shows (here, so pages can check them without loading Excalidraw)
+export class SlideTooLargeError extends Error {}
+export class TooManyImagesError extends Error {}
+
 export type StoredScene = {
   elements: ExcalidrawElement[]
   background: string

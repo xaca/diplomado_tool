@@ -3,6 +3,7 @@ import {
   doc,
   serverTimestamp,
   setDoc,
+  updateDoc,
   writeBatch,
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
@@ -147,6 +148,21 @@ export async function reorderSlides(
   const batch = writeBatch(db)
   updateOrder(batch, boardId, studentId, order)
   await written(batch.commit())
+}
+
+/** Dashboards show "updated …": slide saves refresh it at most every 10 minutes (review R2). */
+export const SPACE_TOUCH_INTERVAL_MS = 10 * 60_000
+
+export function shouldTouchSpace(lastUpdated: Date, now = Date.now()) {
+  return now - lastUpdated.getTime() >= SPACE_TOUCH_INTERVAL_MS
+}
+
+export async function touchSpace(boardId: string, studentId: string) {
+  await written(
+    updateDoc(doc(db, paths.space(boardId, studentId)), {
+      updatedAt: serverTimestamp(),
+    }),
+  )
 }
 
 export async function saveSlide(

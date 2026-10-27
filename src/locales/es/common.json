@@ -181,8 +181,7 @@
       "orange": "Naranja"
     },
     "saved": "Tarjeta guardada",
-    "notFound": "No encontramos este espacio o no tienes acceso.",
-    "slidesSoon": "Aquí verás las diapositivas del proceso (llegan en M5)."
+    "notFound": "No encontramos este espacio o no tienes acceso."
   },
   "cover": {
     "label": "Imagen de portada",
@@ -197,6 +196,35 @@
       "tooLarge": "La imagen es demasiado grande (máximo 30 MB).",
       "forbidden": "No tienes permiso para subir imágenes a este espacio (¿el tablero está cerrado?).",
       "network": "No se pudo subir la imagen. Revisa tu conexión e inténtalo de nuevo."
+    }
+  },
+  "slides": {
+    "edit": "Editar diapositivas",
+    "editorTitle": "Mis diapositivas",
+    "view": "Ver",
+    "list": "Diapositivas",
+    "add": "Nueva",
+    "addFirst": "Crear la primera diapositiva",
+    "empty": "Documenta tu proceso: cada diapositiva es un lienzo con texto, imágenes, dibujos, enlaces y videos.",
+    "open": "Abrir diapositiva {{number}}",
+    "drag": "Mover diapositiva {{number}}",
+    "duplicate": "Duplicar diapositiva {{number}}",
+    "delete": "Eliminar diapositiva {{number}}",
+    "deleteTitle": "¿Eliminar la diapositiva {{number}}?",
+    "deleteHint": "No se puede deshacer.",
+    "deleteConfirm": "Eliminar",
+    "max": "Máximo {{count}} diapositivas por espacio.",
+    "tooManyImages": "Máximo 30 imágenes por diapositiva.",
+    "nearLimit": "Diapositiva casi llena: divídela en dos",
+    "none": "Aún no hay diapositivas.",
+    "noneMine": "Aún no tienes diapositivas. Toca «Editar diapositivas» para empezar.",
+    "renderError": "No se pudo mostrar esta diapositiva",
+    "status": {
+      "dirty": "Cambios sin guardar",
+      "saving": "Guardando…",
+      "saved": "Guardado",
+      "error": "No se pudo guardar. Reintentando…",
+      "tooLarge": "Diapositiva demasiado grande: quita elementos o divídela"
     }
   }
 }
