@@ -8,6 +8,7 @@ import { LoginPage } from '@/pages/LoginPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { PresenterPage } from '@/pages/PresenterPage'
 import { SpacePage } from '@/pages/SpacePage'
+import { StoragePage } from '@/pages/StoragePage'
 import { StudentHomePage } from '@/pages/StudentHomePage'
 import { TeacherBoardPage } from '@/pages/TeacherBoardPage'
 import { TeacherHomePage } from '@/pages/TeacherHomePage'
@@ -40,6 +41,10 @@ export const router = createBrowserRouter([
               {
                 path: 'teacher/boards/:boardId',
                 element: <TeacherBoardPage />,
+              },
+              {
+                path: 'teacher/boards/:boardId/storage',
+                element: <StoragePage />,
               },
             ],
           },

@@ -1,6 +1,7 @@
 import { AuthError, bearerToken, type Caller } from './auth';
 import { signParams, uploadParams } from './cloudinary';
-import { PermissionError, type FirestoreReader } from './firestore';
+import { CloudinaryError, type CloudinaryAdmin } from './cloudinary-admin';
+import { PermissionError, type FirestoreDoc, type FirestoreReader } from './firestore';
 
 // Request handling, independent of the runtime: index.ts wires the real dependencies,
 // tests pass fakes (no network, no Cloudinary, no Google).
@@ -8,6 +9,7 @@ import { PermissionError, type FirestoreReader } from './firestore';
 export type Deps = {
 	verifyIdToken: (token: string) => Promise<Caller>;
 	readDoc: FirestoreReader;
+	cloudinary: CloudinaryAdmin;
 	now: () => number;
 	newId: () => string;
 };
@@ -15,6 +17,11 @@ export type Deps = {
 type Handler = (request: Request, env: Env, deps: Deps) => Promise<Response> | Response;
 
 const ID_PATTERN = /^[A-Za-z0-9_-]{1,128}$/;
+const DAY_MS = 24 * 60 * 60 * 1000;
+/** Free Workers plan: 50 outgoing requests per call → 40 asset reads + board + Cloudinary */
+export const MAX_DELETE_BATCH = 40;
+/** Purge: at most this many Cloudinary pages (1000 images each) per call; the app calls again */
+const MAX_PURGE_PAGES = 5;
 
 class HttpError extends Error {
 	constructor(
@@ -40,15 +47,64 @@ function environmentOf(request: Request): 'dev' | 'prod' {
 	return origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1') ? 'dev' : 'prod';
 }
 
+/** Firestore permission errors (the rules said no) become 403. */
+async function asCaller<T>(read: () => Promise<T>): Promise<T> {
+	try {
+		return await read();
+	} catch (error) {
+		if (error instanceof PermissionError) throw new HttpError(403, 'forbidden');
+		throw error;
+	}
+}
+
+/** Same as isWritable() in the app (src/features/boards/lifecycle.ts) and boardIsActive() in the rules. */
+function isWritable(board: FirestoreDoc, now: number) {
+	const last = typeof board.lastActivityAt === 'number' ? board.lastActivityAt : NaN;
+	const days = typeof board.archiveAfterDays === 'number' ? board.archiveAfterDays : 90;
+	return board.status === 'active' && !(last + days * DAY_MS <= now);
+}
+
 /** May this user upload into this student's space? Asked to Firestore with the user's own token. */
 async function assertCanUpload(caller: Caller, boardId: string, studentId: string, deps: Deps) {
-	try {
+	await asCaller(async () => {
 		const member = await deps.readDoc(`boards/${boardId}/members/${caller.uid}`, caller.token);
 		if (!member || member.studentId !== studentId) throw new HttpError(403, 'not your space');
 		const board = await deps.readDoc(`boards/${boardId}`, caller.token);
-		if (!board || board.status !== 'active') throw new HttpError(403, 'board is not active');
+		if (!board || !isWritable(board, deps.now())) throw new HttpError(403, 'board is not active');
+	});
+}
+
+/** The caller must be one of the board's teachers. Returns the board. */
+async function assertBoardTeacher(caller: Caller, boardId: string, deps: Deps) {
+	const board = await asCaller(() => deps.readDoc(`boards/${boardId}`, caller.token));
+	const teachers = Array.isArray(board?.teacherEmails) ? board.teacherEmails : [];
+	if (!board || !teachers.includes(caller.email)) throw new HttpError(403, 'not a teacher of this board');
+	return board;
+}
+
+async function readBody(request: Request) {
+	return ((await request.json().catch(() => null)) ?? {}) as Record<string, unknown>;
+}
+
+function boardIdFrom(body: Record<string, unknown>) {
+	const boardId = typeof body.boardId === 'string' ? body.boardId : '';
+	if (!ID_PATTERN.test(boardId)) throw new HttpError(400, 'invalid boardId');
+	return boardId;
+}
+
+/** Images of this board only, in either environment folder, named after their registry id. */
+function belongsToBoard(publicId: unknown, boardId: string, assetId: string): publicId is string {
+	return typeof publicId === 'string' && new RegExp(`^pbl/(dev|prod)/${boardId}/[A-Za-z0-9_-]{1,128}/${assetId}$`).test(publicId);
+}
+
+async function cloudinaryCall<T>(call: () => Promise<T>) {
+	try {
+		return await call();
 	} catch (error) {
-		if (error instanceof PermissionError) throw new HttpError(403, 'forbidden');
+		if (error instanceof CloudinaryError) {
+			console.error(error.message);
+			throw new HttpError(502, 'cloudinary unavailable');
+		}
 		throw error;
 	}
 }
@@ -92,7 +148,67 @@ const routes: Record<string, Handler> = {
 			signature,
 		});
 	},
+
+	/**
+	 * Cleanup (M7): deletes unused images of a board from Cloudinary. Only the board's teacher, and
+	 * only images the app already marked "orphaned" in the registry (read with the teacher's token).
+	 */
+	'POST /assets/delete': async (request, _env, deps) => {
+		const caller = await authenticate(request, deps);
+		const body = await readBody(request);
+		const boardId = boardIdFrom(body);
+		const assetIds: unknown[] = Array.isArray(body.assetIds) ? body.assetIds : [];
+		if (
+			assetIds.length === 0 ||
+			assetIds.length > MAX_DELETE_BATCH ||
+			!assetIds.every((id): id is string => typeof id === 'string' && ID_PATTERN.test(id))
+		)
+			throw new HttpError(400, `assetIds: 1 to ${MAX_DELETE_BATCH} ids`);
+		const ids = assetIds as string[];
+
+		await assertBoardTeacher(caller, boardId, deps);
+		const assets = await asCaller(() => Promise.all(ids.map((id) => deps.readDoc(`boards/${boardId}/assets/${id}`, caller.token))));
+
+		const results: Record<string, 'deleted' | 'not_found' | 'skipped'> = {};
+		const toDelete = new Map<string, string>(); // publicId → assetId
+		ids.forEach((assetId, index) => {
+			const asset = assets[index];
+			if (asset?.status === 'orphaned' && belongsToBoard(asset.publicId, boardId, assetId)) toDelete.set(asset.publicId, assetId);
+			else results[assetId] = 'skipped';
+		});
+
+		const deleted = await cloudinaryCall(() => deps.cloudinary.deleteByIds([...toDelete.keys()]));
+		for (const [publicId, assetId] of toDelete) results[assetId] = deleted[publicId] === 'deleted' ? 'deleted' : 'not_found';
+		return json({ results });
+	},
+
+	/** Purge (M7): deletes every image of an archived board. Call again while `complete` is false. */
+	'POST /boards/purge': async (request, _env, deps) => {
+		const caller = await authenticate(request, deps);
+		const boardId = boardIdFrom(await readBody(request));
+		const board = await assertBoardTeacher(caller, boardId, deps);
+		if (board.status !== 'archived') throw new HttpError(409, 'only archived boards can be purged');
+
+		const prefix = `pbl/${environmentOf(request)}/${boardId}/`;
+		let deleted = 0;
+		for (let page = 0; page < MAX_PURGE_PAGES; page++) {
+			const result = await cloudinaryCall(() => deps.cloudinary.deleteByPrefix(prefix));
+			deleted += result.deleted;
+			if (!result.partial) return json({ deleted, complete: true });
+		}
+		return json({ deleted, complete: false });
+	},
+
+	/** Cloudinary credits used this month (teacher dashboard meter). Any teacher. */
+	'GET /usage': async (request, _env, deps) => {
+		const caller = await authenticate(request, deps);
+		// staffEmails/{my email} is readable only by myself: it exists → I'm a teacher
+		const staff = await asCaller(() => deps.readDoc(`staffEmails/${caller.email}`, caller.token));
+		if (!staff) throw new HttpError(403, 'teachers only');
+		return json(await cloudinaryCall(() => deps.cloudinary.usage()));
+	},
 };
+
 
 export async function handle(request: Request, env: Env, deps: Deps): Promise<Response> {
 	const origin = request.headers.get('Origin');

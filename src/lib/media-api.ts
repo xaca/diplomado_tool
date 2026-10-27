@@ -17,6 +17,24 @@ export type SignedUpload = {
   signature: string
 }
 
+export type DeleteAssetsResponse = {
+  results: Record<string, 'deleted' | 'not_found' | 'skipped'>
+}
+
+export type PurgeResponse = { deleted: number; complete: boolean }
+
+export type CloudinaryUsage = {
+  credits: { used: number; limit: number; percent: number }
+  storageBytes: number
+  bandwidthBytes: number
+  transformations: number
+  images: number
+  updatedAt: string | null
+}
+
+/** Free Workers plan: the Worker accepts at most this many assets per delete call */
+export const MAX_DELETE_BATCH = 40
+
 export class MediaApiError extends Error {
   readonly status: number
 
@@ -59,4 +77,31 @@ export const mediaApi = {
       },
       true,
     ),
+
+  /** Deletes unused images (already marked "orphaned") from Cloudinary. Board teacher only. */
+  deleteAssets: (boardId: string, assetIds: string[]) =>
+    request<DeleteAssetsResponse>(
+      '/assets/delete',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ boardId, assetIds }),
+      },
+      true,
+    ),
+
+  /** Deletes all images of an archived board. Call again until `complete`. */
+  purgeBoard: (boardId: string) =>
+    request<PurgeResponse>(
+      '/boards/purge',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ boardId }),
+      },
+      true,
+    ),
+
+  /** Cloudinary credits used this month. Teachers only. */
+  usage: () => request<CloudinaryUsage>('/usage', {}, true),
 }

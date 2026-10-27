@@ -1,29 +1,58 @@
 import { env } from 'cloudflare:test';
 import { describe, expect, it } from 'vitest';
-import { handle, type Deps } from '../src/app';
+import { handle, MAX_DELETE_BATCH, type Deps } from '../src/app';
 import { AuthError, verifyIdToken } from '../src/auth';
 import { signParams, uploadParams } from '../src/cloudinary';
+import { CloudinaryError, createCloudinaryAdmin, type CloudinaryAdmin } from '../src/cloudinary-admin';
 import { createFirestoreReader, PermissionError, type FirestoreDoc } from '../src/firestore';
 
 // Offline tests: fake token verification and fake Firestore. No Google, no Cloudinary calls.
 
 const LAURA = { uid: 'uid-laura', email: 'laura@gmail.com', token: 'token-laura' };
+const TEACHER = { uid: 'uid-teacher', email: 'docente@gmail.com', token: 'token-teacher' };
+const NOW = 1_700_000_000_000;
+const DAY = 24 * 60 * 60 * 1000;
 const BOARD = 'board1';
 
 type Docs = Record<string, FirestoreDoc | 'forbidden'>;
 
-function deps(docs: Docs = {}): Deps {
+type CloudinaryCalls = { deleteByIds: string[][]; deleteByPrefix: string[]; usage: number };
+
+function fakeCloudinary(calls: CloudinaryCalls, options: { partialPages?: number; fail?: boolean } = {}): CloudinaryAdmin {
+	let partialPages = options.partialPages ?? 0;
+	return {
+		deleteByIds: async (ids) => {
+			if (options.fail) throw new CloudinaryError('down');
+			calls.deleteByIds.push(ids);
+			// one of them was already gone
+			return Object.fromEntries(ids.map((id) => [id, id.endsWith('gone') ? 'not_found' : 'deleted']));
+		},
+		deleteByPrefix: async (prefix) => {
+			calls.deleteByPrefix.push(prefix);
+			const partial = partialPages-- > 0;
+			return { deleted: partial ? 1000 : 3, partial };
+		},
+		usage: async () => {
+			calls.usage += 1;
+			return { credits: { used: 4.2, limit: 25, percent: 16.8 }, storageBytes: 1, bandwidthBytes: 2, transformations: 3, images: 4, updatedAt: null };
+		},
+	};
+}
+
+function deps(docs: Docs = {}, cloudinary?: CloudinaryAdmin): Deps {
 	return {
 		verifyIdToken: async (token) => {
 			if (token === LAURA.token) return LAURA;
+			if (token === TEACHER.token) return TEACHER;
 			throw new AuthError('bad token');
 		},
+		cloudinary: cloudinary ?? fakeCloudinary({ deleteByIds: [], deleteByPrefix: [], usage: 0 }),
 		readDoc: async (path) => {
 			const doc = docs[path];
 			if (doc === 'forbidden') throw new PermissionError(path);
 			return doc ?? null;
 		},
-		now: () => 1_700_000_000_000,
+		now: () => NOW,
 		newId: () => 'asset123',
 	};
 }
@@ -101,9 +130,16 @@ describe('POST /uploads/sign', () => {
 		expect((await handle(sign({ boardId: BOARD, studentId: 'st_laura' }), env, deps(denied))).status).toBe(403);
 	});
 
-	it('refuses when the board is locked or archived', async () => {
+	it('refuses when the board is locked, archived or unused for too long (auto-archived)', async () => {
 		const locked = { ...joinedLaura, [`boards/${BOARD}`]: { status: 'locked' } };
 		expect((await handle(sign({ boardId: BOARD, studentId: 'st_laura' }), env, deps(locked))).status).toBe(403);
+		const unused = {
+			...joinedLaura,
+			[`boards/${BOARD}`]: { status: 'active', archiveAfterDays: 90, lastActivityAt: NOW - 91 * DAY },
+		};
+		expect((await handle(sign({ boardId: BOARD, studentId: 'st_laura' }), env, deps(unused))).status).toBe(403);
+		const recent = { ...unused, [`boards/${BOARD}`]: { status: 'active', archiveAfterDays: 90, lastActivityAt: NOW - 3 * DAY } };
+		expect((await handle(sign({ boardId: BOARD, studentId: 'st_laura' }), env, deps(recent))).status).toBe(200);
 	});
 
 	it('requires a valid token', async () => {
@@ -166,7 +202,141 @@ describe('firestore reader', () => {
 		}) as unknown as typeof fetch;
 		const read = createFirestoreReader(env, fakeFetch);
 		expect(await read('boards/b/members/x', 't')).toEqual({ studentId: 'st_1', n: 3 });
+		const withDate = createFirestoreReader(env, (async () =>
+			Response.json({ fields: { at: { timestampValue: '2026-10-27T12:00:00.000Z' } } })) as unknown as typeof fetch);
+		expect(await withDate('boards/b', 't')).toEqual({ at: Date.UTC(2026, 9, 27, 12) });
 		expect(await read('boards/b/missing', 't')).toBeNull();
 		await expect(read('boards/b/secret', 't')).rejects.toThrow(PermissionError);
+	});
+});
+
+// ---------- M7: cleanup, purge, usage ----------
+
+function post(path: string, body: unknown, options: { token?: string; origin?: string } = {}) {
+	return new Request(`https://media-api.test${path}`, {
+		method: 'POST',
+		headers: {
+			Authorization: `Bearer ${options.token ?? TEACHER.token}`,
+			Origin: options.origin ?? 'http://localhost:5173',
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify(body),
+	});
+}
+
+const asset = (assetId: string, status: string, board = BOARD) => ({
+	publicId: `pbl/prod/${board}/st_laura/${assetId}`,
+	studentId: 'st_laura',
+	status,
+});
+
+const teacherBoard = (status = 'active'): Docs => ({
+	[`boards/${BOARD}`]: { status, teacherEmails: [TEACHER.email] },
+});
+
+describe('POST /assets/delete', () => {
+	it('deletes only orphaned images of this board, and reports each one', async () => {
+		const calls: CloudinaryCalls = { deleteByIds: [], deleteByPrefix: [], usage: 0 };
+		const docs: Docs = {
+			...teacherBoard(),
+			[`boards/${BOARD}/assets/a1`]: asset('a1', 'orphaned'),
+			[`boards/${BOARD}/assets/gone`]: asset('gone', 'orphaned'),
+			[`boards/${BOARD}/assets/used`]: asset('used', 'active'),
+			[`boards/${BOARD}/assets/foreign`]: asset('foreign', 'orphaned', 'other-board'),
+		};
+		const response = await handle(
+			post('/assets/delete', { boardId: BOARD, assetIds: ['a1', 'gone', 'used', 'foreign', 'missing'] }),
+			env,
+			deps(docs, fakeCloudinary(calls)),
+		);
+		expect(response.status).toBe(200);
+		expect(await response.json()).toEqual({
+			results: { a1: 'deleted', gone: 'not_found', used: 'skipped', foreign: 'skipped', missing: 'skipped' },
+		});
+		expect(calls.deleteByIds).toEqual([[`pbl/prod/${BOARD}/st_laura/a1`, `pbl/prod/${BOARD}/st_laura/gone`]]);
+	});
+
+	it('only the board teacher, and at most a batch per call', async () => {
+		const docs = { ...teacherBoard(), [`boards/${BOARD}/assets/a1`]: asset('a1', 'orphaned') };
+		const asStudent = await handle(post('/assets/delete', { boardId: BOARD, assetIds: ['a1'] }, { token: LAURA.token }), env, deps(docs));
+		expect(asStudent.status).toBe(403);
+		const tooMany = Array.from({ length: MAX_DELETE_BATCH + 1 }, (_, i) => `a${i}`);
+		expect((await handle(post('/assets/delete', { boardId: BOARD, assetIds: tooMany }), env, deps(docs))).status).toBe(400);
+		expect((await handle(post('/assets/delete', { boardId: BOARD, assetIds: ['../x'] }), env, deps(docs))).status).toBe(400);
+		expect((await handle(post('/assets/delete', { boardId: BOARD, assetIds: [] }), env, deps(docs))).status).toBe(400);
+	});
+
+	it('a Cloudinary outage is a clean 502', async () => {
+		const docs = { ...teacherBoard(), [`boards/${BOARD}/assets/a1`]: asset('a1', 'orphaned') };
+		const cloudinary = fakeCloudinary({ deleteByIds: [], deleteByPrefix: [], usage: 0 }, { fail: true });
+		const response = await handle(post('/assets/delete', { boardId: BOARD, assetIds: ['a1'] }), env, deps(docs, cloudinary));
+		expect(response.status).toBe(502);
+	});
+});
+
+describe('POST /boards/purge', () => {
+	it('deletes the whole board folder of an archived board, page by page', async () => {
+		const calls: CloudinaryCalls = { deleteByIds: [], deleteByPrefix: [], usage: 0 };
+		const response = await handle(
+			post('/boards/purge', { boardId: BOARD }, { origin: 'https://diplomado-fc679.web.app' }),
+			env,
+			deps(teacherBoard('archived'), fakeCloudinary(calls, { partialPages: 2 })),
+		);
+		expect(await response.json()).toEqual({ deleted: 2003, complete: true });
+		expect(calls.deleteByPrefix).toEqual(Array(3).fill(`pbl/prod/${BOARD}/`));
+	});
+
+	it('stops after a few pages and asks to be called again', async () => {
+		const response = await handle(
+			post('/boards/purge', { boardId: BOARD }),
+			env,
+			deps(teacherBoard('archived'), fakeCloudinary({ deleteByIds: [], deleteByPrefix: [], usage: 0 }, { partialPages: 99 })),
+		);
+		expect(await response.json()).toMatchObject({ complete: false });
+	});
+
+	it('refuses active boards and non-teachers', async () => {
+		expect((await handle(post('/boards/purge', { boardId: BOARD }), env, deps(teacherBoard('active')))).status).toBe(409);
+		expect(
+			(await handle(post('/boards/purge', { boardId: BOARD }, { token: LAURA.token }), env, deps(teacherBoard('archived')))).status,
+		).toBe(403);
+	});
+});
+
+describe('GET /usage', () => {
+	const usage = (token: string) => new Request('https://media-api.test/usage', { headers: { Authorization: `Bearer ${token}` } });
+
+	it('teachers see the Cloudinary credits; students do not', async () => {
+		const docs: Docs = { [`staffEmails/${TEACHER.email}`]: { role: 'teacher' } };
+		const ok = await handle(usage(TEACHER.token), env, deps(docs));
+		expect(await ok.json()).toMatchObject({ credits: { used: 4.2, limit: 25, percent: 16.8 } });
+		expect((await handle(usage(LAURA.token), env, deps(docs))).status).toBe(403);
+	});
+});
+
+describe('cloudinary admin client', () => {
+	it('sends Basic auth, repeated public_ids[] and maps the usage report', async () => {
+		const requests: { url: string; method: string; auth: string | null }[] = [];
+		const fakeFetch = (async (url: string, init: RequestInit) => {
+			requests.push({ url, method: init.method ?? 'GET', auth: new Headers(init.headers).get('Authorization') });
+			if (url.includes('/usage'))
+				return Response.json({ credits: { usage: 3, limit: 25, used_percent: 12 }, storage: { usage: 10 }, resources: 7 });
+			return Response.json({ deleted: { 'pbl/prod/b/s/a1': 'deleted' }, partial: false });
+		}) as unknown as typeof fetch;
+		const admin = createCloudinaryAdmin(env, fakeFetch);
+
+		expect(await admin.deleteByIds(['pbl/prod/b/s/a1', 'pbl/prod/b/s/a2'])).toEqual({ 'pbl/prod/b/s/a1': 'deleted' });
+		expect(await admin.deleteByPrefix('pbl/prod/b/')).toEqual({ deleted: 1, partial: false });
+		expect(await admin.usage()).toMatchObject({ credits: { used: 3, limit: 25, percent: 12 }, storageBytes: 10, images: 7 });
+
+		expect(requests[0].method).toBe('DELETE');
+		expect(requests[0].url).toBe(
+			`https://api.cloudinary.com/v1_1/${env.CLOUDINARY_CLOUD_NAME}/resources/image/upload?public_ids%5B%5D=pbl%2Fprod%2Fb%2Fs%2Fa1&public_ids%5B%5D=pbl%2Fprod%2Fb%2Fs%2Fa2`,
+		);
+		expect(requests[1].url).toContain('prefix=pbl%2Fprod%2Fb%2F');
+		expect(requests[0].auth).toBe(`Basic ${btoa(`${env.CLOUDINARY_API_KEY}:${env.CLOUDINARY_API_SECRET}`)}`);
+		// no ids → no request
+		expect(await admin.deleteByIds([])).toEqual({});
+		expect(requests).toHaveLength(3);
 	});
 });

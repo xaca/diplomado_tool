@@ -5,6 +5,7 @@
 
 import { handle } from './app';
 import { verifyIdToken } from './auth';
+import { createCloudinaryAdmin } from './cloudinary-admin';
 import { createFirestoreReader } from './firestore';
 
 export default {
@@ -12,6 +13,7 @@ export default {
 		return handle(request, env, {
 			verifyIdToken: (token) => verifyIdToken(token, env),
 			readDoc: createFirestoreReader(env),
+			cloudinary: createCloudinaryAdmin(env),
 			now: () => Date.now(),
 			newId: () => crypto.randomUUID().replaceAll('-', '').slice(0, 20),
 		});

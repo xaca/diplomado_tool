@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { CreateBoardDialog } from '@/features/boards/components/CreateBoardDialog'
+import { RestoreDialog } from '@/features/data-transfer/components/RestoreDialog'
 import { useTeacherBoards } from '@/features/boards/hooks'
 import {
   lifecycleOf,
@@ -30,7 +31,10 @@ export function TeacherHomePage() {
         <h1 className="font-heading text-2xl font-semibold">
           {t('teacher.title')}
         </h1>
-        <CreateBoardDialog />
+        <div className="flex flex-wrap gap-2">
+          <RestoreDialog />
+          <CreateBoardDialog />
+        </div>
       </div>
 
       {error && <p className="text-destructive">{t('errors.generic')}</p>}

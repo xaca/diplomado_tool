@@ -7,6 +7,7 @@ export type FirestoreReader = (path: string, idToken: string) => Promise<Firesto
 
 type Value = {
 	stringValue?: string;
+	timestampValue?: string;
 	integerValue?: string;
 	booleanValue?: boolean;
 	nullValue?: null;
@@ -16,6 +17,8 @@ type Value = {
 
 function decode(value: Value): unknown {
 	if ('stringValue' in value) return value.stringValue;
+	// RFC 3339 string → milliseconds
+	if ('timestampValue' in value) return Date.parse(value.timestampValue ?? '');
 	if ('integerValue' in value) return Number(value.integerValue);
 	if ('booleanValue' in value) return value.booleanValue;
 	if ('arrayValue' in value) return (value.arrayValue?.values ?? []).map(decode);

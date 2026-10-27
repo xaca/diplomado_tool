@@ -21,6 +21,7 @@
 		"AUTH_MODE": "firebase",
 		// Empty = production Firestore; local emulator: http://127.0.0.1:8080
 		"FIRESTORE_HOST": "",
+		"CLOUDINARY_API_BASE": "",
 		"ALLOWED_ORIGINS": "http://localhost:5173,https://diplomado-fc679.web.app,https://diplomado-fc679.firebaseapp.com"
 	}
 	/**
