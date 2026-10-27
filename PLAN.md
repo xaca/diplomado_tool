@@ -10,7 +10,7 @@ Status legend: `[ ]` to do · `[x]` done
 
 - **Phase 1 — Template setup:** ✅ done (2026-10-26), commit `8f20758`
 - **Plan review (rev. 6, 2026-10-26):** ✅ consistency + free-tier review done, see [Review findings](#review-findings-rev-6)
-- **Phase 2 — "Padlet for PBL" app:** 🚧 in progress — Google sign-in enabled · M4 Steps 1–6 done (`/health` → `config: ok`) · service account key ready · **M1 ✅** · **Loop 1 (M2) ✅** ([report](reports/loop-01-m2.md)) · **Loop 2 (M3) ✅** ([report](reports/loop-02-m3.md)) · **Loop 3 (M4) ✅ code done** ([report](reports/loop-03-m4.md)) · **Loop 4 (M5) ✅ code done** ([report](reports/loop-04-m5.md)) · **Loop 5 (M6) ✅ code done** ([report](reports/loop-05-m6.md)) · **Loop 6 (M7) ✅ code done** ([report](reports/loop-06-m7.md)) — waiting for you: `npm run worker:deploy` + `npm run deploy:rules` (covers M2–M5) + one real upload, **before 2026-11-25** (Worker live at `https://media-api.paradisserossa.workers.dev`)
+- **Phase 2 — "Padlet for PBL" app:** 🚧 in progress — Google sign-in enabled · M4 Steps 1–6 done (`/health` → `config: ok`) · service account key ready · **M1 ✅** · **Loop 1 (M2) ✅** ([report](reports/loop-01-m2.md)) · **Loop 2 (M3) ✅** ([report](reports/loop-02-m3.md)) · **Loop 3 (M4) ✅ code done** ([report](reports/loop-03-m4.md)) · **Loop 4 (M5) ✅ code done** ([report](reports/loop-04-m5.md)) · **Loop 5 (M6) ✅ code done** ([report](reports/loop-05-m6.md)) · **Loop 6 (M7) ✅ code done** ([report](reports/loop-06-m7.md)) · **Loop 7 (M8) ✅ code done** ([report](reports/loop-07-m8.md)) — **ready to launch**, waiting for you: `npm run worker:deploy` + `npm run deploy:rules` (covers M2–M5) + one real upload, **before 2026-11-25** (Worker live at `https://media-api.paradisserossa.workers.dev`)
 
 ---
 
@@ -587,7 +587,7 @@ Saved as `reports/loop-NN-<milestone>.md` (committed) and summarized in the chat
 | 4 ✅ | **M5** Excalidraw slides                  | editor, autosave (throttled), images via Cloudinary, viewer, self-hosted fonts                                                                                      | `npm run deploy:rules` · acceptance test                                                     |
 | 5 ✅ | **M6** Presentation                       | full screen, keyboard, next student, GSAP transitions                                                                                                               | acceptance test                                                                              |
 | 6 ✅ | **M7** Lifecycle & backups                | archived projects, cleanup, purge, JSON backup/restore, CLI commands, Worker delete/usage                                                                           | `npx wrangler deploy` · `npm run deploy:rules` · try cleanup on a test board                 |
-| 7    | **M8** Hardening & launch                 | App Check code, final rules review, privacy notice, metadata                                                                                                        | create a reCAPTCHA v3 key + register App Check (console) · `npm run deploy` (hosting)        |
+| 7 ✅ | **M8** Hardening & launch                 | App Check code, final rules review, privacy notice, metadata                                                                                                        | create a reCAPTCHA v3 key + register App Check (console) · `npm run deploy` (hosting)        |
 | —    | **M9** More teachers                      | when you need it                                                                                                                                                    | —                                                                                            |
 
 **Starting a loop:** say **"run loop N"** (e.g. "run loop 1"). I'll work through it and come back with the report.
@@ -684,10 +684,12 @@ Each milestone ends with something we can try in the browser, plus a commit.
 
 ### M8 — Hardening & launch
 
-- [ ] Full rules review + `npm run test:rules`
-- [ ] App Check with the **reCAPTCHA v3** provider (free, no billing account; reCAPTCHA Enterprise needs billing enabled) on Firestore; the Worker accepts only the app origins + valid tokens
-- [ ] Short **privacy notice** on the login page (the app stores student names and emails; academic use only, data deleted when the board is purged) — Colombian Ley 1581 de 2012 (Habeas Data)
-- [ ] Final `<title>`, `lang="es"`, favicon, Open Graph · deploy Hosting + Worker
+- [x] Full rules review + `npm run test:rules` (58) — **fixed a hijack of invite-joined students' spaces** (see [report](reports/loop-07-m8.md#2-done)); invite link closed on auto-archived boards; https-only photos
+- [x] App Check with the **reCAPTCHA v3** provider (code ready, off until `VITE_RECAPTCHA_SITE_KEY` is set); the Worker checks `X-Firebase-AppCheck` (`APP_CHECK` = off / monitor / enforce, deployed as monitor) and forwards it to Firestore
+- [x] **Privacy notice** `/privacidad` (Ley 1581 de 2012), linked from the login page and the footer
+- [x] Final `<title>`, `lang="es"`, favicon, Open Graph image, noindex, Hosting cache + security headers, teacher-only chunk
+- [ ] **Launch** (you): [step by step](reports/loop-07-m8.md#4-your-turn-launch-step-by-step) — deploy rules, Worker, reCAPTCHA key + App Check registration, Hosting
+- [ ] After a few days in monitor mode (you): enforce App Check for Firestore (console) and set `APP_CHECK` to `enforce` (Worker)
 
 ### M9 — More teachers (when needed)
 
