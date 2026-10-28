@@ -1,5 +1,5 @@
 import { AppCheckError, AuthError, bearerToken, type Caller } from './auth';
-import { signParams, uploadParams } from './cloudinary';
+import { cloudinarySecret, signParams, uploadParams } from './cloudinary';
 import { CloudinaryError, type CloudinaryAdmin } from './cloudinary-admin';
 import { PermissionError, type FirestoreDoc, type FirestoreReader } from './firestore';
 
@@ -126,6 +126,10 @@ async function cloudinaryCall<T>(call: () => Promise<T>) {
 	} catch (error) {
 		if (error instanceof CloudinaryError) {
 			console.error(error.message);
+			if (error.badCredentials) {
+				console.error('[cloudinary] API key/secret mismatch: check CLOUDINARY_API_SECRET');
+				throw new HttpError(502, 'cloudinary credentials invalid');
+			}
 			throw new HttpError(502, 'cloudinary unavailable');
 		}
 		throw error;
@@ -137,7 +141,7 @@ const routes: Record<string, Handler> = {
 		json({
 			ok: true,
 			// Reports whether the secret exists, never its value
-			config: env.CLOUDINARY_API_SECRET ? 'ok' : 'missing CLOUDINARY_API_SECRET',
+			config: cloudinarySecret(env) ? 'ok' : 'missing CLOUDINARY_API_SECRET',
 		}),
 
 	'GET /me': async (request, env, deps) => {
@@ -162,7 +166,7 @@ const routes: Record<string, Handler> = {
 			assetId,
 			timestamp: Math.floor(deps.now() / 1000),
 		});
-		const signature = await signParams(params, env.CLOUDINARY_API_SECRET);
+		const signature = await signParams(params, cloudinarySecret(env));
 		return json({
 			assetId,
 			cloudName: env.CLOUDINARY_CLOUD_NAME,
@@ -190,7 +194,9 @@ const routes: Record<string, Handler> = {
 		const ids = assetIds as string[];
 
 		await assertBoardTeacher(caller, boardId, deps);
-		const assets = await asCaller(() => Promise.all(ids.map((id) => deps.readDoc(`boards/${boardId}/assets/${id}`, caller.token, caller.appCheck))));
+		const assets = await asCaller(() =>
+			Promise.all(ids.map((id) => deps.readDoc(`boards/${boardId}/assets/${id}`, caller.token, caller.appCheck))),
+		);
 
 		const results: Record<string, 'deleted' | 'not_found' | 'skipped'> = {};
 		const toDelete = new Map<string, string>(); // publicId → assetId
@@ -235,7 +241,6 @@ const routes: Record<string, Handler> = {
 		return json(await cloudinaryCall(() => deps.cloudinary.usage()));
 	},
 };
-
 
 export async function handle(request: Request, env: Env, deps: Deps): Promise<Response> {
 	const origin = request.headers.get('Origin');

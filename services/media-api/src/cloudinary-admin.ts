@@ -1,6 +1,8 @@
 // Cloudinary Admin API (deleting images, usage). Basic auth with the API key + secret, so it only
 // ever runs here. `CLOUDINARY_API_BASE` is overridable for the local integration test (fake server).
 
+import { cloudinarySecret } from './cloudinary';
+
 export type DeleteResult = Record<string, 'deleted' | 'not_found' | string>;
 
 export type Usage = {
@@ -20,7 +22,15 @@ export type CloudinaryAdmin = {
 	usage: () => Promise<Usage>;
 };
 
-export class CloudinaryError extends Error {}
+export class CloudinaryError extends Error {
+	constructor(
+		message: string,
+		/** Cloudinary rejected the API key + secret (401): a configuration problem, not an outage */
+		readonly badCredentials = false,
+	) {
+		super(message);
+	}
+}
 
 type UsageResponse = {
 	last_updated?: string;
@@ -34,14 +44,14 @@ type UsageResponse = {
 
 export function createCloudinaryAdmin(env: Env, fetchImpl: typeof fetch = fetch): CloudinaryAdmin {
 	const base = `${env.CLOUDINARY_API_BASE || 'https://api.cloudinary.com'}/v1_1/${env.CLOUDINARY_CLOUD_NAME}`;
-	const authorization = `Basic ${btoa(`${env.CLOUDINARY_API_KEY}:${env.CLOUDINARY_API_SECRET}`)}`;
+	const authorization = `Basic ${btoa(`${env.CLOUDINARY_API_KEY}:${cloudinarySecret(env)}`)}`;
 
 	async function call<T>(method: 'GET' | 'DELETE', path: string, query: URLSearchParams = new URLSearchParams()) {
 		const response = await fetchImpl(`${base}${path}${query.size ? `?${query}` : ''}`, {
 			method,
 			headers: { Authorization: authorization },
 		});
-		if (!response.ok) throw new CloudinaryError(`Cloudinary ${method} ${path}: ${response.status}`);
+		if (!response.ok) throw new CloudinaryError(`Cloudinary ${method} ${path}: ${response.status}`, response.status === 401);
 		return (await response.json()) as T;
 	}
 

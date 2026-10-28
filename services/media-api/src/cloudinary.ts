@@ -13,6 +13,11 @@ export async function signParams(params: UploadParams, apiSecret: string) {
 	return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
+/** The API secret, without the space or newline a paste can add (it would break every signature). */
+export function cloudinarySecret(env: Pick<Env, 'CLOUDINARY_API_SECRET'>) {
+	return (env.CLOUDINARY_API_SECRET ?? '').trim();
+}
+
 export const ALLOWED_FORMATS = 'jpg,jpeg,png,webp,gif';
 /** Incoming transformation: nothing larger than 2560 px is ever stored, even if the app is bypassed. */
 export const INCOMING_TRANSFORMATION = 'c_limit,w_2560,h_2560';

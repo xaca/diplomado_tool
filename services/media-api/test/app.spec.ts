@@ -34,7 +34,14 @@ function fakeCloudinary(calls: CloudinaryCalls, options: { partialPages?: number
 		},
 		usage: async () => {
 			calls.usage += 1;
-			return { credits: { used: 4.2, limit: 25, percent: 16.8 }, storageBytes: 1, bandwidthBytes: 2, transformations: 3, images: 4, updatedAt: null };
+			return {
+				credits: { used: 4.2, limit: 25, percent: 16.8 },
+				storageBytes: 1,
+				bandwidthBytes: 2,
+				transformations: 3,
+				images: 4,
+				updatedAt: null,
+			};
 		},
 	};
 }
@@ -115,6 +122,17 @@ describe('POST /uploads/sign', () => {
 		expect(body.signature).toBe(await signParams(body.params, env.CLOUDINARY_API_SECRET));
 		expect(body.apiKey).toBe(env.CLOUDINARY_API_KEY);
 		expect(response.headers.get('Access-Control-Allow-Origin')).toBe('http://localhost:5173');
+	});
+
+	it('ignores a space or newline pasted around the secret', async () => {
+		const pasted = {
+			...env,
+			CLOUDINARY_API_SECRET: ` ${env.CLOUDINARY_API_SECRET}
+`,
+		};
+		const response = await handle(sign({ boardId: BOARD, studentId: 'st_laura' }), pasted, deps(joinedLaura));
+		const body = (await response.json()) as { params: Record<string, string>; signature: string };
+		expect(body.signature).toBe(await signParams(body.params, env.CLOUDINARY_API_SECRET));
 	});
 
 	it('uses the prod folder from the deployed app', async () => {
@@ -321,6 +339,17 @@ describe('GET /usage', () => {
 		expect(await ok.json()).toMatchObject({ credits: { used: 4.2, limit: 25, percent: 16.8 } });
 		expect((await handle(usage(LAURA.token), env, deps(docs))).status).toBe(403);
 	});
+
+	it('a key/secret Cloudinary rejects is reported as such, not as an outage', async () => {
+		const docs: Docs = { [`staffEmails/${TEACHER.email}`]: { role: 'teacher' } };
+		const cloudinary = fakeCloudinary({ deleteByIds: [], deleteByPrefix: [], usage: 0 });
+		cloudinary.usage = async () => {
+			throw new CloudinaryError('Cloudinary GET /usage: 401', true);
+		};
+		const response = await handle(usage(TEACHER.token), env, deps(docs, cloudinary));
+		expect(response.status).toBe(502);
+		expect(await response.json()).toEqual({ error: 'cloudinary credentials invalid' });
+	});
 });
 
 describe('cloudinary admin client', () => {
@@ -347,6 +376,15 @@ describe('cloudinary admin client', () => {
 		// no ids → no request
 		expect(await admin.deleteByIds([])).toEqual({});
 		expect(requests).toHaveLength(3);
+	});
+
+	it('a 401 means the key and secret do not match', async () => {
+		const status = async (code: number) => {
+			const admin = createCloudinaryAdmin(env, (async () => new Response('{}', { status: code })) as unknown as typeof fetch);
+			return admin.usage().catch((error: CloudinaryError) => error.badCredentials);
+		};
+		expect(await status(401)).toBe(true);
+		expect(await status(500)).toBe(false);
 	});
 });
 
