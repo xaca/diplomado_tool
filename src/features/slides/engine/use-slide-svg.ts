@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { IMAGE_SIZES, imageUrl } from '@/lib/cloudinary'
+import { isChunkLoadError, reloadForNewVersion } from '@/lib/stale-build'
 import type { SlideDoc } from '@/model'
 
 // Slide → SVG, rendered in the browser (zero Firestore/Cloudinary cost) and cached in memory.
@@ -33,7 +34,11 @@ export function loadSlideSvg(
     svg = import('@/features/slides/engine/runtime').then(
       ({ renderSlideSvg }) => renderSlideSvg(slide, options),
     )
-    svg.catch(() => cache.delete(key))
+    svg.catch((error: unknown) => {
+      cache.delete(key)
+      // The renderer's file is gone after a deploy: reload onto the new version
+      if (isChunkLoadError(error)) reloadForNewVersion()
+    })
     cache.set(key, svg)
     if (cache.size > MAX_CACHED) cache.delete(cache.keys().next().value!)
   }

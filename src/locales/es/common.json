@@ -8,7 +8,14 @@
     "remove": "Eliminar"
   },
   "errors": {
-    "generic": "Algo salió mal. Inténtalo de nuevo."
+    "generic": "Algo salió mal. Inténtalo de nuevo.",
+    "page": {
+      "title": "Algo salió mal",
+      "body": "No se pudo abrir esta página. Recarga para intentarlo de nuevo.",
+      "reload": "Recargar",
+      "home": "Ir al inicio",
+      "updating": "Actualizando a la nueva versión…"
+    }
   },
   "language": {
     "label": "Idioma",

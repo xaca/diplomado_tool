@@ -1,6 +1,7 @@
 import { createBrowserRouter } from 'react-router'
 import { HomeRedirect, RequireAuth, RequireTeacher } from '@/app/guards'
 import { AppShell } from '@/components/layout/AppShell'
+import { RouteError } from '@/components/layout/RouteError'
 import { BoardPage } from '@/pages/BoardPage'
 import { EditorRoute } from '@/pages/EditorRoute'
 import { JoinPage } from '@/pages/JoinPage'
@@ -16,12 +17,16 @@ import {
   TeacherHomeRoute,
 } from '@/pages/TeacherRoutes'
 
+// Friendly error page everywhere (and a reload onto the new version after a deploy)
+const errorElement = <RouteError />
+
 export const router = createBrowserRouter([
-  { path: '/login', element: <LoginPage /> },
+  { path: '/login', element: <LoginPage />, errorElement },
   // Public: linked from the login page (Ley 1581 de 2012)
-  { path: '/privacidad', element: <PrivacyPage /> },
+  { path: '/privacidad', element: <PrivacyPage />, errorElement },
   {
     element: <RequireAuth />,
+    errorElement,
     children: [
       // Full screen, without the app header
       { path: 'b/:boardId/present/:studentId?', element: <PresenterPage /> },
@@ -57,5 +62,5 @@ export const router = createBrowserRouter([
       },
     ],
   },
-  { path: '*', element: <NotFoundPage /> },
+  { path: '*', element: <NotFoundPage />, errorElement },
 ])

@@ -8,7 +8,14 @@
     "remove": "Remove"
   },
   "errors": {
-    "generic": "Something went wrong. Please try again."
+    "generic": "Something went wrong. Please try again.",
+    "page": {
+      "title": "Something went wrong",
+      "body": "This page couldn't be opened. Reload to try again.",
+      "reload": "Reload",
+      "home": "Go home",
+      "updating": "Updating to the new version…"
+    }
   },
   "language": {
     "label": "Language",
