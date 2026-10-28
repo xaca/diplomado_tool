@@ -99,7 +99,14 @@ describe('upload failures say which step failed', () => {
     })
     expect(error).toMatchObject({ reason: 'network', stage: 'cloudinary' })
     expect(error.cause).toBe('400 Invalid Signature abc')
+    expect(cloudinaryError(500, null)).toMatchObject({ reason: 'network' })
     expect(cloudinaryError(500, null).cause).toBe('500')
+  })
+
+  it('"Invalid Signature" is a configuration problem, not the connection', () => {
+    expect(
+      cloudinaryError(401, { error: { message: 'Invalid Signature abc' } }),
+    ).toMatchObject({ reason: 'config', stage: 'cloudinary' })
   })
 
   it('a registry write denied by the rules is "forbidden", anything else "network"', () => {

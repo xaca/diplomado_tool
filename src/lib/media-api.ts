@@ -37,10 +37,13 @@ export const MAX_DELETE_BATCH = 40
 
 export class MediaApiError extends Error {
   readonly status: number
+  /** The Worker's `error` text, e.g. 'cloudinary credentials invalid' */
+  readonly code: string | undefined
 
-  constructor(status: number, path: string) {
-    super(`media-api ${path} failed: ${status}`)
+  constructor(status: number, path: string, code?: string) {
+    super(`media-api ${path} failed: ${status}${code ? ` (${code})` : ''}`)
     this.status = status
+    this.code = code
   }
 }
 
@@ -61,7 +64,16 @@ async function request<T>(
     ...init,
     headers,
   })
-  if (!response.ok) throw new MediaApiError(response.status, path)
+  if (!response.ok) {
+    const body = (await response.json().catch(() => null)) as {
+      error?: unknown
+    } | null
+    throw new MediaApiError(
+      response.status,
+      path,
+      typeof body?.error === 'string' ? body.error : undefined,
+    )
+  }
   return response.json() as Promise<T>
 }
 

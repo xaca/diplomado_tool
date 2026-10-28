@@ -88,7 +88,11 @@ export type AdminFakes = {
  */
 export async function fakeAdminServices(
   page: Page,
-  options: { usagePercent?: number; purgePages?: number } = {},
+  options: {
+    usagePercent?: number
+    purgePages?: number
+    usageError?: string
+  } = {},
 ): Promise<AdminFakes> {
   const fakes: AdminFakes = { deleteRequests: [], purgeRequests: [] }
   let purgePages = options.purgePages ?? 1
@@ -119,6 +123,12 @@ export async function fakeAdminServices(
       })
     }
     if (path === '/usage') {
+      if (options.usageError)
+        return route.fulfill({
+          status: 502,
+          headers: cors(),
+          json: { error: options.usageError },
+        })
       const percent = options.usagePercent ?? 16
       return route.fulfill({
         headers: cors(),

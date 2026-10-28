@@ -195,6 +195,20 @@ test.describe('M7 · storage, backup and purge', () => {
     expect(await status('fresh')).toBe('active')
   })
 
+  test('the storage page says when the Cloudinary key and secret do not match', async ({
+    page,
+  }) => {
+    await fakeAdminServices(page, {
+      usageError: 'cloudinary credentials invalid',
+    })
+    await openTeacherBoard(page)
+    await page.getByRole('button', { name: 'Almacenamiento' }).click()
+    await expect(page.getByTestId('usage-credentials')).toContainText(
+      'Las credenciales de Cloudinary no coinciden',
+    )
+    await expect(page.getByTestId('usage-meter')).toHaveCount(0)
+  })
+
   test('backup → restore into a new board, with students, cards and slides', async ({
     page,
   }) => {

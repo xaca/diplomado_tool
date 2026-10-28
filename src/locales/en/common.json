@@ -196,7 +196,8 @@
       "type": "Unsupported format. Use JPG, PNG, WebP or GIF.",
       "tooLarge": "The image is too large (30 MB max).",
       "forbidden": "You can't upload images to this space (is the board closed?).",
-      "network": "Couldn't upload the image. Check your connection and try again."
+      "network": "Couldn't upload the image. Check your connection and try again.",
+      "config": "The image service isn't set up correctly. Tell your teacher."
     }
   },
   "slides": {
@@ -273,6 +274,7 @@
     "title": "Storage",
     "usageTitle": "Cloudinary usage this month (all your boards)",
     "usageError": "Cloudinary usage couldn't be loaded right now.",
+    "usageCredentials": "The Cloudinary credentials don't match: check the Worker's API secret. Until then, images can't be uploaded.",
     "credits": "{{used}} of {{limit}} credits ({{percent}} %)",
     "cloudinaryTotals": "{{storage}} stored, {{bandwidth}} served",
     "usageWarning": "Over 70 % of the free plan: clean up unused images or purge old boards.",

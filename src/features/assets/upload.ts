@@ -8,7 +8,8 @@ import { checkFile, prepareImage } from '@/features/assets/prepare-image'
 // prepare in the browser → Worker signs → browser uploads straight to Cloudinary → register in Firestore.
 
 export class UploadError extends Error {
-  readonly reason: 'type' | 'tooLarge' | 'forbidden' | 'network'
+  /** `config`: the image service rejects our credentials (only the teacher/admin can fix it) */
+  readonly reason: 'type' | 'tooLarge' | 'forbidden' | 'network' | 'config'
   /** Which step failed (logged, so a failure can be traced without guessing) */
   readonly stage: 'check' | 'sign' | 'cloudinary' | 'response' | 'register'
 
@@ -71,7 +72,8 @@ export function toImageRef(
 export function cloudinaryError(status: number, body: unknown) {
   const message = (body as { error?: { message?: unknown } } | null)?.error
     ?.message
-  return new UploadError('network', 'cloudinary', {
+  // 401 "Invalid Signature": the Worker's API secret doesn't match the API key
+  return new UploadError(status === 401 ? 'config' : 'network', 'cloudinary', {
     cause: `${status} ${typeof message === 'string' ? message : ''}`.trim(),
   })
 }

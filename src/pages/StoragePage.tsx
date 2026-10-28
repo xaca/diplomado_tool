@@ -35,7 +35,7 @@ import {
   type PurgeStep,
 } from '@/features/storage/api'
 import { downloadJson, slugify } from '@/lib/download'
-import { mediaApi, type CloudinaryUsage } from '@/lib/media-api'
+import { MediaApiError, mediaApi, type CloudinaryUsage } from '@/lib/media-api'
 
 /** Cloudinary credits warning threshold (PLAN.md → Usage meter) */
 const USAGE_WARNING_PERCENT = 70
@@ -52,7 +52,9 @@ export function StoragePage() {
     value: BoardData | null
     error: boolean
   }>({ value: null, error: false })
-  const [usage, setUsage] = useState<CloudinaryUsage | 'error' | null>(null)
+  const [usage, setUsage] = useState<
+    CloudinaryUsage | 'error' | 'credentials' | null
+  >(null)
   const [cleaning, setCleaning] = useState<number | null>(null)
   const [confirmClean, setConfirmClean] = useState(false)
   const [backupDone, setBackupDone] = useState(false)
@@ -79,7 +81,16 @@ export function StoragePage() {
   }, [boardId, version])
 
   useEffect(() => {
-    mediaApi.usage().then(setUsage, () => setUsage('error'))
+    mediaApi
+      .usage()
+      .then(setUsage, (error: unknown) =>
+        setUsage(
+          error instanceof MediaApiError &&
+            error.code === 'cloudinary credentials invalid'
+            ? 'credentials'
+            : 'error',
+        ),
+      )
   }, [])
 
   if (board.loading) {
@@ -173,6 +184,13 @@ export function StoragePage() {
         ) : usage === 'error' ? (
           <p className="text-sm text-muted-foreground">
             {t('storage.usageError')}
+          </p>
+        ) : usage === 'credentials' ? (
+          <p
+            className="text-sm text-destructive"
+            data-testid="usage-credentials"
+          >
+            {t('storage.usageCredentials')}
           </p>
         ) : (
           <div className="flex flex-col gap-2" data-testid="usage-meter">

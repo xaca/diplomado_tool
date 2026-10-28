@@ -196,7 +196,8 @@
       "type": "Formato no soportado. Usa JPG, PNG, WebP o GIF.",
       "tooLarge": "La imagen es demasiado grande (máximo 30 MB).",
       "forbidden": "No tienes permiso para subir imágenes a este espacio (¿el tablero está cerrado?).",
-      "network": "No se pudo subir la imagen. Revisa tu conexión e inténtalo de nuevo."
+      "network": "No se pudo subir la imagen. Revisa tu conexión e inténtalo de nuevo.",
+      "config": "El servicio de imágenes no está bien configurado. Avisa a tu docente."
     }
   },
   "slides": {
@@ -273,6 +274,7 @@
     "title": "Almacenamiento",
     "usageTitle": "Uso de Cloudinary este mes (todos tus tableros)",
     "usageError": "No se pudo consultar el uso de Cloudinary en este momento.",
+    "usageCredentials": "Las credenciales de Cloudinary no coinciden: revisa la clave secreta (API secret) del Worker. Mientras tanto no se pueden subir imágenes.",
     "credits": "{{used}} de {{limit}} créditos ({{percent}} %)",
     "cloudinaryTotals": "{{storage}} guardados, {{bandwidth}} servidos",
     "usageWarning": "Más del 70 % del plan gratuito: limpia imágenes sin usar o purga tableros viejos.",
