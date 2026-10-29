@@ -98,7 +98,10 @@
     "emailTaken": "{{email}} ya pertenece a otro estudiante.",
     "removeTitle": "¿Eliminar a {{name}}?",
     "removeHint": "Se eliminan sus correos, sus cuentas vinculadas y su espacio en este tablero. No se puede deshacer.",
-    "removed": "Estudiante eliminado"
+    "removed": "Estudiante eliminado",
+    "noCard": "Sin tarjeta",
+    "createCard": "Crear tarjeta",
+    "cardCreated": "Tarjeta creada"
   },
   "merge": {
     "selected": "2 estudiantes seleccionados: ¿son la misma persona?",

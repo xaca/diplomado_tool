@@ -5,6 +5,7 @@ import {
   getDoc,
   getDocs,
   serverTimestamp,
+  setDoc,
   writeBatch,
   type WriteBatch,
 } from 'firebase/firestore'
@@ -12,6 +13,7 @@ import { recordBoardActivity } from '@/features/boards/api'
 import { db } from '@/lib/firebase'
 import type { WithId } from '@/lib/firestore-hooks'
 import {
+  defaultSpace,
   MAX_EMAILS_PER_STUDENT,
   paths,
   studentInputSchema,
@@ -135,6 +137,20 @@ async function deleteSlides(
 ) {
   const slides = await getDocs(collection(db, paths.slides(boardId, studentId)))
   for (const slide of slides.docs) batch.delete(slide.ref)
+}
+
+/**
+ * A joined student without a card (a join interrupted before link and card were written together):
+ * the teacher creates the empty card. The student edits it as usual; the photo appears on their next edit.
+ */
+export async function createMissingSpace(boardId: string, student: Student) {
+  const ref = doc(db, paths.space(boardId, student.id))
+  if ((await getDoc(ref)).exists()) return
+  await setDoc(ref, {
+    ...defaultSpace(student.id, student.displayName, null),
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  })
 }
 
 /** Deletes the student, their email index, linked accounts and their space. */

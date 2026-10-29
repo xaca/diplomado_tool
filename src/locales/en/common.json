@@ -98,7 +98,10 @@
     "emailTaken": "{{email}} already belongs to another student.",
     "removeTitle": "Remove {{name}}?",
     "removeHint": "Their emails, linked accounts and space in this board are deleted. This can't be undone.",
-    "removed": "Student removed"
+    "removed": "Student removed",
+    "noCard": "No card",
+    "createCard": "Create card",
+    "cardCreated": "Card created"
   },
   "merge": {
     "selected": "2 students selected: are they the same person?",

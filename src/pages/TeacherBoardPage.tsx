@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, Download, ExternalLink, UserPlus } from 'lucide-react'
@@ -11,6 +11,7 @@ import { ImportDialog } from '@/features/students/components/ImportDialog'
 import { StudentFormDialog } from '@/features/students/components/StudentFormDialog'
 import { StudentsTable } from '@/features/students/components/StudentsTable'
 import { useStudents } from '@/features/students/hooks'
+import { useSpaces } from '@/features/spaces/hooks'
 import { toStudentsFile } from '@/features/students/import'
 import { downloadJson, slugify } from '@/lib/download'
 
@@ -19,6 +20,13 @@ export function TeacherBoardPage() {
   const { boardId } = useParams()
   const board = useBoard(boardId)
   const students = useStudents(boardId)
+  // Which students have a card: a joined student without one gets a "create card" button
+  const spaces = useSpaces(boardId, null)
+  const cardIds = useMemo(
+    () =>
+      spaces.loading ? null : new Set(spaces.data.map((space) => space.id)),
+    [spaces.loading, spaces.data],
+  )
   const [adding, setAdding] = useState(false)
 
   if (board.loading) {
@@ -109,7 +117,11 @@ export function TeacherBoardPage() {
         {students.loading ? (
           <Skeleton className="h-40" />
         ) : (
-          <StudentsTable boardId={boardId} students={students.data} />
+          <StudentsTable
+            boardId={boardId}
+            students={students.data}
+            cardIds={cardIds}
+          />
         )}
       </div>
 

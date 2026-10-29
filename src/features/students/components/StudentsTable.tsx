@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Merge, Pencil, Trash2 } from 'lucide-react'
+import { Merge, Pencil, SquarePlus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   AlertDialog,
@@ -24,6 +24,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import {
+  createMissingSpace,
   mergeStudents,
   removeStudent,
   type Student,
@@ -33,15 +34,31 @@ import { StudentFormDialog } from '@/features/students/components/StudentFormDia
 export function StudentsTable({
   boardId,
   students,
+  cardIds,
 }: {
   boardId: string
   students: Student[]
+  /** Students that have a card (null while loading) */
+  cardIds?: ReadonlySet<string> | null
 }) {
   const { t } = useTranslation()
   const [selected, setSelected] = useState<string[]>([])
   const [editing, setEditing] = useState<Student | null>(null)
   const [removing, setRemoving] = useState<Student | null>(null)
   const [merging, setMerging] = useState(false)
+  const [creatingCard, setCreatingCard] = useState<string | null>(null)
+
+  async function createCard(student: Student) {
+    setCreatingCard(student.id)
+    try {
+      await createMissingSpace(boardId, student)
+      toast.success(t('students.cardCreated'))
+    } catch {
+      toast.error(t('errors.generic'))
+    } finally {
+      setCreatingCard(null)
+    }
+  }
 
   const selectedStudents = students.filter((student) =>
     selected.includes(student.id),
@@ -136,6 +153,28 @@ export function StudentsTable({
                 >
                   {t(`students.statuses.${student.status}`)}
                 </Badge>
+                {cardIds &&
+                  student.status === 'joined' &&
+                  !cardIds.has(student.id) && (
+                    <span className="mt-1 flex flex-wrap items-center gap-1">
+                      <Badge
+                        variant="outline"
+                        className="border-amber-500 text-amber-700"
+                        data-testid="no-card"
+                      >
+                        {t('students.noCard')}
+                      </Badge>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={creatingCard === student.id}
+                        onClick={() => void createCard(student)}
+                      >
+                        <SquarePlus />
+                        {t('students.createCard')}
+                      </Button>
+                    </span>
+                  )}
                 {student.linkedUids.length > 1 && (
                   <span className="ml-2 text-xs text-muted-foreground">
                     {t('students.accounts', {

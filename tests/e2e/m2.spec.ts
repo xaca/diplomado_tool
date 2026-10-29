@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { DEMO, seedDemo } from '../../scripts/seed.ts'
+import { emulatorDb } from '../../scripts/emulator.ts'
 import { signIn, signInAt } from './helpers.ts'
 
 test.beforeEach(async () => {
@@ -99,6 +100,50 @@ test.describe('M2 · boards, students and joining', () => {
     await expect(laura).toContainText('Ingresó')
     await expect(
       teacher.getByText('5 en total · 1 ya ingresaron'),
+    ).toBeVisible()
+  })
+
+  test('a joined student without a card (interrupted join) gets it back: on sign-in, or from the teacher', async ({
+    browser,
+  }) => {
+    const card = emulatorDb.doc(`boards/${DEMO.boardId}/spaces/st_laura`)
+    const joinLaura = async () => {
+      const student = await browser.newPage()
+      await signIn(student, 'laura@gmail.com')
+      await expect(student.getByTestId('my-boards')).toContainText(
+        DEMO.boardTitle,
+      )
+      return student
+    }
+    await (await joinLaura()).close()
+    await card.delete()
+
+    // The teacher sees it and creates the card
+    const teacher = await browser.newPage()
+    await signIn(teacher, DEMO.teacher)
+    await teacher.goto(`/teacher/boards/${DEMO.boardId}`)
+    const laura = teacher
+      .getByTestId('student-row')
+      .filter({ hasText: 'Laura Nataly' })
+    await expect(laura.getByTestId('no-card')).toHaveText('Sin tarjeta')
+    await expect(teacher.getByTestId('no-card')).toHaveCount(1)
+    await laura.getByRole('button', { name: 'Crear tarjeta' }).click()
+    await expect(laura.getByTestId('no-card')).toHaveCount(0)
+    // The badge goes as soon as the write is applied locally; the server gets it a moment later
+    await expect.poll(async () => (await card.get()).exists).toBe(true)
+    expect((await card.get()).data()).toMatchObject({
+      studentId: 'st_laura',
+      ownerName: 'Laura Nataly',
+      title: '',
+    })
+
+    // Or the student's next sign-in recreates it, and she can edit it
+    await card.delete()
+    const student = await joinLaura()
+    await expect.poll(async () => (await card.get()).exists).toBe(true)
+    await student.getByText(DEMO.boardTitle).click()
+    await expect(
+      student.getByRole('button', { name: 'Editar mi tarjeta' }),
     ).toBeVisible()
   })
 
