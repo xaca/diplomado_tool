@@ -12,6 +12,35 @@ Status legend: `[ ]` to do · `[x]` done
 - **Plan review (rev. 6, 2026-10-26):** ✅ consistency + free-tier review done, see [Review findings](#review-findings-rev-6)
 - **Phase 2 — "Padlet for PBL" app:** 🚧 in progress — Google sign-in enabled · M4 Steps 1–6 done (`/health` → `config: ok`) · service account key ready · **M1 ✅** · **Loop 1 (M2) ✅** ([report](reports/loop-01-m2.md)) · **Loop 2 (M3) ✅** ([report](reports/loop-02-m3.md)) · **Loop 3 (M4) ✅ code done** ([report](reports/loop-03-m4.md)) · **Loop 4 (M5) ✅ code done** ([report](reports/loop-04-m5.md)) · **Loop 5 (M6) ✅ code done** ([report](reports/loop-05-m6.md)) · **Loop 6 (M7) ✅ code done** ([report](reports/loop-06-m7.md)) · **Loop 7 (M8) ✅ code done** ([report](reports/loop-07-m8.md)) · **Extras ✅ code done** (2026-10-29): profile page `/me`, teacher's notes on slides · **Loop 8 (M10) Class participation: 📝 planned**, decisions [D12–D17](#decisions-all-answered-) waiting for you — **ready to launch**, waiting for you: `npm run worker:deploy` + `npm run deploy:rules` (covers M2–M5) + one real upload, **before 2026-11-25** (Worker live at `https://media-api.paradisserossa.workers.dev`)
 
+## ▶ Resume here (last session: 2026-10-29)
+
+**Where we are:** M1–M8 code done and tested. Today two extras were built and one new milestone was planned. Nothing from today is deployed or pushed.
+
+**Built today (on `main`, all tests green)**
+
+| Commit    | What                                                                                                                                                                                                                                                       |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `d511b31` | **Profile page `/me`** (F10, "Mi perfil" in the user menu): display name (empty = Google name), "show my Google photo", language. Saving renames the student's cards on active boards; the teacher's roster keeps its own spelling (last write wins).      |
+| `df9a562` | **Teacher's notes on slides** (F11): the teacher adds / edits / deletes notes under each slide (space page); the student reads them there and beside the slide in the editor; classmates never see them; deleted with the slide, the student and on purge. |
+| `f97a676` | Plan: first draft of a class wall (discarded, replaced by the next commit)                                                                                                                                                                                 |
+| `083e981` | Plan: **M10 Class participation** (see below)                                                                                                                                                                                                              |
+
+Checks at the end of the session: rules tests 68/68 · unit 71/71 · admin CLI ✅ · lint / format / build ✅ · e2e 46/48 in the full run (the 2 failures, `deploy.spec` and the M8 lazy-chunk test, were timeouts in a slow run and passed when re-run alone).
+
+**Your turn (before anything from today works in production)**
+
+1. `npm run deploy:rules` (profile and notes changed `firestore.rules`)
+2. `npm run deploy` (Hosting)
+3. Still pending from earlier loops: `npm run worker:deploy` + one real upload, App Check / reCAPTCHA steps from the [M8 report](reports/loop-07-m8.md#4-your-turn-launch-step-by-step) — **open rules expire 2026-11-25**
+4. Try it: change your name in "Mi perfil" and check your card; as the teacher, add a note under a student's slide and open it as that student.
+
+**Next: Loop 8 = [M10 Class participation](#m10--class-participation-participación-en-clase-f12--loop-8)** (planned, not started)
+
+- Per board, a **"Clases"** section. The teacher creates a class with **1–5 participation slides** (prompt: question, instructions, optional picture) and opens / closes it.
+- Students add **contribution cards** (text + picture) on each slide, up to 3 per slide, and **edit / delete only their own**; the teacher edits / deletes any and can present the class live.
+- Stored in its own `classes` collection: **all existing features stay as they are** (see "What does NOT change" in M10).
+- **To start:** confirm or change decisions **[D12–D17](#decisions-all-answered-)** (format, limits, visibility, teacher powers, backup, location), then say **"run loop 8"**.
+
 ---
 
 # Phase 2 — Product
