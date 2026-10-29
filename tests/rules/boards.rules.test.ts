@@ -337,6 +337,56 @@ describe('auto-join (imported students)', () => {
     await assertFails(autoJoin(as(LAURA), LAURA, 'st_seb'))
   })
 
+  it('the join batch may only create an EMPTY card', async () => {
+    await seed()
+    const db = as(LAURA)
+    const batch = writeBatch(db)
+    batch.set(doc(db, 'boards', BOARD, 'members', LAURA.uid), {
+      uid: LAURA.uid,
+      studentId: 'st_laura',
+      email: LAURA.email,
+      joinedAt: serverTimestamp(),
+    })
+    batch.update(doc(db, 'boards', BOARD, 'students', 'st_laura'), {
+      linkedUids: arrayUnion(LAURA.uid),
+      status: 'joined',
+      joinedAt: serverTimestamp(),
+    })
+    batch.set(doc(db, 'boards', BOARD, 'spaces', 'st_laura'), {
+      ...space('st_laura'),
+      title: 'Ya con contenido',
+    })
+    await assertFails(batch.commit())
+  })
+
+  it('a board restored from a backup already has the card: the join batch with a card fails, linking alone works', async () => {
+    await seed()
+    await env.withSecurityRulesDisabled(async (context) => {
+      await setDoc(
+        doc(context.firestore(), 'boards', BOARD, 'spaces', 'st_laura'),
+        { ...space('st_laura'), title: 'Restaurada' },
+      )
+    })
+    await assertFails(autoJoin(as(LAURA), LAURA, 'st_laura'))
+    await assertSucceeds(autoJoin(as(LAURA), LAURA, 'st_laura', false))
+  })
+
+  it('joined without a card: the student or the teacher can create the empty card, nobody else', async () => {
+    await seed()
+    await autoJoin(as(LAURA), LAURA, 'st_laura', false)
+    const card = (db: Firestore) =>
+      setDoc(doc(db, 'boards', BOARD, 'spaces', 'st_laura'), space('st_laura'))
+    await assertFails(card(as(STRANGER)))
+    await assertFails(card(as(OTHER_TEACHER)))
+    await assertSucceeds(card(as(TEACHER)))
+    await env.withSecurityRulesDisabled(async (context) => {
+      await deleteDoc(
+        doc(context.firestore(), 'boards', BOARD, 'spaces', 'st_laura'),
+      )
+    })
+    await assertSucceeds(card(as(LAURA)))
+  })
+
   it('someone not on the list cannot join without the invite code', async () => {
     await seed()
     await assertFails(autoJoin(as(STRANGER), STRANGER, 'st_laura'))

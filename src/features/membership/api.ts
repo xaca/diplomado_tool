@@ -19,6 +19,7 @@ import {
   paths,
   type BoardDoc,
   type JoinCodeDoc,
+  type MemberDoc,
   type StudentDoc,
   type StudentEmailDoc,
 } from '@/model'
@@ -30,49 +31,84 @@ function emailOf(user: User) {
   return normalizeEmail(user.email ?? '')
 }
 
-/** Links this account to the student and creates their space if it's missing. */
-async function linkAccount(user: User, boardId: string, studentId: string) {
-  const batch = writeBatch(db)
-  batch.set(doc(db, paths.member(boardId, user.uid)), {
-    uid: user.uid,
-    studentId,
-    email: emailOf(user),
-    joinedAt: serverTimestamp(),
-  })
-  batch.update(doc(db, paths.student(boardId, studentId)), {
-    linkedUids: arrayUnion(user.uid),
-    status: 'joined',
-    joinedAt: serverTimestamp(),
-  })
-  try {
-    await batch.commit()
-  } catch (error) {
-    // Lost a race with another tab/effect that linked this account first: that's success too
-    if (!(await getDoc(doc(db, paths.member(boardId, user.uid)))).exists()) {
-      throw error
-    }
+function newSpace(studentId: string, name: string, user: User) {
+  return {
+    ...defaultSpace(studentId, name, user.photoURL),
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
   }
+}
 
-  // Readable only once we're a member; a second account of the same student finds it already there
+/** The name on the card: the teacher's spelling, else the Google account's. */
+function cardName(student: StudentDoc | undefined, user: User) {
+  return student?.displayName ?? user.displayName ?? emailOf(user)
+}
+
+/**
+ * Creates the student's empty card if it's missing (e.g. a join interrupted before the link and
+ * the card were written together). Readable only once we're a member.
+ */
+async function ensureSpace(user: User, boardId: string, studentId: string) {
   const spaceRef = doc(db, paths.space(boardId, studentId))
   if ((await getDoc(spaceRef)).exists()) return
   const student = await getDoc(doc(db, paths.student(boardId, studentId)))
-  const name =
-    (student.data() as StudentDoc | undefined)?.displayName ??
-    user.displayName ??
-    emailOf(user)
   try {
     await writeBatch(db)
-      .set(spaceRef, {
-        ...defaultSpace(studentId, name, user.photoURL),
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      })
+      .set(
+        spaceRef,
+        newSpace(studentId, cardName(student.data() as StudentDoc, user), user),
+      )
       .commit()
   } catch (error) {
     // Both accounts of the same student may create it at the same time
     if (!(await getDoc(spaceRef)).exists()) throw error
   }
+}
+
+/**
+ * Links this account to the student. The student's first account writes the link and the card in
+ * ONE batch, so a join can never stop halfway ("Ingresó" without a card).
+ */
+async function linkAccount(user: User, boardId: string, studentId: string) {
+  const studentRef = doc(db, paths.student(boardId, studentId))
+  const memberRef = doc(db, paths.member(boardId, user.uid))
+  const student = (await getDoc(studentRef)).data() as StudentDoc | undefined
+  // A second account of the same student finds the card already there
+  const firstAccount = (student?.linkedUids ?? []).length === 0
+
+  const writeLink = (withCard: boolean) => {
+    const batch = writeBatch(db)
+    batch.set(memberRef, {
+      uid: user.uid,
+      studentId,
+      email: emailOf(user),
+      joinedAt: serverTimestamp(),
+    })
+    batch.update(studentRef, {
+      linkedUids: arrayUnion(user.uid),
+      status: 'joined',
+      joinedAt: serverTimestamp(),
+    })
+    if (withCard)
+      batch.set(
+        doc(db, paths.space(boardId, studentId)),
+        newSpace(studentId, cardName(student, user), user),
+      )
+    return batch.commit()
+  }
+
+  try {
+    await writeLink(firstAccount)
+    if (firstAccount) return
+  } catch (error) {
+    // Lost a race with another tab/effect that linked this account first: that's success too
+    if (!(await getDoc(memberRef)).exists()) {
+      // The card may exist already (e.g. a board restored from a backup): link without it
+      if (!firstAccount) throw error
+      await writeLink(false)
+    }
+  }
+  await ensureSpace(user, boardId, studentId)
 }
 
 // One auto-join at a time per account: React StrictMode runs effects twice in dev, and a
@@ -104,7 +140,17 @@ async function autoJoinOnce(user: User) {
     const boardId = entry.ref.parent.parent!.id
     const { studentId } = entry.data() as StudentEmailDoc
     const member = await getDoc(doc(db, paths.member(boardId, user.uid)))
-    if (member.exists()) continue
+    if (member.exists()) {
+      // Joined before, but the card may be missing: repair it (never blocks the other boards)
+      await ensureSpace(
+        user,
+        boardId,
+        (member.data() as MemberDoc).studentId,
+      ).catch((error: unknown) =>
+        console.error('[membership] card not created', boardId, error),
+      )
+      continue
+    }
     await linkAccount(user, boardId, studentId)
     joined += 1
   }
