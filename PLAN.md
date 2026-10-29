@@ -10,7 +10,7 @@ Status legend: `[ ]` to do · `[x]` done
 
 - **Phase 1 — Template setup:** ✅ done (2026-10-26), commit `8f20758`
 - **Plan review (rev. 6, 2026-10-26):** ✅ consistency + free-tier review done, see [Review findings](#review-findings-rev-6)
-- **Phase 2 — "Padlet for PBL" app:** 🚧 in progress — Google sign-in enabled · M4 Steps 1–6 done (`/health` → `config: ok`) · service account key ready · **M1 ✅** · **Loop 1 (M2) ✅** ([report](reports/loop-01-m2.md)) · **Loop 2 (M3) ✅** ([report](reports/loop-02-m3.md)) · **Loop 3 (M4) ✅ code done** ([report](reports/loop-03-m4.md)) · **Loop 4 (M5) ✅ code done** ([report](reports/loop-04-m5.md)) · **Loop 5 (M6) ✅ code done** ([report](reports/loop-05-m6.md)) · **Loop 6 (M7) ✅ code done** ([report](reports/loop-06-m7.md)) · **Loop 7 (M8) ✅ code done** ([report](reports/loop-07-m8.md)) · **Extras ✅ code done** (2026-10-29): profile page `/me`, teacher's notes on slides · **Loop 8 (M10) Class wall: 📝 planned**, decisions [D12–D17](#decisions-all-answered-) waiting for you — **ready to launch**, waiting for you: `npm run worker:deploy` + `npm run deploy:rules` (covers M2–M5) + one real upload, **before 2026-11-25** (Worker live at `https://media-api.paradisserossa.workers.dev`)
+- **Phase 2 — "Padlet for PBL" app:** 🚧 in progress — Google sign-in enabled · M4 Steps 1–6 done (`/health` → `config: ok`) · service account key ready · **M1 ✅** · **Loop 1 (M2) ✅** ([report](reports/loop-01-m2.md)) · **Loop 2 (M3) ✅** ([report](reports/loop-02-m3.md)) · **Loop 3 (M4) ✅ code done** ([report](reports/loop-03-m4.md)) · **Loop 4 (M5) ✅ code done** ([report](reports/loop-04-m5.md)) · **Loop 5 (M6) ✅ code done** ([report](reports/loop-05-m6.md)) · **Loop 6 (M7) ✅ code done** ([report](reports/loop-06-m7.md)) · **Loop 7 (M8) ✅ code done** ([report](reports/loop-07-m8.md)) · **Extras ✅ code done** (2026-10-29): profile page `/me`, teacher's notes on slides · **Loop 8 (M10) Class participation: 📝 planned**, decisions [D12–D17](#decisions-all-answered-) waiting for you — **ready to launch**, waiting for you: `npm run worker:deploy` + `npm run deploy:rules` (covers M2–M5) + one real upload, **before 2026-11-25** (Worker live at `https://media-api.paradisserossa.workers.dev`)
 
 ---
 
@@ -18,22 +18,22 @@ Status legend: `[ ]` to do · `[x]` done
 
 A Padlet-style board where **each student owns one space** and documents their project process as **slides**. The teacher can **present each student's space** in full screen.
 
-| #   | Feature                                                                                                                | Who                                   |
-| --- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| F1  | Sign in with Google, using **any** of the student's emails (personal Gmail or university)                              | everyone                              |
-| F2  | Board dashboard: columns of cards, one card per student (like the reference image), live updates                       | everyone in the board                 |
-| F3  | Space editor: **one Excalidraw canvas per slide** (text, images, links, embeds, shapes, drawing); add / reorder slides | the student who owns the space        |
-| F4  | Space profile: title, summary, cover image, color                                                                      | the student                           |
-| F5  | Presentation mode: full screen, keyboard navigation, **next / previous student**                                       | teacher (students: their own space)   |
-| F6  | Boards: create a board, add students, invite link                                                                      | teacher                               |
-| F7  | Import / export with **JSON** (students, board backup)                                                                 | teacher                               |
-| F8  | **Storage & cleanup**: image usage, remove unused images, **"Archived projects"** for inactive boards, purge           | teacher (dashboard) + you (admin CLI) |
-| F9  | **Spanish (default) / English** interface                                                                              | everyone                              |
-| F10 | **Profile** (`/me`): display name, photo on cards, language ✅                                                         | everyone                              |
-| F11 | **Teacher's notes** on each slide, private to the teacher and the student ✅                                           | teacher writes · the student reads    |
-| F12 | **Class wall** ("Muro"): a shared feed per board where the teacher and the students post text and pictures, and reply  | everyone in the board                 |
+| #   | Feature                                                                                                                                                    | Who                                                  |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| F1  | Sign in with Google, using **any** of the student's emails (personal Gmail or university)                                                                  | everyone                                             |
+| F2  | Board dashboard: columns of cards, one card per student (like the reference image), live updates                                                           | everyone in the board                                |
+| F3  | Space editor: **one Excalidraw canvas per slide** (text, images, links, embeds, shapes, drawing); add / reorder slides                                     | the student who owns the space                       |
+| F4  | Space profile: title, summary, cover image, color                                                                                                          | the student                                          |
+| F5  | Presentation mode: full screen, keyboard navigation, **next / previous student**                                                                           | teacher (students: their own space)                  |
+| F6  | Boards: create a board, add students, invite link                                                                                                          | teacher                                              |
+| F7  | Import / export with **JSON** (students, board backup)                                                                                                     | teacher                                              |
+| F8  | **Storage & cleanup**: image usage, remove unused images, **"Archived projects"** for inactive boards, purge                                               | teacher (dashboard) + you (admin CLI)                |
+| F9  | **Spanish (default) / English** interface                                                                                                                  | everyone                                             |
+| F10 | **Profile** (`/me`): display name, photo on cards, language ✅                                                                                             | everyone                                             |
+| F11 | **Teacher's notes** on each slide, private to the teacher and the student ✅                                                                               | teacher writes · the student reads                   |
+| F12 | **Class participation**: per class, the teacher opens **1–5 participation slides**; students add, edit and delete their own contributions (text + picture) | teacher creates and moderates · students participate |
 
-Students can see their classmates' spaces **read-only**. The **class wall** (F12) is the one place where everybody writes together: announcements, questions, progress pictures, answers.
+Students can see their classmates' spaces **read-only**. **Class participation** (F12) is the one place where everybody writes together, on **separate slides** that never touch the students' own spaces.
 
 ---
 
@@ -118,8 +118,9 @@ boards/{boardId}/spaces/{studentId}             one space per student
 boards/{boardId}/spaces/{studentId}/slides/{slideId}   one Excalidraw scene per slide
 boards/{boardId}/spaces/{studentId}/notes/{noteId}     teacher's note on one slide (teacher + owner only)
 boards/{boardId}/assets/{assetId}               registry of every image uploaded in this board
-boards/{boardId}/wall/{postId}                  class wall: one post (text + up to 4 images)          (M10)
-boards/{boardId}/wall/{postId}/replies/{replyId}   one reply to a post (text + up to 1 image)           (M10)
+boards/{boardId}/classes/{classId}              class participation: one class session, 1–5 slides     (M10)
+boards/{boardId}/classes/{classId}/slides/{slideId}          the teacher's prompt for one slide (M10)
+boards/{boardId}/classes/{classId}/contributions/{id}        one student's (or teacher's) contribution (M10)
 
 joinCodes/{code}                                invite code → boardId
 ```
@@ -141,9 +142,7 @@ boards/{boardId}
   status: 'active' | 'locked' | 'archived',
   lastActivityAt,                         // any edit in the board (throttled) → auto-archive
   archiveAfterDays: 90,                   // configurable per board
-  background, createdAt, updatedAt, archivedAt?,
-  wallMode: 'open' | 'teacherPosts' | 'off',   // M10 — default 'open'
-  wallLastPostAt? }                       // M10 — "new on the wall" badge (no extra listener)
+  background, createdAt, updatedAt, archivedAt? }
 
 boards/{boardId}/students/{studentId}
 { displayName, emails: string[], group?,
@@ -175,26 +174,33 @@ boards/{boardId}/spaces/{studentId}/notes/{noteId}   // the teacher's annotation
 { slideId, text,                          // ≤ 2000 chars
   authorEmail, authorName, createdAt, updatedAt }
 
-boards/{boardId}/wall/{postId}            // class wall (M10) — everyone in the board reads it
-{ authorUid, authorRole: 'teacher' | 'student',
-  authorStudentId: string | null,         // null for teachers
-  authorName, authorPhotoURL,             // denormalized from the profile (1 read per post)
-  text,                                   // plain text ≤ 5000 chars; links are auto-linked, no HTML
-  images: ImageRef[],                     // ≤ 4
-  assetIds: string[],                     // same images as ids → orphan detection
-  pinned: boolean,                        // teacher only: pinned posts go first
-  replyCount,                             // kept in the same batch as each reply
-  createdAt, updatedAt, editedAt? }
+boards/{boardId}/classes/{classId}        // class participation (M10) — everyone in the board reads it
+{ title,                                  // "Clase 3 · Prototipos" (≤ 120)
+  date?,                                  // 'YYYY-MM-DD'
+  status: 'open' | 'closed',              // closed → read-only for students
+  slideOrder: string[], slideCount,       // 1–5 participation slides
+  createdBy, createdAt, updatedAt }
 
-boards/{boardId}/wall/{postId}/replies/{replyId}
-{ authorUid, authorRole, authorStudentId, authorName, authorPhotoURL,
-  text,                                   // ≤ 2000 chars
-  images: ImageRef[], assetIds: string[], // ≤ 1
-  createdAt, updatedAt, editedAt? }
+boards/{boardId}/classes/{classId}/slides/{slideId}   // written only by the board's teachers
+{ title,                                  // the question or activity (≤ 120)
+  prompt,                                 // instructions (≤ 1000, plain text)
+  image: ImageRef | null,                 // optional picture for the prompt
+  color,                                  // same palette as the cards
+  createdAt, updatedAt }
+
+boards/{boardId}/classes/{classId}/contributions/{slideId}_{uid}_{n}   // n = 1..3 per person per slide
+{ slideId, authorUid, authorRole: 'teacher' | 'student',
+  authorStudentId: string | null,         // null for teachers
+  authorName, authorPhotoURL,             // denormalized from the profile (cardName / cardPhoto)
+  text,                                   // ≤ 1000 chars, plain text, auto-linked URLs
+  image: ImageRef | null, assetIds: string[],
+  color,
+  createdAt, updatedAt,
+  editedByTeacher?: boolean }             // shown as "editado por el docente"
 
 boards/{boardId}/assets/{assetId}         // one per upload
-{ publicId, studentId, slideId?, kind: 'slide' | 'cover' | 'wall',
-  ownerUid?,                              // wall images: who uploaded it (teachers have no studentId)
+{ publicId, studentId, slideId?, kind: 'slide' | 'cover' | 'class',
+  ownerUid?,                              // class images: who uploaded it (teachers have no studentId)
   width, height, format, bytes,
   status: 'active' | 'orphaned' | 'deleted',
   createdAt, deletedAt? }
@@ -214,7 +220,9 @@ joinCodes/{code}
 - **Slide saves don't touch the space document.** The dashboard listens live to `spaces`, so every space update costs 1 read **per open dashboard**. The space doc changes only when title, summary, cover or slide order change, and `updatedAt` at most every 10 minutes. Without this, 40 students saving while 40 dashboards are open would burn the 50K reads/day.
 - **`engine` + `schemaVersion`:** old slides always say how they were made, which allows future migrations.
 - **Notes live under the space, not in the slide:** a slide save never rewrites the teacher's feedback, and one listener per page covers every slide.
-- **Wall replies are a subcollection:** the feed listens only to the newest posts (`limit 20`, "Ver más" loads older ones with a one-shot read); replies are read only when a post is opened. `replyCount` on the post keeps the feed at 1 read per post.
+- **One document per contribution, with a predictable id** (`{slideId}_{uid}_{n}`, n = 1..3): the rules protect each student's content (only the author or the teacher can change it), and they cap participation at 3 per person per slide without a counter.
+- **Participation slides are not Excalidraw scenes:** a shared canvas is one document, so 40 students would overwrite each other and the rules couldn't protect anyone's work. Each slide is the teacher's prompt plus a grid of contribution cards.
+- **The page listens to the slide on screen** (`contributions where slideId == current`), not to the whole class: a contribution on slide 2 costs nothing to people looking at slide 1.
 
 ---
 
@@ -258,7 +266,7 @@ joinCodes/{code}
 
 **Nobody can upload to your Cloudinary account** without being a signed-in member of a board. No public upload preset exists.
 
-**Wall images (M10):** the app calls `POST /uploads/sign` with `{ boardId, scope: 'wall' }`. The Worker allows **any member or board teacher** of a writable board and signs `public_id = pbl/{env}/{boardId}/wall/{assetId}`. The registry entry has `kind: 'wall'` and `ownerUid`. Same browser resize (max 2560 px, WebP) and same 10 MB limit as slides.
+**Class participation images (M10):** the app calls `POST /uploads/sign` with `{ boardId, scope: 'class' }`. The Worker allows **any member or board teacher** of a writable board and signs `public_id = pbl/{env}/{boardId}/class/{assetId}`. The registry entry has `kind: 'class'` and `ownerUid`. Same browser resize (max 2560 px, WebP) and same 10 MB limit as slides.
 
 ### Folder structure in Cloudinary
 
@@ -268,7 +276,7 @@ pbl/
   prod/
     {boardId}/
       {studentId}/{assetId}               ← public_id ↔ registry id (1:1)
-      wall/{assetId}                      ← class wall images (M10)
+      class/{assetId}                     ← class participation images (M10)
 ```
 
 Tags: `board_{boardId}`, `student_{studentId}`, `env_prod`.
@@ -278,7 +286,7 @@ Tags: `board_{boardId}`, `student_{studentId}`, `env_prod`.
 | Where                    | Transformation                     | Typical size |
 | ------------------------ | ---------------------------------- | ------------ |
 | Dashboard card cover     | `f_auto,q_auto,c_fill,w_400,h_225` | ~15 KB       |
-| Wall post (feed)         | `f_auto,q_auto,c_limit,w_800`      | ~50 KB       |
+| Contribution card        | `f_auto,q_auto,c_limit,w_800`      | ~50 KB       |
 | Editor / viewer          | `f_auto,q_auto,c_limit,w_1280`     | ~100 KB      |
 | Full-screen presentation | `f_auto,q_auto,c_limit,w_1920`     | ~200 KB      |
 
@@ -318,9 +326,9 @@ Purging deletes the Cloudinary folder `pbl/prod/{boardId}/` and all Firestore do
 
 ### 3. Unused images (orphans)
 
-An image becomes unused when it's deleted from a slide, replaced as a cover, its slide is deleted, or (M10) its wall post or reply is edited or deleted.
+An image becomes unused when it's deleted from a slide, replaced as a cover, its slide is deleted, or (M10) its class contribution or prompt is edited or deleted.
 
-- **Detection:** `assets` (status `active`) minus the union of all `slides.assetIds`, `spaces.cover` and (M10) the `assetIds` of wall posts and replies. Images younger than 24 h are skipped, because they may be in the middle of an edit.
+- **Detection:** `assets` (status `active`) minus the union of all `slides.assetIds`, `spaces.cover` and (M10) the images of class prompts and contributions. Images younger than 24 h are skipped, because they may be in the middle of an edit.
 - **Teacher dashboard → Board → Storage:** used storage, number of images, unused images with their size, and a **"Clean up unused images"** button (media-api `POST /assets/delete`).
 - **CLI:** `npm run admin -- cleanup --board <id> | --all [--dry-run]`.
 
@@ -405,18 +413,19 @@ Sign in with Google ──► is staffEmails/{my email} there?
 
 ## Security Rules (summary)
 
-| Path                              | Read                          | Create / Update                                                                                                                                              | Delete                                      |
-| --------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------- |
-| `users/{uid}`                     | signed in                     | self only                                                                                                                                                    | ✗                                           |
-| `staffEmails/{email}`             | self or admin                 | admin (v1: only the admin CLI)                                                                                                                               | admin                                       |
-| `boards/{id}`                     | board teacher or member       | create: `isTeacher()` with own email in `teacherEmails` · update: board teacher · members: only `lastActivityAt`                                             | board teacher, only when `archived` (purge) |
-| `joinCodes/{code}`                | `get` only (no `list`)        | `isTeacher()`                                                                                                                                                | board teacher                               |
-| `students`, `studentEmails`       | board teacher · own entry     | board teacher · student: link own uid · invite batch                                                                                                         | board teacher                               |
-| `members/{uid}`                   | board teacher or member       | self, linked to a `studentId` proven by email index or invite code                                                                                           | board teacher or self                       |
-| `spaces/{studentId}` + `slides`   | board teacher or member       | `myStudentId(boardId) == studentId` and `isBoardWritable(boardId)`; size and shape validation                                                                | the student or board teacher                |
-| `assets/{assetId}`                | board teacher · owner student | owner student (after signed upload) · status changes by owner / board teacher                                                                                | ✗                                           |
-| `spaces/…/notes/{noteId}`         | board teacher · space owner   | board teacher (slide must exist, own email, server time) · edit: text only                                                                                   | board teacher · owner with its slide        |
-| `wall/{postId}` + `replies` (M10) | board teacher or member       | author = me, server time, sizes; members only while the board is writable and `wallMode` allows it · `pinned`: teacher only · `replyCount` ±1 with its reply | the author or board teacher                 |
+| Path                            | Read                          | Create / Update                                                                                                                                                                | Delete                                                   |
+| ------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------- |
+| `users/{uid}`                   | signed in                     | self only                                                                                                                                                                      | ✗                                                        |
+| `staffEmails/{email}`           | self or admin                 | admin (v1: only the admin CLI)                                                                                                                                                 | admin                                                    |
+| `boards/{id}`                   | board teacher or member       | create: `isTeacher()` with own email in `teacherEmails` · update: board teacher · members: only `lastActivityAt`                                                               | board teacher, only when `archived` (purge)              |
+| `joinCodes/{code}`              | `get` only (no `list`)        | `isTeacher()`                                                                                                                                                                  | board teacher                                            |
+| `students`, `studentEmails`     | board teacher · own entry     | board teacher · student: link own uid · invite batch                                                                                                                           | board teacher                                            |
+| `members/{uid}`                 | board teacher or member       | self, linked to a `studentId` proven by email index or invite code                                                                                                             | board teacher or self                                    |
+| `spaces/{studentId}` + `slides` | board teacher or member       | `myStudentId(boardId) == studentId` and `isBoardWritable(boardId)`; size and shape validation                                                                                  | the student or board teacher                             |
+| `assets/{assetId}`              | board teacher · owner student | owner student (after signed upload) · status changes by owner / board teacher                                                                                                  | ✗                                                        |
+| `spaces/…/notes/{noteId}`       | board teacher · space owner   | board teacher (slide must exist, own email, server time) · edit: text only                                                                                                     | board teacher · owner with its slide                     |
+| `classes/…` + `slides` (M10)    | board teacher or member       | board teacher only                                                                                                                                                             | board teacher                                            |
+| `classes/…/contributions` (M10) | board teacher or member       | members: id `{slideId}_{myUid}_{1..3}`, author = me, server time, sizes, class `open`, board writable, slide exists · author edits own · teacher edits any (`editedByTeacher`) | the author (class open, board writable) or board teacher |
 
 Tested with `@firebase/rules-unit-testing` on the emulator before deploying. **Deadline: the current open rules expire 2026-11-25.**
 
@@ -477,22 +486,24 @@ Tested with `@firebase/rules-unit-testing` on the emulator before deploying. **D
 
 ## Routes
 
-| Route                              | Page                                                                                           | Access                        |
-| ---------------------------------- | ---------------------------------------------------------------------------------------------- | ----------------------------- |
-| `/login`                           | Google sign-in (account chooser always shown)                                                  | public                        |
-| `/`                                | My boards + **Proyectos archivados** section                                                   | signed in                     |
-| `/join/:code`                      | Invite link                                                                                    | signed in                     |
-| `/me`                              | Profile: name, photo on cards, language                                                        | signed in                     |
-| `/b/:boardId`                      | **Dashboard** (cards grid)                                                                     | member / board teacher        |
-| `/b/:boardId/wall`                 | **Class wall** (M10): pinned + newest posts, replies, new-post box                             | member / board teacher        |
-| `/b/:boardId/s/:studentId`         | View a space (read-only) + the teacher's notes under each slide                                | member / board teacher        |
-| `/b/:boardId/s/:studentId/edit`    | **Editor** (Excalidraw per slide)                                                              | the student                   |
-| `/b/:boardId/present/:studentId?`  | **Presentation** (←/→ slides, ↑/↓ students, Esc)                                               | board teacher · student (own) |
-| `/teacher`                         | **Teacher dashboard**: active boards, archived projects, usage meter                           | teacher                       |
-| `/teacher/boards/new`              | Create a board                                                                                 | teacher                       |
-| `/teacher/boards/:boardId`         | Manage: students (import / quick add / emails / merge), invite link, export, archive / restore | board teacher                 |
-| `/teacher/boards/:boardId/storage` | **Storage & cleanup**: usage, unused images, purge                                             | board teacher                 |
-| `/admin/staff`                     | Teachers and admins (**M9**)                                                                   | admin                         |
+| Route                                | Page                                                                                           | Access                        |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------- | ----------------------------- |
+| `/login`                             | Google sign-in (account chooser always shown)                                                  | public                        |
+| `/`                                  | My boards + **Proyectos archivados** section                                                   | signed in                     |
+| `/join/:code`                        | Invite link                                                                                    | signed in                     |
+| `/me`                                | Profile: name, photo on cards, language                                                        | signed in                     |
+| `/b/:boardId`                        | **Dashboard** (cards grid)                                                                     | member / board teacher        |
+| `/b/:boardId/class`                  | **Classes** (M10): list of class sessions (teacher: new class, open / close)                   | member / board teacher        |
+| `/b/:boardId/class/:classId`         | **Class participation** (M10): slides 1–5, prompt + live contribution cards                    | member / board teacher        |
+| `/b/:boardId/class/:classId/present` | Class participation full screen (←/→ slides, live)                                             | board teacher                 |
+| `/b/:boardId/s/:studentId`           | View a space (read-only) + the teacher's notes under each slide                                | member / board teacher        |
+| `/b/:boardId/s/:studentId/edit`      | **Editor** (Excalidraw per slide)                                                              | the student                   |
+| `/b/:boardId/present/:studentId?`    | **Presentation** (←/→ slides, ↑/↓ students, Esc)                                               | board teacher · student (own) |
+| `/teacher`                           | **Teacher dashboard**: active boards, archived projects, usage meter                           | teacher                       |
+| `/teacher/boards/new`                | Create a board                                                                                 | teacher                       |
+| `/teacher/boards/:boardId`           | Manage: students (import / quick add / emails / merge), invite link, export, archive / restore | board teacher                 |
+| `/teacher/boards/:boardId/storage`   | **Storage & cleanup**: usage, unused images, purge                                             | board teacher                 |
+| `/admin/staff`                       | Teachers and admins (**M9**)                                                                   | admin                         |
 
 Editor, viewer, presenter (Excalidraw) and the teacher area are **lazy-loaded** chunks.
 
@@ -513,7 +524,7 @@ src/
     spaces/            SpaceCard, useSpaces (live), space profile
     profile/           /me: profile name, photo switch, card sync
     notes/             teacher's notes on slides (SlideNotes, useNotes)
-    wall/              (M10) class wall: feed, composer, replies, moderation
+    classes/           (M10) class participation: sessions, prompt slides, contribution cards, present
     slides/
       engine/          ⬅ adapter: ExcalidrawSlideEditor, renderSlideSvg, scene load/save, image files ↔ Cloudinary
       editor/          EditorPage, SlideSidebar (reorder), autosave, save status
@@ -621,18 +632,18 @@ Saved as `reports/loop-NN-<milestone>.md` (committed) and summarized in the chat
 
 ### Loop roadmap
 
-| Loop | Milestone                                 | I build                                                                                                                                                             | You do at the end                                                                            |
-| ---- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| 0 ✅ | **M1 finish**                             | —                                                                                                                                                                   | `npm run admin -- setup --email paradisserossa@gmail.com` · log in as teacher and as student |
-| 1 ✅ | **Infra + M2** Boards, students & joining | emulator seed, Playwright setup, `npm test`; teacher dashboard, create board, students table, JSON import + quick add, auto-join, invite link, merge, rules + tests | `npm run deploy:rules` (rules + indexes) · acceptance test                                   |
-| 2 ✅ | **M3** Dashboard                          | Padlet-like board view, live cards, space profile (no cover yet)                                                                                                    | `npm run deploy:rules` · acceptance test                                                     |
-| 3 ✅ | **M4** Uploads (Worker Steps 7–12)        | token check, permission check, signed uploads, cover image, asset registry, rules                                                                                   | `npx wrangler deploy` · upload a real image · `npm run deploy:rules`                         |
-| 4 ✅ | **M5** Excalidraw slides                  | editor, autosave (throttled), images via Cloudinary, viewer, self-hosted fonts                                                                                      | `npm run deploy:rules` · acceptance test                                                     |
-| 5 ✅ | **M6** Presentation                       | full screen, keyboard, next student, GSAP transitions                                                                                                               | acceptance test                                                                              |
-| 6 ✅ | **M7** Lifecycle & backups                | archived projects, cleanup, purge, JSON backup/restore, CLI commands, Worker delete/usage                                                                           | `npx wrangler deploy` · `npm run deploy:rules` · try cleanup on a test board                 |
-| 7 ✅ | **M8** Hardening & launch                 | App Check code, final rules review, privacy notice, metadata                                                                                                        | create a reCAPTCHA v3 key + register App Check (console) · `npm run deploy` (hosting)        |
-| 8 📝 | **M10** Class wall                        | wall feed + composer (text, ≤ 4 images), replies, pin / delete / wall mode, "new" badge, Worker `scope: 'wall'`, orphans, backup v2, rules + tests                  | answer D12–D17 · `npm run worker:deploy` · `npm run deploy:rules` · acceptance test          |
-| —    | **M9** More teachers                      | when you need it                                                                                                                                                    | —                                                                                            |
+| Loop | Milestone                                 | I build                                                                                                                                                                                              | You do at the end                                                                            |
+| ---- | ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| 0 ✅ | **M1 finish**                             | —                                                                                                                                                                                                    | `npm run admin -- setup --email paradisserossa@gmail.com` · log in as teacher and as student |
+| 1 ✅ | **Infra + M2** Boards, students & joining | emulator seed, Playwright setup, `npm test`; teacher dashboard, create board, students table, JSON import + quick add, auto-join, invite link, merge, rules + tests                                  | `npm run deploy:rules` (rules + indexes) · acceptance test                                   |
+| 2 ✅ | **M3** Dashboard                          | Padlet-like board view, live cards, space profile (no cover yet)                                                                                                                                     | `npm run deploy:rules` · acceptance test                                                     |
+| 3 ✅ | **M4** Uploads (Worker Steps 7–12)        | token check, permission check, signed uploads, cover image, asset registry, rules                                                                                                                    | `npx wrangler deploy` · upload a real image · `npm run deploy:rules`                         |
+| 4 ✅ | **M5** Excalidraw slides                  | editor, autosave (throttled), images via Cloudinary, viewer, self-hosted fonts                                                                                                                       | `npm run deploy:rules` · acceptance test                                                     |
+| 5 ✅ | **M6** Presentation                       | full screen, keyboard, next student, GSAP transitions                                                                                                                                                | acceptance test                                                                              |
+| 6 ✅ | **M7** Lifecycle & backups                | archived projects, cleanup, purge, JSON backup/restore, CLI commands, Worker delete/usage                                                                                                            | `npx wrangler deploy` · `npm run deploy:rules` · try cleanup on a test board                 |
+| 7 ✅ | **M8** Hardening & launch                 | App Check code, final rules review, privacy notice, metadata                                                                                                                                         | create a reCAPTCHA v3 key + register App Check (console) · `npm run deploy` (hosting)        |
+| 8 📝 | **M10** Class participation               | classes with 1–5 participation slides, contribution cards (text + picture), own edit / delete, teacher moderation, open / close, present, Worker `scope: 'class'`, orphans, backup v2, rules + tests | answer D12–D17 · `npm run worker:deploy` · `npm run deploy:rules` · acceptance test          |
+| —    | **M9** More teachers                      | when you need it                                                                                                                                                                                     | —                                                                                            |
 
 **Starting a loop:** say **"run loop N"** (e.g. "run loop 1"). I'll work through it and come back with the report.
 
@@ -741,41 +752,50 @@ Each milestone ends with something we can try in the browser, plus a commit.
 - [x] **Teacher's notes on slides** (F11): add / edit / delete under each slide in the space viewer; the student reads them there and next to the slide in the editor; classmates never see them; deleted with their slide, with the student and on purge — commit `df9a562`
 - [ ] **Deploy rules** (you): `npm run deploy:rules` (both extras need it), then `npm run deploy`
 
-### M10 — Class wall ("Muro de la clase", F12) — Loop 8
+### M10 — Class participation ("Participación en clase", F12) — Loop 8
 
-A Padlet-style feed **per board** where the teacher and the students talk: announcements, questions, progress photos, answers. It complements the private slide notes (F11).
+A shared board **per class session** where the teacher and the students interact. It lives in **separate participation slides**, apart from each student's own space.
 
 **What people see**
 
-- A **"Tarjetas | Muro"** switch in the board header (`/b/:boardId` ↔ `/b/:boardId/wall`), with a dot when there are posts newer than my last visit (`board.wallLastPostAt` vs. a per-device "last seen"; no extra reads).
-- **Composer** at the top: text (plain, ≤ 5000 chars, line breaks, auto-linked URLs) + up to **4 pictures** (drag & drop, paste or pick; resized in the browser; upload progress) → "Publicar".
-- **Feed:** pinned posts first, then newest first. Each post: avatar, name, "Docente" badge for teachers, relative time, "editado", text, picture grid (tap → full size), "N respuestas".
-- **Replies** (one level): open a post to see its replies live and answer (text ≤ 2000 + 1 picture).
-- **My own posts and replies:** edit or delete. **Teacher:** pin / unpin, delete anything, and choose the **wall mode** for the board: **open** (everyone posts) · **only the teacher posts** (students reply) · **off** (hidden).
-- **Archived or locked boards:** the wall stays readable, nobody can write (same check as slides).
+- A **"Tarjetas | Clases"** switch in the board header (`/b/:boardId` ↔ `/b/:boardId/class`). "Clases" lists the sessions, newest first, with date, number of slides and open / closed.
+- **Teacher:** "Nueva clase" → title + date → **1 to 5 participation slides** (add, reorder, delete). Each slide has a **prompt**: a question or activity title, instructions and an optional picture. The teacher **opens or closes** the class: when closed, students only read.
+- **Class page** `/b/:boardId/class/:classId`: slide tabs **1 … 5**. Each slide shows the prompt at the top and the **contribution cards** below (masonry grid, like the dashboard), live.
+- **Students:** "Participar" → text (≤ 1000 chars) + optional picture + card color. They **edit and delete their own** contributions while the class is open, up to **3 per slide**. Their cards show their name and photo (from `/me`).
+- **Teacher:** edits or deletes **any** contribution (the card then says "editado por el docente") and can also add their own (marked "Docente").
+- **Present** (teacher): full screen, ←/→ between slides, contributions appear live; good for discussing in class.
+- **Archived or locked boards:** classes stay readable and presentable; nobody writes (same check as slides).
+
+**What does NOT change (functionality preserved)**
+
+- Personal spaces, cards, slides (Excalidraw), the editor, the viewer, presentation mode, the teacher's notes, the profile, storage, backups and purge work exactly as today. Participation is stored in its **own collection** (`classes`), so no existing document, rule or route changes meaning.
+- The only shared pieces are **extended, not changed**: the Worker gets a new upload scope, the asset registry a new `kind`, orphan detection / purge / student removal also look at `classes`, and the backup gets a version 2 that still restores version 1 files.
+- Every existing test (rules, unit, Worker, admin CLI, e2e) must still pass at the end of the loop.
 
 **How it's built**
 
-- [ ] Model + Zod schemas: `WallPostDoc`, `WallReplyDoc`, `wallMode`, sizes; author name and photo from the profile (`cardName` / `cardPhoto`)
-- [ ] Rules: read = board teacher or member; create = author fields are mine, `createdAt == request.time`, text and image limits, board writable, `wallMode` allows it (teacher always); update = author edits `text` / `images` / `assetIds` / `editedAt`, teacher toggles `pinned`; `replyCount` changes only by ±1 together with a reply create / delete (`getAfter` / `existsAfter`); delete = author or board teacher; members may set `board.wallLastPostAt == request.time`
-- [ ] Worker: `scope: 'wall'` in `POST /uploads/sign` (member or board teacher, board writable) → `pbl/{env}/{boardId}/wall/{assetId}`; Worker tests + integration test
-- [ ] Asset registry: `kind: 'wall'`, `ownerUid`; rules allow members and teachers to register wall uploads; editing / deleting a post marks its images `orphaned`
-- [ ] Orphan detection, storage page, purge (app + CLI) and the student removal / merge include the wall
-- [ ] **Backup v2** (`pbl.boardBackup` version 2): posts + replies (text, image refs, author name and role); restore accepts v1 and v2; authors are re-linked by student id, teachers' posts are restored as the restoring teacher
-- [ ] Wall page: composer, feed (live newest 20 + "Ver más"), pinned section, post dialog with live replies, edit / delete / pin, wall mode setting (teacher board page), "new" badge, empty states, es / en
-- [ ] Privacy notice: the wall is visible to the whole class
-- [ ] Tests: unit (feed merge / order, schemas, backup v2), rules (≈ 15), Worker, e2e (post with pictures, reply, edit / delete, teacher pins and moderates, "only the teacher posts", archived board read-only, classmate visibility)
-- [ ] **Your turn:** `npm run worker:deploy` · `npm run deploy:rules` (+ index for pinned posts) · `npm run deploy` · acceptance test
+- [ ] Model + Zod schemas: `ClassDoc`, `ClassSlideDoc`, `ContributionDoc`, limits (5 slides, 3 per person per slide, 1000 chars, 1 picture)
+- [ ] Rules: read = board teacher or member · classes and prompt slides: board teacher only · contributions: create with id `{slideId}_{myUid}_{1..3}`, author fields = me, `createdAt == request.time`, slide exists, class `open`, board writable (teacher: always) · update: the author (same checks, can't move it to another slide or change the author) or the teacher (`text` / `image` / `color` / `editedByTeacher`) · delete: the author while open, or the teacher
+- [ ] Worker: `scope: 'class'` in `POST /uploads/sign` (member or board teacher, board writable) → `pbl/{env}/{boardId}/class/{assetId}`; Worker tests + integration test
+- [ ] Asset registry: `kind: 'class'`, `ownerUid`; rules let members and teachers register their class uploads; replacing / deleting a picture marks it `orphaned`
+- [ ] Orphan detection, storage page, purge (app + CLI) include `classes`; removing a student keeps their contributions (D15)
+- [ ] **Backup v2** (`pbl.boardBackup` version 2): classes, prompt slides and contributions (text, picture refs, author name and role); restore accepts v1 and v2
+- [ ] Pages: classes list, class editor (teacher: title, date, slides, prompts, open / close), class page (tabs, prompt, live cards, "Participar", edit / delete), present view; es / en; mobile layout
+- [ ] Privacy notice: contributions are visible to the whole class
+- [ ] Tests: unit (limits, id helper, ordering, backup v2), rules (≈ 18), Worker, e2e (teacher creates a class with 3 slides; two students participate with text + picture; a student edits / deletes only their own; the 4th contribution on a slide is refused; teacher edits / deletes any; closed class is read-only; present view updates live; archived board read-only) + the full existing suite
+- [ ] **Your turn:** `npm run worker:deploy` · `npm run deploy:rules` · `npm run deploy` · acceptance test
 
-**Free-tier budget (40 students, busy class day)**
+**Free-tier budget (40 students, one class with 5 slides)**
 
-| What                                                         | Estimate                                 | Limit      |
-| ------------------------------------------------------------ | ---------------------------------------- | ---------- |
-| Writes: 40 posts + 150 replies (+ counters, registry, badge) | ~600 / day                               | 20K / day  |
-| Reads: each new post or reply × open walls (~40)             | ~8K / day, plus ~20 per wall opened      | 50K / day  |
-| Cloudinary: 80 pictures × ~400 KB stored, ~50 KB per view    | ~32 MB stored, ~1 GB delivered per month | 25 credits |
+| What                                                                | Estimate                                 | Limit      |
+| ------------------------------------------------------------------- | ---------------------------------------- | ---------- |
+| Writes: ~2 contributions per student per slide + edits + registry   | ~500 per class                           | 20K / day  |
+| Reads: each contribution × people on that slide (≤ 41) + first load | ~10–20K per class                        | 50K / day  |
+| Cloudinary: ~100 pictures × ~400 KB stored, ~50 KB per view         | ~40 MB stored, ~2 GB delivered per month | 25 credits |
 
-**Risks:** no rate limit in the rules (a student could flood the wall) → the teacher deletes and can switch the wall to "only the teacher posts" or off; free-text moderation is manual.
+Two big classes on the same day still fit; the usage meter (M7) shows Firestore and Cloudinary use.
+
+**Risks:** reads grow with "contributions × viewers" (mitigated by listening only to the slide on screen and the 3-per-slide cap); moderation is manual (the teacher closes the class or deletes cards).
 
 ### M9 — More teachers (when needed)
 
@@ -783,8 +803,8 @@ A Padlet-style feed **per board** where the teacher and the students talk: annou
 
 ### Later
 
-- Comments and reactions on cards (like Padlet); reactions (👍 ❤️ 💡) on wall posts
-- Wall: attachments other than pictures (PDF), @mentions, email digest
+- Comments and reactions on cards (like Padlet); reactions (👍 ❤️ 💡) on class contributions
+- Class participation: free placement of cards on the slide, anonymous mode, attachments (PDF), export a class to PDF
 - Slide templates, board themes
 - Export a space to PDF
 - Self-service email linking (one-time code from account A, entered in account B)
@@ -990,31 +1010,31 @@ Full review of the plan for consistency, free-tier limits and security, done bef
 
 ## Decisions (all answered ✅)
 
-D12–D17 (class wall, M10) are **proposed** (⏳): confirm or change them before Loop 8.
+D12–D17 (class participation, M10) are **proposed** (⏳): confirm or change them before Loop 8.
 
-| #   | Decision                  | Answer                                                                                                                                |
-| --- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| D1  | Image storage             | **Cloudinary**, signed uploads via the media-api                                                                                      |
-| D2  | Slide editor              | **Excalidraw** canvas per slide (MIT, free, no key, no watermark)                                                                     |
-| D3  | Text                      | **Excalidraw's text tool** (font, size, color, align; no inline bold/italic)                                                          |
-| D4  | Teacher / admin roles     | **Recognized by email**: `staffEmails/{email}` (you = admin via CLI); everyone else signs in as a student                             |
-| D5  | Classmates' spaces        | **Visible read-only**                                                                                                                 |
-| D6  | Joining a board           | **A: teacher adds students (auto-join) + B: invite link**                                                                             |
-| D7  | Language                  | **Spanish (default) + English**                                                                                                       |
-| D8  | Import / export           | **JSON** + quick-add paste box                                                                                                        |
-| D9  | Students with 2 emails    | **Person + email index**                                                                                                              |
-| D10 | First admin               | **Your personal Gmail**, via `npm run admin -- setup` from this console                                                               |
-| D11 | Removing old data         | **Teacher dashboard (Storage page) + local CLI**, via the media-api                                                                   |
-| Q1  | Free canvas               | **Excalidraw** (the whole project must be free, academic use)                                                                         |
-| Q2  | Cloudflare Worker         | **Yes**, built step by step (M4 walkthrough)                                                                                          |
-| Q3  | Old boards                | **Auto-move to "Proyectos archivados" after 90 days without use** (configurable); purge is manual, after a backup                     |
-| Q4  | Default language          | **Spanish**                                                                                                                           |
-| Q5  | Admin email               | **Your personal Gmail**                                                                                                               |
-| D12 | ⏳ Who writes on the wall | **Proposed:** everyone in the board; the teacher can switch a board to "only the teacher posts" (students reply) or turn the wall off |
-| D13 | ⏳ Wall content           | **Proposed:** plain text + up to 4 pictures per post, one level of replies (text + 1 picture); no reactions or files yet (Later)      |
-| D14 | ⏳ Wall visibility        | **Proposed:** the whole board (students + teachers); private feedback stays in the slide notes (F11)                                  |
-| D15 | ⏳ Removed students       | **Proposed:** their wall posts stay (name kept); the teacher can delete them                                                          |
-| D16 | ⏳ Backup                 | **Proposed:** the wall is part of the board backup (v2) and is restored with it                                                       |
-| D17 | ⏳ "New posts" alert      | **Proposed:** in-app dot only (free, no server); no email or push notifications                                                       |
+| #   | Decision                | Answer                                                                                                                                                             |
+| --- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| D1  | Image storage           | **Cloudinary**, signed uploads via the media-api                                                                                                                   |
+| D2  | Slide editor            | **Excalidraw** canvas per slide (MIT, free, no key, no watermark)                                                                                                  |
+| D3  | Text                    | **Excalidraw's text tool** (font, size, color, align; no inline bold/italic)                                                                                       |
+| D4  | Teacher / admin roles   | **Recognized by email**: `staffEmails/{email}` (you = admin via CLI); everyone else signs in as a student                                                          |
+| D5  | Classmates' spaces      | **Visible read-only**                                                                                                                                              |
+| D6  | Joining a board         | **A: teacher adds students (auto-join) + B: invite link**                                                                                                          |
+| D7  | Language                | **Spanish (default) + English**                                                                                                                                    |
+| D8  | Import / export         | **JSON** + quick-add paste box                                                                                                                                     |
+| D9  | Students with 2 emails  | **Person + email index**                                                                                                                                           |
+| D10 | First admin             | **Your personal Gmail**, via `npm run admin -- setup` from this console                                                                                            |
+| D11 | Removing old data       | **Teacher dashboard (Storage page) + local CLI**, via the media-api                                                                                                |
+| Q1  | Free canvas             | **Excalidraw** (the whole project must be free, academic use)                                                                                                      |
+| Q2  | Cloudflare Worker       | **Yes**, built step by step (M4 walkthrough)                                                                                                                       |
+| Q3  | Old boards              | **Auto-move to "Proyectos archivados" after 90 days without use** (configurable); purge is manual, after a backup                                                  |
+| Q4  | Default language        | **Spanish**                                                                                                                                                        |
+| Q5  | Admin email             | **Your personal Gmail**                                                                                                                                            |
+| D12 | ⏳ Participation format | **Proposed:** each participation slide = the teacher's prompt + a grid of contribution cards (not a shared Excalidraw canvas, which would overwrite people's work) |
+| D13 | ⏳ Limits               | **Proposed:** 1–5 slides per class; up to 3 contributions per student per slide; text ≤ 1000 + 1 picture                                                           |
+| D14 | ⏳ Visibility           | **Proposed:** the whole class sees every contribution with the author's name (anonymous mode: Later)                                                               |
+| D15 | ⏳ Teacher powers       | **Proposed:** edit / delete any contribution (marked "editado por el docente"), open / close each class; a removed student's contributions stay                    |
+| D16 | ⏳ Backup               | **Proposed:** classes and contributions are part of the board backup (v2) and restored with it                                                                     |
+| D17 | ⏳ Where it lives       | **Proposed:** a "Clases" section in each board (not a separate board), so members and rules are reused                                                             |
 
 **Next step:** see the Phase 2 status line at the top and the latest loop report.
