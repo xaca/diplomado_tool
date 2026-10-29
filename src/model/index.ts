@@ -29,6 +29,10 @@ export const paths = {
     `${COLLECTIONS.boards}/${boardId}/spaces/${studentId}/slides`,
   slide: (boardId: string, studentId: string, slideId: string) =>
     `${COLLECTIONS.boards}/${boardId}/spaces/${studentId}/slides/${slideId}`,
+  notes: (boardId: string, studentId: string) =>
+    `${COLLECTIONS.boards}/${boardId}/spaces/${studentId}/notes`,
+  note: (boardId: string, studentId: string, noteId: string) =>
+    `${COLLECTIONS.boards}/${boardId}/spaces/${studentId}/notes/${noteId}`,
   joinCode: (code: string) => `${COLLECTIONS.joinCodes}/${code}`,
 }
 
@@ -135,6 +139,23 @@ export const MAX_IMAGES_PER_SLIDE = 30
 /** Hard limit enforced by the rules; the editor warns from SLIDE_WARN_BYTES */
 export const MAX_SLIDE_BYTES = 900_000
 export const SLIDE_WARN_BYTES = 800_000
+
+/**
+ * boards/{boardId}/spaces/{studentId}/notes/{noteId}: the teacher's annotation on one slide.
+ * Private: only the board's teachers and the space's owner read them.
+ */
+export type NoteDoc = {
+  slideId: string
+  text: string
+  authorEmail: string
+  authorName: string
+  createdAt: unknown
+  updatedAt: unknown
+}
+
+export const MAX_NOTE_LENGTH = 2000
+
+export const noteTextSchema = z.string().trim().min(1).max(MAX_NOTE_LENGTH)
 
 export type AssetKind = 'cover' | 'slide'
 export type AssetStatus = 'active' | 'orphaned' | 'deleted'

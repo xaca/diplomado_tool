@@ -113,6 +113,7 @@ boards/{boardId}/studentEmails/{email}          email → studentId (lookup inde
 boards/{boardId}/members/{uid}                  a login account linked to a student
 boards/{boardId}/spaces/{studentId}             one space per student
 boards/{boardId}/spaces/{studentId}/slides/{slideId}   one Excalidraw scene per slide
+boards/{boardId}/spaces/{studentId}/notes/{noteId}     teacher's note on one slide (teacher + owner only)
 boards/{boardId}/assets/{assetId}               registry of every image uploaded in this board
 
 joinCodes/{code}                                invite code → boardId

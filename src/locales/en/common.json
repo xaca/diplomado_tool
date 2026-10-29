@@ -236,6 +236,7 @@
     "delete": "Delete slide {{number}}",
     "deleteTitle": "Delete slide {{number}}?",
     "deleteHint": "This can't be undone.",
+    "deleteHintNotes": "This can't be undone. The teacher's notes on it are deleted too.",
     "deleteConfirm": "Delete",
     "max": "Up to {{count}} slides per space.",
     "tooManyImages": "Up to 30 images per slide.",
@@ -250,6 +251,18 @@
       "error": "Couldn't save. Retrying…",
       "tooLarge": "Slide too large: remove some elements or split it"
     }
+  },
+  "notes": {
+    "title": "Teacher's notes",
+    "new": "Add a note",
+    "add": "Add",
+    "label": "Note",
+    "placeholder": "Write your comment on this slide…",
+    "edit": "Edit note",
+    "delete": "Delete note",
+    "edited": "edited",
+    "count_one": "{{count}} note",
+    "count_other": "{{count}} notes"
   },
   "presenter": {
     "present": "Present",

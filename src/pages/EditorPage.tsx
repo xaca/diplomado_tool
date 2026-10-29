@@ -1,7 +1,7 @@
 import { lazy, Suspense, useLayoutEffect, useRef, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, Eye, Plus } from 'lucide-react'
+import { ArrowLeft, Eye, MessageSquareText, Plus } from 'lucide-react'
 import { doc } from 'firebase/firestore'
 import { toast } from 'sonner'
 import {
@@ -20,6 +20,8 @@ import { UploadError } from '@/features/assets/upload'
 import { recordBoardActivity } from '@/features/boards/api'
 import { useBoard } from '@/features/boards/hooks'
 import { isWritable, lifecycleOf } from '@/features/boards/lifecycle'
+import { SlideNotes } from '@/features/notes/components/SlideNotes'
+import { useNotes } from '@/features/notes/hooks'
 import {
   addSlide,
   deleteSlide,
@@ -53,6 +55,12 @@ export function EditorPage() {
     boardId && studentId ? doc(db, paths.space(boardId, studentId)) : null
   const space = useLiveDoc<SpaceDoc>(ref, `space:${boardId}:${studentId}`)
   const slides = useSlides(boardId, studentId, space.data?.slideOrder)
+  const notes = useNotes(
+    boardId,
+    studentId,
+    !!me.studentId && me.studentId === studentId,
+  )
+  const [showNotes, setShowNotes] = useState(true)
 
   const canvas = useRef<SlideCanvasHandle>(null)
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -96,6 +104,7 @@ export function EditorPage() {
   const order = space.data.slideOrder
   const current =
     slides.data.find((slide) => slide.id === selectedId) ?? slides.data[0]
+  const currentNotes = current ? (notes.bySlide.get(current.id) ?? []) : []
 
   async function run(action: () => Promise<void>) {
     setBusy(true)
@@ -142,7 +151,13 @@ export function EditorPage() {
       const rest = order.filter((id) => id !== slide.id)
       if (slide.id === current?.id)
         setSelectedId(rest[Math.min(index, rest.length - 1)] ?? null)
-      await deleteSlide(boardId, studentId, order, slide.id)
+      await deleteSlide(
+        boardId,
+        studentId,
+        order,
+        slide.id,
+        (notes.bySlide.get(slide.id) ?? []).map((note) => note.id),
+      )
     })
   }
 
@@ -187,6 +202,17 @@ export function EditorPage() {
           error={status.error}
           bytes={bytes}
         />
+        {currentNotes.length > 0 && (
+          <Button
+            variant={showNotes ? 'secondary' : 'outline'}
+            size="sm"
+            aria-pressed={showNotes}
+            onClick={() => setShowNotes((value) => !value)}
+          >
+            <MessageSquareText />
+            {t('notes.count', { count: currentNotes.length })}
+          </Button>
+        )}
         <Button
           variant="outline"
           size="sm"
@@ -242,6 +268,17 @@ export function EditorPage() {
             </div>
           )}
         </div>
+        {current && showNotes && currentNotes.length > 0 && (
+          <aside className="max-h-48 shrink-0 overflow-y-auto border-t p-2 md:max-h-none md:w-72 md:border-t-0 md:border-l">
+            <SlideNotes
+              boardId={boardId}
+              studentId={studentId}
+              slideId={current.id}
+              notes={currentNotes}
+              canWrite={false}
+            />
+          </aside>
+        )}
       </div>
 
       <AlertDialog
@@ -256,7 +293,9 @@ export function EditorPage() {
               })}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {t('slides.deleteHint')}
+              {deleting && notes.bySlide.has(deleting.id)
+                ? t('slides.deleteHintNotes')
+                : t('slides.deleteHint')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

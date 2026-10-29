@@ -334,6 +334,35 @@ service cloud.firestore {
           allow delete: if isBoardTeacher(boardId)
             || (isSpaceOwner(boardId, studentId) && boardIsActive(boardId));
         }
+
+        // ---------- notes/{noteId}: the teacher's annotations on a slide ----------
+        // Private feedback: the board's teachers and the space's owner, never classmates.
+
+        function slidePath(boardId, studentId, slideId) {
+          return /databases/$(database)/documents/boards/$(boardId)/spaces/$(studentId)/slides/$(slideId);
+        }
+
+        match /notes/{noteId} {
+          allow read: if isBoardTeacher(boardId) || isSpaceOwner(boardId, studentId);
+          allow create: if isBoardTeacher(boardId)
+            && request.resource.data.keys().hasOnly(['slideId', 'text', 'authorEmail', 'authorName',
+                'createdAt', 'updatedAt'])
+            && request.resource.data.slideId is string
+            && exists(slidePath(boardId, studentId, request.resource.data.slideId))
+            && isString(request.resource.data.text, 1, 2000)
+            && request.resource.data.authorEmail == myEmail()
+            && isString(request.resource.data.authorName, 1, 200)
+            && request.resource.data.createdAt == request.time
+            && request.resource.data.updatedAt == request.time;
+          allow update: if isBoardTeacher(boardId)
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text', 'updatedAt'])
+            && isString(request.resource.data.text, 1, 2000)
+            && request.resource.data.updatedAt == request.time;
+          // The owner removes them only together with their slide (same batch)
+          allow delete: if isBoardTeacher(boardId)
+            || (isSpaceOwner(boardId, studentId)
+              && !existsAfter(slidePath(boardId, studentId, resource.data.slideId)));
+        }
       }
 
       // ---------- assets/{assetId}: registry of every upload (storage usage, cleanup in M7) ----------

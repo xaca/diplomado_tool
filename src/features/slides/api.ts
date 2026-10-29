@@ -123,14 +123,18 @@ export async function addSlide(
   return ref.id
 }
 
+/** Deletes a slide and the teacher's notes on it (same batch: the rules check the slide is gone). */
 export async function deleteSlide(
   boardId: string,
   studentId: string,
   order: readonly string[],
   slideId: string,
+  noteIds: readonly string[] = [],
 ) {
   const batch = writeBatch(db)
   batch.delete(doc(db, paths.slide(boardId, studentId, slideId)))
+  for (const noteId of noteIds)
+    batch.delete(doc(db, paths.note(boardId, studentId, noteId)))
   updateOrder(
     batch,
     boardId,

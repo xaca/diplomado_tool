@@ -51,9 +51,14 @@ export async function loadBoard(boardId: string) {
     ref.collection('studentEmails').get(),
     ref.collection('members').get(),
   ])
-  const slides = await Promise.all(
-    spaces.docs.map((space) => space.ref.collection('slides').get()),
-  )
+  const [slides, notes] = await Promise.all([
+    Promise.all(
+      spaces.docs.map((space) => space.ref.collection('slides').get()),
+    ),
+    Promise.all(
+      spaces.docs.map((space) => space.ref.collection('notes').get()),
+    ),
+  ])
 
   const snapshot: BoardSnapshot = {
     board: {
@@ -104,7 +109,7 @@ export async function loadBoard(boardId: string) {
     }
   })
   const refs: DocumentReference[] = [
-    ...slides.flatMap((s) => s.docs.map((doc) => doc.ref)),
+    ...[...slides, ...notes].flatMap((s) => s.docs.map((doc) => doc.ref)),
     ...[spaces, members, emails, students, assets].flatMap((s) =>
       s.docs.map((doc) => doc.ref),
     ),

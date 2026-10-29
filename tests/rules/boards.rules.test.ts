@@ -1074,3 +1074,144 @@ describe('rules review (M8)', () => {
     )
   })
 })
+
+describe("teacher's notes on slides", () => {
+  const SEB = { uid: 'seb', email: 'seb@gmail.com' }
+  const notesOf = (db: Firestore) =>
+    collection(db, 'boards', BOARD, 'spaces', 'st_laura', 'notes')
+  const noteRef = (db: Firestore, noteId = 'n1') =>
+    doc(db, 'boards', BOARD, 'spaces', 'st_laura', 'notes', noteId)
+  const slidePath = (db: Firestore, slideId = 's1') =>
+    doc(db, 'boards', BOARD, 'spaces', 'st_laura', 'slides', slideId)
+
+  const note = (overrides: Record<string, unknown> = {}) => ({
+    slideId: 's1',
+    text: 'Buen avance; agrega la fuente del dato.',
+    authorEmail: TEACHER.email,
+    authorName: 'Profe',
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    ...overrides,
+  })
+
+  /** Laura joined, has slide s1, a classmate (Seb) joined too, and one note exists */
+  async function withSlide(withNote = true) {
+    await seed()
+    await autoJoin(as(LAURA), LAURA, 'st_laura')
+    await env.withSecurityRulesDisabled(async (context) => {
+      const db = context.firestore()
+      await setDoc(
+        doc(db, 'boards', BOARD, 'spaces', 'st_laura', 'slides', 's1'),
+        {
+          engine: 'excalidraw',
+          content: '{}',
+          files: {},
+          assetIds: [],
+          bytes: 2,
+          schemaVersion: 1,
+          updatedAt: serverTimestamp(),
+        },
+      )
+      await updateDoc(doc(db, 'boards', BOARD, 'spaces', 'st_laura'), {
+        slideOrder: ['s1'],
+        slideCount: 1,
+      })
+      await setDoc(
+        doc(db, 'boards', BOARD, 'students', 'st_seb'),
+        student([SEB.email]),
+      )
+      await setDoc(doc(db, 'boards', BOARD, 'studentEmails', SEB.email), {
+        email: SEB.email,
+        studentId: 'st_seb',
+      })
+      if (withNote)
+        await setDoc(
+          doc(db, 'boards', BOARD, 'spaces', 'st_laura', 'notes', 'n1'),
+          note(),
+        )
+    })
+    await autoJoin(as(SEB), SEB, 'st_seb')
+  }
+
+  it('the board teacher annotates a slide, edits the text and deletes it', async () => {
+    await withSlide(false)
+    await assertSucceeds(setDoc(noteRef(as(TEACHER)), note()))
+    await assertSucceeds(
+      updateDoc(noteRef(as(TEACHER)), {
+        text: 'Corregido',
+        updatedAt: serverTimestamp(),
+      }),
+    )
+    await assertSucceeds(deleteDoc(noteRef(as(TEACHER))))
+  })
+
+  it('a note must point to an existing slide, be signed by me, bounded and server-timed', async () => {
+    await withSlide(false)
+    const db = as(TEACHER)
+    await assertFails(setDoc(noteRef(db), note({ slideId: 'nope' })))
+    await assertFails(
+      setDoc(noteRef(db), note({ authorEmail: OTHER_TEACHER.email })),
+    )
+    await assertFails(setDoc(noteRef(db), note({ text: '' })))
+    await assertFails(setDoc(noteRef(db), note({ text: 'x'.repeat(2001) })))
+    await assertFails(
+      setDoc(noteRef(db), note({ createdAt: new Date(2030, 0, 1) })),
+    )
+    await assertFails(setDoc(noteRef(db), note({ resolved: true })))
+  })
+
+  it('editing keeps the author and the slide', async () => {
+    await withSlide()
+    await assertFails(
+      updateDoc(noteRef(as(TEACHER)), {
+        authorName: 'Otra',
+        updatedAt: serverTimestamp(),
+      }),
+    )
+    await assertFails(
+      updateDoc(noteRef(as(TEACHER)), {
+        slideId: 's2',
+        updatedAt: serverTimestamp(),
+      }),
+    )
+  })
+
+  it('the owner reads their notes; classmates, other teachers and strangers do not', async () => {
+    await withSlide()
+    await assertSucceeds(getDocs(notesOf(as(LAURA))))
+    await assertSucceeds(getDoc(noteRef(as(TEACHER))))
+    await assertFails(getDocs(notesOf(as(SEB))))
+    await assertFails(getDoc(noteRef(as(SEB))))
+    await assertFails(getDocs(notesOf(as(OTHER_TEACHER))))
+    await assertFails(getDoc(noteRef(as(STRANGER))))
+  })
+
+  it('students never write notes', async () => {
+    await withSlide()
+    await assertFails(
+      setDoc(noteRef(as(LAURA), 'n2'), note({ authorEmail: LAURA.email })),
+    )
+    await assertFails(
+      updateDoc(noteRef(as(LAURA)), {
+        text: 'Todo perfecto',
+        updatedAt: serverTimestamp(),
+      }),
+    )
+    await assertFails(deleteDoc(noteRef(as(LAURA))))
+    await assertFails(deleteDoc(noteRef(as(SEB))))
+  })
+
+  it('the owner deletes them only together with their slide', async () => {
+    await withSlide()
+    const db = as(LAURA)
+    const batch = writeBatch(db)
+    batch.delete(slidePath(db))
+    batch.delete(noteRef(db))
+    batch.update(doc(db, 'boards', BOARD, 'spaces', 'st_laura'), {
+      slideOrder: [],
+      slideCount: 0,
+      updatedAt: serverTimestamp(),
+    })
+    await assertSucceeds(batch.commit())
+  })
+})

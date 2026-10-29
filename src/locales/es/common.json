@@ -236,6 +236,7 @@
     "delete": "Eliminar diapositiva {{number}}",
     "deleteTitle": "¿Eliminar la diapositiva {{number}}?",
     "deleteHint": "No se puede deshacer.",
+    "deleteHintNotes": "No se puede deshacer. Las anotaciones del docente sobre ella también se eliminan.",
     "deleteConfirm": "Eliminar",
     "max": "Máximo {{count}} diapositivas por espacio.",
     "tooManyImages": "Máximo 30 imágenes por diapositiva.",
@@ -250,6 +251,18 @@
       "error": "No se pudo guardar. Reintentando…",
       "tooLarge": "Diapositiva demasiado grande: quita elementos o divídela"
     }
+  },
+  "notes": {
+    "title": "Anotaciones del docente",
+    "new": "Agregar anotación",
+    "add": "Agregar",
+    "label": "Anotación",
+    "placeholder": "Escribe tu comentario sobre esta diapositiva…",
+    "edit": "Editar anotación",
+    "delete": "Eliminar anotación",
+    "edited": "editada",
+    "count_one": "{{count}} anotación",
+    "count_other": "{{count}} anotaciones"
   },
   "presenter": {
     "present": "Presentar",

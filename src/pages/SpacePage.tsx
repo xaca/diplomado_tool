@@ -7,6 +7,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useBoard } from '@/features/boards/hooks'
+import { SlideNotes } from '@/features/notes/components/SlideNotes'
+import { useNotes } from '@/features/notes/hooks'
 import { isWritable, lifecycleOf } from '@/features/boards/lifecycle'
 import { SlidePreview } from '@/features/slides/components/SlidePreview'
 import { useSlides } from '@/features/slides/hooks'
@@ -32,6 +34,10 @@ export function SpacePage() {
   const space = useLiveDoc<SpaceDoc>(ref, `space:${boardId}:${studentId}`)
   const slides = useSlides(boardId, studentId, space.data?.slideOrder)
   const [editing, setEditing] = useState(false)
+  const isMine = !!me.studentId && me.studentId === studentId
+  const teacher = isTeacherRole(role)
+  // The teacher's annotations: private to the teacher and the owner
+  const notes = useNotes(boardId, studentId, teacher || isMine)
 
   if (space.loading || board.loading) {
     return (
@@ -49,8 +55,7 @@ export function SpacePage() {
     )
   }
 
-  const isMine = me.studentId === space.data.id
-  const teacher = isTeacherRole(role)
+  const spaceId = space.data.id
   const canEdit = isMine && !!board.data && isWritable(lifecycleOf(board.data))
 
   return (
@@ -156,6 +161,15 @@ export function SpacePage() {
                 large
                 className="rounded-xl border shadow-sm"
               />
+              {(teacher || isMine) && (
+                <SlideNotes
+                  boardId={boardId}
+                  studentId={spaceId}
+                  slideId={slide.id}
+                  notes={notes.bySlide.get(slide.id) ?? []}
+                  canWrite={teacher}
+                />
+              )}
             </li>
           ))}
         </ol>

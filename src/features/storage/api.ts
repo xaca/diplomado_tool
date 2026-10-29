@@ -47,11 +47,18 @@ export async function loadBoardData(boardId: string): Promise<BoardData> {
     getDocs(collection(db, paths.members(boardId))),
   ])
   if (!board.exists()) throw new Error('board not found')
-  const slides = await Promise.all(
-    spaces.docs.map((space) =>
-      getDocs(collection(db, paths.slides(boardId, space.id))),
+  const [slides, notes] = await Promise.all([
+    Promise.all(
+      spaces.docs.map((space) =>
+        getDocs(collection(db, paths.slides(boardId, space.id))),
+      ),
     ),
-  )
+    Promise.all(
+      spaces.docs.map((space) =>
+        getDocs(collection(db, paths.notes(boardId, space.id))),
+      ),
+    ),
+  ])
   const boardData = board.data() as BoardDoc
 
   return {
@@ -108,7 +115,9 @@ export async function loadBoardData(boardId: string): Promise<BoardData> {
       snapshot.docs.map((slide) => (slide.data() as SlideDoc).assetIds ?? []),
     ),
     refs: [
-      ...slides.flatMap((snapshot) => snapshot.docs.map((slide) => slide.ref)),
+      ...[...slides, ...notes].flatMap((snapshot) =>
+        snapshot.docs.map((d) => d.ref),
+      ),
       ...spaces.docs.map((d) => d.ref),
       ...members.docs.map((d) => d.ref),
       ...emails.docs.map((d) => d.ref),

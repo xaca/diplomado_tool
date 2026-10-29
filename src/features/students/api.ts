@@ -129,14 +129,17 @@ export async function updateStudent(
   void recordBoardActivity(boardId)
 }
 
-/** Deletes a space's slides (a deleted document keeps its subcollections in Firestore). */
+/** Deletes a space's slides and notes (a deleted document keeps its subcollections in Firestore). */
 async function deleteSlides(
   batch: WriteBatch,
   boardId: string,
   studentId: string,
 ) {
-  const slides = await getDocs(collection(db, paths.slides(boardId, studentId)))
-  for (const slide of slides.docs) batch.delete(slide.ref)
+  const [slides, notes] = await Promise.all([
+    getDocs(collection(db, paths.slides(boardId, studentId))),
+    getDocs(collection(db, paths.notes(boardId, studentId))),
+  ])
+  for (const item of [...slides.docs, ...notes.docs]) batch.delete(item.ref)
 }
 
 /**
