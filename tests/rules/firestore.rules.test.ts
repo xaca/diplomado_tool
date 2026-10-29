@@ -114,6 +114,20 @@ describe('users/{uid}', () => {
     )
   })
 
+  it('the profile page sets a bounded name (or null → Google name) and the photo switch', async () => {
+    const ref = doc(as(STUDENT), 'users', STUDENT.uid)
+    await assertSucceeds(setDoc(ref, profile(STUDENT.email)))
+    await assertSucceeds(
+      setDoc(ref, { profileName: 'Lau', showPhoto: false }, { merge: true }),
+    )
+    await assertSucceeds(setDoc(ref, { profileName: null }, { merge: true }))
+    await assertFails(setDoc(ref, { profileName: '' }, { merge: true }))
+    await assertFails(
+      setDoc(ref, { profileName: 'x'.repeat(121) }, { merge: true }),
+    )
+    await assertFails(setDoc(ref, { showPhoto: 'no' }, { merge: true }))
+  })
+
   it('signed-out visitors read nothing', async () => {
     await assertFails(
       getDoc(

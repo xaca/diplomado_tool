@@ -1,5 +1,6 @@
+import { useNavigate } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import { LogOut, RefreshCw } from 'lucide-react'
+import { LogOut, RefreshCw, UserRound } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
@@ -14,6 +15,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useAuthActions, useLanguage } from '@/features/auth/hooks'
+import { displayNameOf } from '@/features/profile/api'
+import { useProfile } from '@/features/profile/hooks'
 import { SUPPORTED_LANGUAGES } from '@/lib/i18n'
 import { initials } from '@/lib/initials'
 import { useAuth } from '@/providers/auth-context'
@@ -23,10 +26,13 @@ export function UserMenu() {
   const { user, role } = useAuth()
   const { signOut, switchAccount } = useAuthActions()
   const { language, setLanguage } = useLanguage()
+  const profile = useProfile()
+  const navigate = useNavigate()
 
   if (!user) return null
 
-  const fallback = initials(user.displayName ?? user.email ?? '')
+  const name = displayNameOf(user, profile.data)
+  const photoURL = profile.data?.showPhoto === false ? null : user.photoURL
 
   return (
     <DropdownMenu>
@@ -42,11 +48,11 @@ export function UserMenu() {
       >
         <Avatar>
           <AvatarImage
-            src={user.photoURL ?? undefined}
+            src={photoURL ?? undefined}
             alt=""
             referrerPolicy="no-referrer"
           />
-          <AvatarFallback>{fallback}</AvatarFallback>
+          <AvatarFallback>{initials(name)}</AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
 
@@ -56,7 +62,10 @@ export function UserMenu() {
             <span className="text-xs font-normal text-muted-foreground">
               {t('auth.signedInAs')}
             </span>
-            <span className="truncate">{user.email}</span>
+            <span className="truncate">{name}</span>
+            <span className="truncate text-xs font-normal text-muted-foreground">
+              {user.email}
+            </span>
             {role && (
               <span className="text-xs font-normal text-muted-foreground">
                 {t(`roles.${role}`)}
@@ -85,6 +94,10 @@ export function UserMenu() {
 
         <DropdownMenuSeparator />
 
+        <DropdownMenuItem onClick={() => void navigate('/me')}>
+          <UserRound />
+          {t('profile.title')}
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={switchAccount}>
           <RefreshCw />
           {t('auth.switchAccount')}

@@ -11,6 +11,7 @@ import {
   writeBatch,
 } from 'firebase/firestore'
 import type { User } from 'firebase/auth'
+import { cardName, cardPhoto, fetchProfile } from '@/features/profile/api'
 import { normalizeEmail } from '@/lib/collections'
 import { db } from '@/lib/firebase'
 import type { WithId } from '@/lib/firestore-hooks'
@@ -31,17 +32,22 @@ function emailOf(user: User) {
   return normalizeEmail(user.email ?? '')
 }
 
-function newSpace(studentId: string, name: string, user: User) {
+/** A new, empty card with my profile's name and photo (features/profile/api.ts) */
+async function newSpace(
+  studentId: string,
+  user: User,
+  student: StudentDoc | undefined,
+) {
+  const profile = await fetchProfile(user.uid)
   return {
-    ...defaultSpace(studentId, name, user.photoURL),
+    ...defaultSpace(
+      studentId,
+      cardName(user, profile, student),
+      cardPhoto(user, profile),
+    ),
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   }
-}
-
-/** The name on the card: the teacher's spelling, else the Google account's. */
-function cardName(student: StudentDoc | undefined, user: User) {
-  return student?.displayName ?? user.displayName ?? emailOf(user)
 }
 
 /**
@@ -56,7 +62,7 @@ async function ensureSpace(user: User, boardId: string, studentId: string) {
     await writeBatch(db)
       .set(
         spaceRef,
-        newSpace(studentId, cardName(student.data() as StudentDoc, user), user),
+        await newSpace(studentId, user, student.data() as StudentDoc),
       )
       .commit()
   } catch (error) {
@@ -76,6 +82,8 @@ async function linkAccount(user: User, boardId: string, studentId: string) {
   // A second account of the same student finds the card already there
   const firstAccount = (student?.linkedUids ?? []).length === 0
 
+  const card = firstAccount ? await newSpace(studentId, user, student) : null
+
   const writeLink = (withCard: boolean) => {
     const batch = writeBatch(db)
     batch.set(memberRef, {
@@ -89,11 +97,8 @@ async function linkAccount(user: User, boardId: string, studentId: string) {
       status: 'joined',
       joinedAt: serverTimestamp(),
     })
-    if (withCard)
-      batch.set(
-        doc(db, paths.space(boardId, studentId)),
-        newSpace(studentId, cardName(student, user), user),
-      )
+    if (withCard && card)
+      batch.set(doc(db, paths.space(boardId, studentId)), card)
     return batch.commit()
   }
 
@@ -208,10 +213,10 @@ export async function joinWithCode(user: User, rawCode: string) {
   }
 
   const studentRef = doc(collection(db, paths.students(boardId)))
-  const name = user.displayName || emailOf(user).split('@')[0]
+  const card = await newSpace(studentRef.id, user, undefined)
   const batch = writeBatch(db)
   batch.set(studentRef, {
-    displayName: name,
+    displayName: card.ownerName,
     emails: [emailOf(user)],
     group: '',
     status: 'joined',
@@ -231,11 +236,7 @@ export async function joinWithCode(user: User, rawCode: string) {
     email: emailOf(user),
     joinedAt: serverTimestamp(),
   })
-  batch.set(doc(db, paths.space(boardId, studentRef.id)), {
-    ...defaultSpace(studentRef.id, name, user.photoURL),
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-  })
+  batch.set(doc(db, paths.space(boardId, studentRef.id)), card)
   try {
     await batch.commit()
   } catch {

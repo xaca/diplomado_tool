@@ -528,7 +528,8 @@ describe('spaces — editing the card (M3)', () => {
     await assertFails(updateDoc(ref, edit({ color: '#000000' })))
     await assertFails(updateDoc(ref, edit({ title: 'x'.repeat(121) })))
     await assertFails(updateDoc(ref, edit({ summary: 'x'.repeat(1001) })))
-    await assertFails(updateDoc(ref, edit({ ownerName: 'Otra persona' })))
+    await assertFails(updateDoc(ref, edit({ ownerName: '' })))
+    await assertFails(updateDoc(ref, edit({ ownerName: 'x'.repeat(121) })))
     await assertFails(updateDoc(ref, edit({ slideCount: 99 })))
   })
 
@@ -554,7 +555,7 @@ describe('spaces — editing the card (M3)', () => {
     )
   })
 
-  it('the teacher can only sync the name; a student cannot rename themselves', async () => {
+  it('the teacher can only sync the name; the student renames their card from their profile', async () => {
     await joined()
     await assertSucceeds(
       updateDoc(doc(as(TEACHER), 'boards', BOARD, 'spaces', 'st_laura'), {
@@ -564,6 +565,14 @@ describe('spaces — editing the card (M3)', () => {
     await assertFails(
       updateDoc(doc(as(TEACHER), 'boards', BOARD, 'spaces', 'st_laura'), {
         title: 'x',
+      }),
+    )
+    // /me: name + photo, with the server time like any card edit
+    await assertSucceeds(
+      updateDoc(doc(as(LAURA), 'boards', BOARD, 'spaces', 'st_laura'), {
+        ownerName: 'Lau',
+        ownerPhotoURL: null,
+        updatedAt: serverTimestamp(),
       }),
     )
     await assertFails(

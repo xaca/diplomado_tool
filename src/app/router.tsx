@@ -9,6 +9,7 @@ import { LoginPage } from '@/pages/LoginPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { PresenterPage } from '@/pages/PresenterPage'
 import { PrivacyPage } from '@/pages/PrivacyPage'
+import { ProfilePage } from '@/pages/ProfilePage'
 import { SpacePage } from '@/pages/SpacePage'
 import { StudentHomePage } from '@/pages/StudentHomePage'
 import {
@@ -38,6 +39,7 @@ export const router = createBrowserRouter([
             element: <HomeRedirect studentHome={<StudentHomePage />} />,
           },
           { path: 'join/:code', element: <JoinPage /> },
+          { path: 'me', element: <ProfilePage /> },
           { path: 'b/:boardId', element: <BoardPage /> },
           { path: 'b/:boardId/s/:studentId', element: <SpacePage /> },
           {

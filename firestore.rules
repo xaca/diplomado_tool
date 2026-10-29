@@ -72,9 +72,12 @@ service cloud.firestore {
 
     function validUser() {
       let data = request.resource.data;
-      return data.keys().hasOnly(['displayName', 'email', 'photoURL', 'locale', 'createdAt', 'lastLoginAt'])
+      return data.keys().hasOnly(['displayName', 'email', 'photoURL', 'locale', 'profileName', 'showPhoto',
+          'createdAt', 'lastLoginAt'])
         && data.email == myEmail()
         && (!('displayName' in data) || data.displayName == null || isString(data.displayName, 0, 200))
+        && (!('profileName' in data) || data.profileName == null || isString(data.profileName, 1, 120))
+        && (!('showPhoto' in data) || data.showPhoto is bool)
         && (!('photoURL' in data) || data.photoURL == null || isHttpsUrl(data.photoURL))
         && (!('locale' in data) || data.locale in ['es', 'en']);
     }
@@ -290,11 +293,12 @@ service cloud.firestore {
               && request.resource.data.slideOrder == [] && request.resource.data.slideCount == 0)
         );
         allow update: if validSpace(studentId) && (
-          // the student edits their card and the order of their slides
+          // the student edits their card and the order of their slides (and their name, from /me)
           (isSpaceOwner(boardId, studentId) && boardIsActive(boardId)
             && request.resource.data.updatedAt == request.time
             && request.resource.data.diff(resource.data).affectedKeys()
-                 .hasOnly(['title', 'summary', 'color', 'ownerPhotoURL', 'cover', 'slideOrder', 'slideCount', 'updatedAt']))
+                 .hasOnly(['title', 'summary', 'color', 'ownerName', 'ownerPhotoURL', 'cover', 'slideOrder',
+                   'slideCount', 'updatedAt']))
           // the teacher renames the student → keep the card name in sync
           || (isBoardTeacher(boardId)
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ownerName']))

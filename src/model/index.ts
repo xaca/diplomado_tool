@@ -34,6 +34,20 @@ export const paths = {
 
 // ---------- documents (as stored; timestamps are SDK-specific, typed as unknown) ----------
 
+/** users/{uid}: the Google fields are refreshed on every login; the profile fields never are */
+export type UserDoc = {
+  displayName: string
+  email: string
+  photoURL: string | null
+  locale?: 'es' | 'en'
+  /** Name chosen on /me (null → the Google name) */
+  profileName?: string | null
+  /** Show the Google photo on my cards (default true) */
+  showPhoto?: boolean
+  createdAt: unknown
+  lastLoginAt: unknown
+}
+
 export type BoardStatus = 'active' | 'locked' | 'archived'
 
 export type BoardDoc = {
@@ -161,6 +175,13 @@ export const boardInputSchema = z.object({
   description: z.string().trim().max(500).default(''),
 })
 export type BoardInput = z.infer<typeof boardInputSchema>
+
+/** Profile page (/me). An empty name means "use my Google name". */
+export const userProfileSchema = z.object({
+  name: z.string().trim().max(120),
+  showPhoto: z.boolean(),
+})
+export type UserProfile = z.infer<typeof userProfileSchema>
 
 export const studentInputSchema = z.object({
   name: z.string().trim().min(1).max(120),

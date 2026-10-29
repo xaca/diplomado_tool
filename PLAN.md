@@ -122,7 +122,8 @@ joinCodes/{code}                                invite code → boardId
 
 ```ts
 users/{uid}
-{ displayName, email, photoURL, locale: 'es' | 'en', createdAt, lastLoginAt }
+{ displayName, email, photoURL, locale: 'es' | 'en', createdAt, lastLoginAt,   // Google fields: refreshed on every login
+  profileName?, showPhoto? }                                                      // set on /me; follow the student to their cards
 
 staffEmails/{email}                       // lowercased
 { email, displayName, role: 'admin' | 'teacher', addedAt }   // exists → this email is a teacher
@@ -443,7 +444,7 @@ Tested with `@firebase/rules-unit-testing` on the emulator before deploying. **D
 | `/login`                           | Google sign-in (account chooser always shown)                                                  | public                        |
 | `/`                                | My boards + **Proyectos archivados** section                                                   | signed in                     |
 | `/join/:code`                      | Invite link                                                                                    | signed in                     |
-| `/me`                              | Profile: language, linked emails, switch account                                               | signed in                     |
+| `/me`                              | Profile: name, photo on cards, language                                                        | signed in                     |
 | `/b/:boardId`                      | **Dashboard** (cards grid)                                                                     | member / board teacher        |
 | `/b/:boardId/s/:studentId`         | View a space (read-only)                                                                       | member / board teacher        |
 | `/b/:boardId/s/:studentId/edit`    | **Editor** (Excalidraw per slide)                                                              | the student                   |

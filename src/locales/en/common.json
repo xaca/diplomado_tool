@@ -36,6 +36,18 @@
     "profileError": "Couldn't load your profile. Check your connection and try again.",
     "privacyLink": "Privacy notice"
   },
+  "profile": {
+    "title": "My profile",
+    "cardTitle": "How others see you",
+    "hint": "Your name and photo appear on your cards in active boards.",
+    "name": "Name",
+    "nameHint": "Leave it empty to use your Google account name.",
+    "showPhoto": "Show my Google photo",
+    "showPhotoHint": "If you hide it, your cards show your initials.",
+    "saved": "Profile saved",
+    "skipped_one": "{{count}} card in a closed or archived board keeps the old name.",
+    "skipped_other": "{{count}} cards in closed or archived boards keep the old name."
+  },
   "roles": {
     "admin": "Teacher (admin)",
     "teacher": "Teacher",

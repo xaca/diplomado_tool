@@ -36,6 +36,18 @@
     "profileError": "No se pudo cargar tu perfil. Revisa tu conexión e inténtalo de nuevo.",
     "privacyLink": "Aviso de privacidad"
   },
+  "profile": {
+    "title": "Mi perfil",
+    "cardTitle": "Cómo te ven los demás",
+    "hint": "Tu nombre y foto aparecen en tus tarjetas de los tableros activos.",
+    "name": "Nombre",
+    "nameHint": "Déjalo vacío para usar el nombre de tu cuenta de Google.",
+    "showPhoto": "Mostrar mi foto de Google",
+    "showPhotoHint": "Si la ocultas, tus tarjetas muestran tus iniciales.",
+    "saved": "Perfil guardado",
+    "skipped_one": "{{count}} tarjeta de un tablero cerrado o archivado conserva el nombre anterior.",
+    "skipped_other": "{{count}} tarjetas de tableros cerrados o archivados conservan el nombre anterior."
+  },
   "roles": {
     "admin": "Docente (admin)",
     "teacher": "Docente",
