@@ -44,3 +44,7 @@ playwright-report
 
 # Excalidraw fonts, copied by vite.config.ts
 public/excalidraw-assets/
+
+# Board backups downloaded from the app (students' names and emails)
+backup/
+*.backup.json
