@@ -219,9 +219,8 @@ test.describe('M16 · polls and ready to present', () => {
     const sebastian = await newPage(browser, 'scetina@uni.edu.co')
     await sebastian.goto(`${boardUrl}/s/st_sebastian`)
     await sebastian.getByTestId('ready-toggle').click()
-    await expect(
-      sebastian.getByText('Marcaste tus diapositivas como listas'),
-    ).toBeVisible()
+    // M20: marking them ready is cheered
+    await expect(sebastian.locator('.cheer-toast')).toBeVisible()
 
     await signIn(page, DEMO.teacher)
     await page.goto(boardUrl)

@@ -62,7 +62,10 @@ test.describe('M14 · embeds that work', () => {
     await dialog
       .getByRole('button', { name: 'Insertar en la diapositiva' })
       .click()
-    await expect(page.getByText('Contenido insertado')).toBeVisible()
+    // The first embed is cheered (M20); later ones say "Contenido insertado"
+    await expect(
+      page.locator('[data-sonner-toast]').filter({ hasText: /contenido/i }),
+    ).toBeVisible()
 
     await expect(page.getByTestId('save-status')).toHaveText('Guardado', {
       timeout: 15_000,

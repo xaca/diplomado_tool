@@ -30,7 +30,8 @@ test.describe('M11 · Design Thinking stage', () => {
     await expect(dialog.getByText('¿En qué etapa vas?')).toBeVisible()
     await dialog.getByRole('button', { name: /Ideando/ }).click()
     await dialog.getByRole('button', { name: 'Guardar' }).click()
-    await expect(page.getByText('Tarjeta guardada')).toBeVisible()
+    // M20: a new stage is cheered (instead of "Tarjeta guardada")
+    await expect(page.locator('.cheer-toast')).toContainText('Ideando')
 
     await expect(mine.getByTestId('stage-avatar')).toHaveAttribute(
       'data-stage',
@@ -136,7 +137,8 @@ test.describe('M11 · uploaded profile photo', () => {
     const crop = page.getByRole('dialog')
     await expect(crop.getByTestId('avatar-crop')).toBeVisible()
     await crop.getByRole('button', { name: 'Guardar' }).click()
-    await expect(page.getByText('Foto actualizada')).toBeVisible()
+    // M20: the first photo is cheered (instead of "Foto actualizada")
+    await expect(page.locator('.cheer-toast')).toBeVisible()
     await expect(page.getByRole('radio', { name: 'Mi foto' })).toBeChecked()
 
     // Signed as an avatar, proving a board membership
