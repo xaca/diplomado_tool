@@ -16,7 +16,7 @@ Status legend: `[ ]` to do · `[x]` done
 
 **Where we are:** M1–M8 + extras deployed (rules 2026-10-30, Hosting + Worker 2026-10-31). **Loop 9 (M11) Profile photo & Design Thinking stage: code done, not deployed** ([report](reports/loop-09-m11.md)). Next: **Loop 8 (M10) Class participation**, waiting for D12–D17.
 
-**Your turn now:** `npm run worker:deploy` → `npm run deploy:rules` → `npm run deploy` (in this order), then the [acceptance test](reports/loop-09-m11.md#5-acceptance-test).
+**Your turn now:** `npm run worker:deploy` → `npm run deploy:rules` → `npm run deploy` (in this order; the last one also ships the navigation fix: home link on the app name, "Volver" on Mi perfil), then the [acceptance test](reports/loop-09-m11.md#5-acceptance-test).
 
 **Session 2026-10-30 / 31: new computer + new milestone**
 
@@ -809,6 +809,12 @@ Each milestone ends with something we can try in the browser, plus a commit.
 - [x] **Profile page `/me`** (F10): display name (empty = Google name), "show my Google photo", language; saving renames the student's cards on writable boards (rules: the owner may change `ownerName`) — commit `d511b31`
 - [x] **Teacher's notes on slides** (F11): add / edit / delete under each slide in the space viewer; the student reads them there and next to the slide in the editor; classmates never see them; deleted with their slide, with the student and on purge — commit `df9a562`
 - [ ] **Deploy rules** (you): `npm run deploy:rules` (both extras need it), then `npm run deploy`
+
+### Navigation fix (2026-10-31)
+
+- [x] The app name in the header is a **home link** (`/` → the teacher dashboard or the student's boards)
+- [x] **Mi perfil** has a **"Volver"** link: back to the page you came from, or home when `/me` was opened directly (new tab, reload)
+- [ ] Deploy (you): `npm run deploy` (Hosting only; no rules or Worker change)
 
 ### M10 — Class participation ("Participación en clase", F12) — Loop 8
 
