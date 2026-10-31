@@ -1,7 +1,8 @@
 import { forwardRef, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Users } from 'lucide-react'
-import { StageAvatar } from '@/features/stages/components/StageAvatar'
+import { HomeLink } from '@/components/layout/HomeLink'
+import { UserMenu } from '@/components/layout/UserMenu'
 import { IMAGE_SIZES, imageUrl } from '@/lib/cloudinary'
 import { cn } from '@/lib/utils'
 import type { BoardDoc, TeacherProfile } from '@/model'
@@ -15,18 +16,28 @@ type Props = {
   /** The board background, for the sticky header's backdrop */
   backdrop: string
   sticky: boolean
-  /** Scrolled down: smaller logo and title, no description (sticky only) */
+  /** Scrolled down: one row (logo, title, icon actions), no description (sticky only) */
   compact: boolean
+  /** Wrap labels in <HeaderActionLabel> so they fold to icons when compact or narrow */
   actions: ReactNode
   /** Under the title: stage summary, read-only notice… */
   children?: ReactNode
-  /** Sticky offset in px (below the class clock banner, M16) */
-  stickyTop?: number
+}
+
+/** An action's text: hidden (still the accessible name) on phones and in the compact header. */
+export function HeaderActionLabel({ children }: { children: ReactNode }) {
+  return (
+    <span className="group-data-compact/header:sr-only max-md:sr-only">
+      {children}
+    </span>
+  )
 }
 
 /**
- * Board header (M12): logo, title, description, the board's teachers with the #DOCENTE ring and
- * the actions. Sticky (D29) keeps it on top while scrolling and shrinks it.
+ * The board's header and the page's only one (M12), full width: the app's home link, the actions
+ * and the user menu (the only avatar), then logo, students · teachers, title and description.
+ * Sticky (D29) keeps it on top while scrolling (below the class clock banner) and folds it into
+ * a single row.
  */
 export const BoardHeader = forwardRef<HTMLElement, Props>(function BoardHeader(
   {
@@ -40,7 +51,6 @@ export const BoardHeader = forwardRef<HTMLElement, Props>(function BoardHeader(
     compact,
     actions,
     children,
-    stickyTop = 0,
   },
   ref,
 ) {
@@ -50,93 +60,112 @@ export const BoardHeader = forwardRef<HTMLElement, Props>(function BoardHeader(
     .filter((profile): profile is TeacherProfile => !!profile)
   const shrink = sticky && compact
 
+  const logo = board.logo && (
+    <img
+      src={imageUrl(board.logo, IMAGE_SIZES.logo)}
+      alt=""
+      className={cn(
+        'shrink-0 object-contain',
+        shrink ? 'max-h-8 max-w-16' : 'max-h-16 max-w-32',
+      )}
+      data-intro
+      data-testid="board-logo"
+    />
+  )
+  const heading = (
+    <h1
+      className={cn(
+        'truncate font-heading font-bold',
+        shrink ? 'text-lg sm:text-xl' : 'text-2xl sm:text-4xl',
+      )}
+      data-testid="board-title"
+      data-intro
+    >
+      {title}
+    </h1>
+  )
+
   return (
     <header
       ref={ref}
+      role="banner"
       className={cn(
-        'flex flex-col gap-3 transition-[padding] duration-300',
+        'group/header flex flex-col transition-[padding,box-shadow] duration-300',
+        shrink ? 'gap-2' : 'gap-4',
         tone === 'light' ? 'text-white' : 'text-neutral-900',
+        // Full width, edge to edge (the cards below keep their centered column)
+        'px-4 sm:px-6 lg:px-8',
+        shrink ? 'py-2 shadow-md' : 'py-4',
         sticky &&
-          'sticky top-0 z-30 -mx-4 px-4 backdrop-blur-md sm:-mx-6 sm:px-6',
-        sticky && (shrink ? 'py-2 shadow-md' : 'py-3'),
+          'sticky top-[var(--clock-banner-h,0px)] z-30 backdrop-blur-md',
       )}
       style={
         sticky
           ? {
               backgroundColor: `color-mix(in srgb, ${backdrop} 88%, transparent)`,
-              top: stickyTop,
             }
           : undefined
       }
       data-testid="board-header"
       data-compact={shrink || undefined}
     >
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className="flex min-w-0 items-center gap-4">
-          {board.logo && (
-            <img
-              src={imageUrl(board.logo, IMAGE_SIZES.logo)}
-              alt=""
-              className={cn(
-                'shrink-0 object-contain transition-all duration-300',
-                shrink ? 'max-h-9 max-w-20' : 'max-h-16 max-w-32',
-              )}
-              data-intro
-              data-testid="board-logo"
-            />
+      {/* Top row: home · (compact: logo + title) · actions · user menu */}
+      <div className="flex items-center gap-3">
+        <HomeLink
+          compact={shrink}
+          className={cn('shrink-0', !shrink && 'text-sm opacity-80')}
+        />
+        {shrink && (
+          <div className="flex min-w-0 items-center gap-3">
+            {logo}
+            {heading}
+          </div>
+        )}
+        <div
+          className={cn(
+            'ml-auto flex items-center justify-end gap-2',
+            shrink ? 'shrink-0' : 'flex-wrap',
           )}
+          data-intro
+        >
+          {actions}
+        </div>
+        <span className="h-6 w-px shrink-0 bg-current opacity-20" aria-hidden />
+        <UserMenu />
+      </div>
+
+      {!shrink && (
+        <div className="flex min-w-0 items-center gap-4">
+          {logo}
           <div className="flex min-w-0 flex-col gap-1">
-            {!shrink && (
-              <p
-                className="flex items-center gap-1 text-sm opacity-80"
-                data-intro
-              >
-                <Users className="size-4" />
-                {t('dashboard.students', { count: studentCount })}
-              </p>
-            )}
-            <h1
-              className={cn(
-                'truncate font-heading font-bold transition-all duration-300',
-                shrink ? 'text-xl' : 'text-2xl sm:text-3xl',
-              )}
-              data-testid="board-title"
+            <p
+              className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm"
               data-intro
             >
-              {title}
-            </h1>
-            {description && !shrink && (
-              <p className="max-w-3xl opacity-90" data-intro>
+              <span className="flex items-center gap-1 opacity-80">
+                <Users className="size-4" />
+                {t('dashboard.students', { count: studentCount })}
+              </span>
+              {teachers.length > 0 && (
+                <span data-testid="board-teachers">
+                  <span className="opacity-80">
+                    {t('look.teachers', { count: teachers.length })}:
+                  </span>{' '}
+                  <span className="font-medium">
+                    {teachers.map((teacher) => teacher.name).join(', ')}
+                  </span>
+                </span>
+              )}
+            </p>
+            {heading}
+            {description && (
+              <p className="max-w-3xl text-balance opacity-90" data-intro>
                 {description}
               </p>
             )}
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2" data-intro>
-          {teachers.length > 0 && !shrink && (
-            <div
-              className="mr-2 flex items-center gap-2 text-sm"
-              data-testid="board-teachers"
-            >
-              <span className="opacity-80">
-                {t('look.teachers', { count: teachers.length })}:
-              </span>
-              {teachers.map((teacher) => (
-                <span key={teacher.name} className="flex items-center gap-1.5">
-                  <StageAvatar
-                    name={teacher.name}
-                    photoURL={teacher.photoURL}
-                    teacher
-                    size={36}
-                  />
-                  <span className="font-medium">{teacher.name}</span>
-                </span>
-              ))}
-            </div>
-          )}
-          {actions}
-        </div>
-      </div>
+      )}
       {children}
     </header>
   )

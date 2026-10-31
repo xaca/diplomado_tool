@@ -4,10 +4,13 @@ import { useTranslation } from 'react-i18next'
 import {
   CircleCheck,
   Paintbrush,
+  Pencil,
   Presentation,
   Settings,
   Timer,
 } from 'lucide-react'
+import { HomeLink } from '@/components/layout/HomeLink'
+import { UserMenu } from '@/components/layout/UserMenu'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
@@ -15,7 +18,11 @@ import {
   type BoardDraft,
 } from '@/features/boards/components/BoardCustomizePanel'
 import { BoardCards } from '@/features/boards/components/BoardCards'
-import { BoardHeader } from '@/features/boards/components/BoardHeader'
+import { FilterMenu } from '@/features/boards/components/FilterMenu'
+import {
+  BoardHeader,
+  HeaderActionLabel,
+} from '@/features/boards/components/BoardHeader'
 import { useBoard } from '@/features/boards/hooks'
 import { isWritable, lifecycleOf } from '@/features/boards/lifecycle'
 import {
@@ -34,7 +41,6 @@ import {
   readyCounts,
   type ReadyFilter,
 } from '@/features/spaces/ready'
-import { cn } from '@/lib/utils'
 import { useMyStudentId, useSpaces } from '@/features/spaces/hooks'
 import { StageSummary } from '@/features/stages/components/StageSummary'
 import { boardStages, matchesStage } from '@/features/stages/stages'
@@ -192,7 +198,9 @@ export function BoardPage() {
   useEffect(() => {
     // The header only shrinks when sticky (BoardHeader: sticky && compact)
     if (!look.stickyHeader) return
-    const onScroll = () => setCompact(window.scrollY > 120)
+    // Hysteresis: folding the header shortens the page, so it must not unfold right away
+    const onScroll = () =>
+      setCompact((compact) => window.scrollY > (compact ? 40 : 120))
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [look.stickyHeader])
@@ -220,7 +228,12 @@ export function BoardPage() {
 
   if (!board.data || !boardId) {
     return (
-      <section className="mx-auto max-w-5xl p-6">
+      <section className="mx-auto flex max-w-5xl flex-col gap-6 p-6">
+        {/* This route has no app header (the board's is the one): keep the way home */}
+        <div className="flex items-center justify-between" role="banner">
+          <HomeLink />
+          <UserMenu />
+        </div>
         <p>{t('boards.notFound')}</p>
       </section>
     )
@@ -236,7 +249,7 @@ export function BoardPage() {
   return (
     <div
       ref={page}
-      className="min-h-[calc(100svh-3.5rem)] transition-colors duration-500"
+      className="min-h-svh transition-colors duration-500"
       style={boardStyle(look)}
       data-testid="board-page"
       data-background={look.background}
@@ -246,95 +259,122 @@ export function BoardPage() {
         clock={boardData.clock}
         teacher={isBoardTeacher}
       />
-      <section className="mx-auto flex max-w-7xl flex-col gap-6 p-4 sm:p-6">
-        <BoardHeader
-          stickyTop={boardData.clock ? 36 : 0}
-          ref={header}
-          board={boardData}
-          title={draft?.title ?? boardData.title}
-          description={draft?.description ?? boardData.description}
-          studentCount={spaces.data.length}
-          tone={tone}
-          backdrop={backgroundOf(look).stops[0]}
-          sticky={look.stickyHeader}
-          compact={compact}
-          actions={
-            <>
-              {mySpace && writable && (
-                <Button onClick={() => setEditingId(mySpace.id)}>
-                  {t('dashboard.editMine')}
-                </Button>
-              )}
-              {teacher && spaces.data.some((space) => space.slideCount > 0) && (
-                <Button
-                  variant="secondary"
-                  nativeButton={false}
-                  render={<Link to={`/b/${boardId}/present`} />}
-                >
-                  <Presentation />
+      <BoardHeader
+        ref={header}
+        board={boardData}
+        title={draft?.title ?? boardData.title}
+        description={draft?.description ?? boardData.description}
+        studentCount={spaces.data.length}
+        tone={tone}
+        backdrop={backgroundOf(look).stops[0]}
+        sticky={look.stickyHeader}
+        compact={compact}
+        actions={
+          <>
+            {mySpace && writable && (
+              <Button
+                title={t('dashboard.editMine')}
+                onClick={() => setEditingId(mySpace.id)}
+              >
+                <Pencil />
+                <HeaderActionLabel>{t('dashboard.editMine')}</HeaderActionLabel>
+              </Button>
+            )}
+            {teacher && spaces.data.some((space) => space.slideCount > 0) && (
+              <Button
+                variant="secondary"
+                nativeButton={false}
+                title={t('presenter.presentAll')}
+                render={<Link to={`/b/${boardId}/present`} />}
+              >
+                <Presentation />
+                <HeaderActionLabel>
                   {t('presenter.presentAll')}
-                </Button>
-              )}
-              {teacher && readyCounts(spaces.data).ready > 0 && (
-                <Button
-                  variant="secondary"
-                  nativeButton={false}
-                  render={<Link to={`/b/${boardId}/present?ready=1`} />}
-                >
-                  <CircleCheck />
-                  {t('ready.presentReady')}
-                </Button>
-              )}
-              {isBoardTeacher && (
-                <Button variant="secondary" onClick={() => setClockOpen(true)}>
-                  <Timer />
-                  {t('clock.button')}
-                </Button>
-              )}
-              {isBoardTeacher && (
-                <Button
-                  variant="secondary"
-                  onClick={() =>
-                    setDraft({
-                      ...resolveLook(boardData),
-                      title: boardData.title,
-                      description: boardData.description,
-                    })
-                  }
-                >
-                  <Paintbrush />
-                  {t('look.customize')}
-                </Button>
-              )}
-              {teacher && (
-                <Button
-                  variant="secondary"
-                  nativeButton={false}
-                  render={<Link to={`/teacher/boards/${boardId}`} />}
-                >
-                  <Settings />
-                  {t('boards.manage')}
-                </Button>
-              )}
-            </>
-          }
-        >
-          {teacher && spaces.data.length > 0 && (
+                </HeaderActionLabel>
+              </Button>
+            )}
+            {teacher && readyCounts(spaces.data).ready > 0 && (
+              <Button
+                variant="secondary"
+                nativeButton={false}
+                title={t('ready.presentReady')}
+                render={<Link to={`/b/${boardId}/present?ready=1`} />}
+              >
+                <CircleCheck />
+                <HeaderActionLabel>{t('ready.presentReady')}</HeaderActionLabel>
+              </Button>
+            )}
+            {isBoardTeacher && (
+              <Button
+                variant="secondary"
+                title={t('clock.button')}
+                onClick={() => setClockOpen(true)}
+              >
+                <Timer />
+                <HeaderActionLabel>{t('clock.button')}</HeaderActionLabel>
+              </Button>
+            )}
+            {isBoardTeacher && (
+              <Button
+                variant="secondary"
+                title={t('look.customize')}
+                onClick={() =>
+                  setDraft({
+                    ...resolveLook(boardData),
+                    title: boardData.title,
+                    description: boardData.description,
+                  })
+                }
+              >
+                <Paintbrush />
+                <HeaderActionLabel>{t('look.customize')}</HeaderActionLabel>
+              </Button>
+            )}
+            {teacher && (
+              <Button
+                variant="secondary"
+                nativeButton={false}
+                title={t('boards.manage')}
+                render={<Link to={`/teacher/boards/${boardId}`} />}
+              >
+                <Settings />
+                <HeaderActionLabel>{t('boards.manage')}</HeaderActionLabel>
+              </Button>
+            )}
+          </>
+        }
+      >
+        {teacher && spaces.data.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
             <StageSummary
               spaces={spaces.data}
               stages={stages}
               filter={stageFilter}
               onFilter={(filter) => withFlip(() => setStageFilter(filter))}
             />
-          )}
-          {teacher && spaces.data.length > 0 && (
             <ReadyFilters
               counts={readyCounts(spaces.data)}
               filter={readyFilter}
               onFilter={(filter) => withFlip(() => setReadyFilter(filter))}
             />
-          )}
-        </BoardHeader>
+            {(stageFilter !== null || readyFilter !== null) && (
+              <button
+                type="button"
+                className="px-1 text-sm underline underline-offset-2"
+                onClick={() =>
+                  withFlip(() => {
+                    setStageFilter(null)
+                    setReadyFilter(null)
+                  })
+                }
+              >
+                {t('stages.showAll')}
+              </button>
+            )}
+          </div>
+        )}
+      </BoardHeader>
+      <section className="mx-auto flex max-w-7xl flex-col gap-6 p-4 sm:p-6">
         {isBoardTeacher && (
           <ClockControls
             boardId={boardId}
@@ -411,7 +451,7 @@ export function BoardPage() {
   )
 }
 
-/** "Listos · Con diapositivas · Sin diapositivas" (M16, D52): click again to show everyone. */
+/** "Avance: Listos · Con diapositivas · Sin diapositivas" (M16, D52); "Todos" shows everyone. */
 function ReadyFilters({
   counts,
   filter,
@@ -428,26 +468,17 @@ function ReadyFilters({
     noSlides: 'ready.noSlides',
   } as const
   return (
-    <nav
-      aria-label={t('ready.filters')}
-      className="flex flex-wrap items-center gap-2"
-      data-testid="ready-filters"
-    >
-      {READY_FILTERS.map((id) => (
-        <button
-          key={id}
-          type="button"
-          aria-pressed={filter === id}
-          onClick={() => onFilter(filter === id ? null : id)}
-          className={cn(
-            'flex h-7 items-center gap-1.5 rounded-full border bg-white/85 px-2.5 text-xs text-neutral-800 shadow-sm hover:bg-white',
-            filter === id && 'ring-2 ring-neutral-900',
-          )}
-        >
-          {t(labels[id])}
-          <span className="font-semibold">{counts[id]}</span>
-        </button>
-      ))}
-    </nav>
+    <FilterMenu
+      label={t('ready.label')}
+      allLabel={t('ready.all')}
+      options={READY_FILTERS.map((id) => ({
+        id,
+        label: t(labels[id]),
+        count: counts[id],
+      }))}
+      value={filter}
+      onChange={(value) => onFilter(value as ReadyFilter | null)}
+      testId="ready-filters"
+    />
   )
 }

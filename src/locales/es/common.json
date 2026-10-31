@@ -469,7 +469,9 @@
     "remove": "Quitar etapa",
     "add": "Agregar etapa",
     "reset": "Volver a Design Thinking",
-    "teacher": "Docente"
+    "teacher": "Docente",
+    "filter": "Etapa",
+    "all": "Todas"
   },
   "look": {
     "customize": "Personalizar",
@@ -651,7 +653,9 @@
     "ready": "Listos",
     "withSlides": "Con diapositivas",
     "noSlides": "Sin diapositivas",
-    "presentReady": "Presentar listos"
+    "presentReady": "Presentar listos",
+    "label": "Avance",
+    "all": "Todos"
   },
   "polls": {
     "title": "Encuestas",

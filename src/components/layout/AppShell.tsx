@@ -1,25 +1,25 @@
-import { Link, Outlet } from 'react-router'
+import { Link, Outlet, useMatches } from 'react-router'
 import { useTranslation } from 'react-i18next'
+import { HomeLink } from '@/components/layout/HomeLink'
 import { UserMenu } from '@/components/layout/UserMenu'
+
+/** Routes with `handle: { ownHeader: true }` render the app name and menu in their own header. */
+export type ShellHandle = { ownHeader?: boolean }
 
 export function AppShell() {
   const { t } = useTranslation()
+  const ownHeader = useMatches().some(
+    (match) => (match.handle as ShellHandle | undefined)?.ownHeader,
+  )
 
   return (
     <div className="flex min-h-svh flex-col">
-      <header className="flex h-14 items-center justify-between border-b px-4">
-        {/* Home: "/" sends teachers to their dashboard and students to their boards */}
-        <Link
-          to="/"
-          className="rounded-md font-heading font-semibold hover:opacity-80"
-          aria-label={`${t('appName')} · ${t('common.home')}`}
-          title={t('common.home')}
-          data-testid="home-link"
-        >
-          {t('appName')}
-        </Link>
-        <UserMenu />
-      </header>
+      {!ownHeader && (
+        <header className="flex h-14 items-center justify-between border-b px-4">
+          <HomeLink />
+          <UserMenu />
+        </header>
+      )}
       <main className="flex-1">
         <Outlet />
       </main>

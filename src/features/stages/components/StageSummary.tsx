@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
+import { FilterMenu } from '@/features/boards/components/FilterMenu'
 import { NO_STAGE, stageCounts, stageLabel } from '@/features/stages/stages'
-import { cn } from '@/lib/utils'
 import type { SpaceDoc, StageDef } from '@/model'
 
 type Props = {
@@ -12,59 +12,58 @@ type Props = {
 
 /**
  * Teacher's view of the class at a glance: how many students are in each stage (from the cards
- * already loaded, no extra reads). Clicking a stage filters the board; clicking it again clears.
+ * already loaded, no extra reads), as a bar in the "Etapa" filter; its menu lists the counts and
+ * filters the board.
  */
 export function StageSummary({ spaces, stages, filter, onFilter }: Props) {
   const { t } = useTranslation()
   const counts = stageCounts(spaces, stages)
-  const items = [
+  const options = [
     ...stages.map((stage) => ({
       id: stage.id,
       label: stageLabel(stage, t),
+      count: counts.get(stage.id) ?? 0,
       color: stage.color,
       dashed: stage.kind === 'browsing',
     })),
-    { id: NO_STAGE, label: t('stages.none'), color: null, dashed: false },
+    {
+      id: NO_STAGE,
+      label: t('stages.none'),
+      count: counts.get(NO_STAGE) ?? 0,
+      color: null,
+    },
   ]
+  const total = options.reduce((sum, option) => sum + option.count, 0)
 
   return (
-    <nav
-      aria-label={t('stages.summary')}
-      className="flex flex-wrap items-center gap-2"
-      data-testid="stage-summary"
-    >
-      {items.map((item) => {
-        const active = filter === item.id
-        return (
-          <button
-            key={item.id}
-            type="button"
-            aria-pressed={active}
-            onClick={() => onFilter(active ? null : item.id)}
-            className={cn(
-              'flex h-7 items-center gap-1.5 rounded-full border bg-white/85 px-2.5 text-xs text-neutral-800 shadow-sm transition-colors hover:bg-white',
-              item.dashed && 'border-dashed border-neutral-400',
-              active && 'ring-2 ring-neutral-900',
-            )}
+    <FilterMenu
+      label={t('stages.filter')}
+      allLabel={t('stages.all')}
+      options={options}
+      value={filter}
+      onChange={onFilter}
+      testId="stage-summary"
+      summary={
+        total > 0 && (
+          <span
+            className="hidden h-1.5 w-20 overflow-hidden rounded-full bg-neutral-200 sm:flex"
+            aria-hidden
           >
-            <span
-              className="size-2.5 rounded-full border border-black/10"
-              style={{ backgroundColor: item.color ?? 'transparent' }}
-            />
-            {item.label}
-            <span className="font-semibold">{counts.get(item.id) ?? 0}</span>
-          </button>
+            {options.map(
+              (option) =>
+                option.count > 0 && (
+                  <span
+                    key={option.id}
+                    style={{
+                      width: `${(option.count / total) * 100}%`,
+                      backgroundColor: option.color ?? '#d4d4d4',
+                    }}
+                  />
+                ),
+            )}
+          </span>
         )
-      })}
-      {filter !== null && (
-        <button
-          type="button"
-          className="text-xs text-neutral-800 underline"
-          onClick={() => onFilter(null)}
-        >
-          {t('stages.showAll')}
-        </button>
-      )}
-    </nav>
+      }
+    />
   )
 }

@@ -469,7 +469,9 @@
     "remove": "Remove stage",
     "add": "Add stage",
     "reset": "Back to Design Thinking",
-    "teacher": "Teacher"
+    "teacher": "Teacher",
+    "filter": "Stage",
+    "all": "All"
   },
   "look": {
     "customize": "Customize",
@@ -651,7 +653,9 @@
     "ready": "Ready",
     "withSlides": "With slides",
     "noSlides": "No slides",
-    "presentReady": "Present ready ones"
+    "presentReady": "Present ready ones",
+    "label": "Progress",
+    "all": "All"
   },
   "polls": {
     "title": "Polls",

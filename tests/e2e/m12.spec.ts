@@ -148,22 +148,22 @@ test.describe('M12 · board customization', () => {
     await expect(page.getByTestId('board-header')).not.toBeInViewport()
   })
 
-  test('the teacher wears the #DOCENTE ring in the board header and the menu', async ({
+  test('the board header names the teacher (text only); the #DOCENTE ring is on the menu avatar', async ({
     page,
   }) => {
     await signIn(page, DEMO.teacher)
     await page.goto(`/b/${DEMO.boardId}`)
     const teachers = page.getByTestId('board-teachers')
-    await expect(teachers.locator('[data-teacher]')).toHaveCount(1)
-    await expect(teachers.getByTestId('teacher-badge')).toBeVisible()
+    await expect(teachers).toContainText('Docente:')
+    // The only avatar in the header is the user menu's
+    await expect(teachers.locator('[data-teacher]')).toHaveCount(0)
+    // The board header is the page's only header: the user menu lives in it
+    await expect(page.getByRole('banner')).toHaveCount(1)
     await expect(
-      page.getByRole('banner').first().locator('[data-teacher]'),
+      page.getByTestId('user-menu').locator('[data-teacher]'),
     ).toHaveCount(1)
     // The ring wraps the photo (inside a button too: buttons shrink unsized svgs)
-    const menuAvatar = page
-      .getByRole('banner')
-      .first()
-      .locator('[data-teacher]')
+    const menuAvatar = page.getByTestId('user-menu').locator('[data-teacher]')
     const avatarBox = await menuAvatar.boundingBox()
     const ringBox = await menuAvatar.locator('[data-ring]').boundingBox()
     expect(ringBox?.width).toBeCloseTo(avatarBox!.width, 0)
@@ -172,9 +172,7 @@ test.describe('M12 · board customization', () => {
     // …and students see it too
     await signIn(page, 'elma@gmail.com')
     await page.goto(`/b/${DEMO.boardId}`)
-    await expect(
-      page.getByTestId('board-teachers').locator('[data-teacher]'),
-    ).toHaveCount(1)
+    await expect(page.getByTestId('board-teachers')).toContainText('Docente:')
     // students never get it
     await expect(
       page.getByTestId('space-card').locator('[data-teacher]'),

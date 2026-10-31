@@ -64,15 +64,18 @@ test.describe('M11 · Design Thinking stage', () => {
   }) => {
     await signIn(page, DEMO.teacher)
     await page.goto(`/b/${DEMO.boardId}`)
-    const summary = page.getByTestId('stage-summary')
+    // "Etapa: Todas ▾" opens the counts per stage
+    await page.getByTestId('stage-summary').click()
+    const menu = page.getByRole('menu')
     await expect(
-      summary.getByRole('button', { name: /Prototipando\s*1/ }),
+      menu.getByRole('menuitemradio', { name: /Prototipando\s*1/ }),
     ).toBeVisible()
     await expect(
-      summary.getByRole('button', { name: /Vitrineando\s*1/ }),
+      menu.getByRole('menuitemradio', { name: /Vitrineando\s*1/ }),
     ).toBeVisible()
 
-    await summary.getByRole('button', { name: /Ideando/ }).click()
+    await menu.getByRole('menuitemradio', { name: /Ideando/ }).click()
+    await expect(page.getByTestId('stage-summary')).toContainText('Ideando')
     await expect(page.getByTestId('space-card')).toHaveCount(1)
     await expect(page.getByTestId('space-card')).toContainText('Elma')
     await page.getByRole('button', { name: 'Ver todos' }).click()
@@ -102,11 +105,11 @@ test.describe('M11 · Design Thinking stage', () => {
     await expect(page.getByText('Etapa guardada')).toBeVisible()
 
     await page.goto(`/b/${DEMO.boardId}`)
+    await page.getByTestId('stage-summary').click()
     await expect(
-      page
-        .getByTestId('stage-summary')
-        .getByRole('button', { name: /Probando/ }),
+      page.getByRole('menu').getByRole('menuitemradio', { name: /Probando/ }),
     ).toBeVisible()
+    await page.keyboard.press('Escape')
 
     // and back to the defaults
     await page.goto(`/teacher/boards/${DEMO.boardId}`)

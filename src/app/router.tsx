@@ -1,6 +1,6 @@
 import { createBrowserRouter } from 'react-router'
 import { HomeRedirect, RequireAuth, RequireTeacher } from '@/app/guards'
-import { AppShell } from '@/components/layout/AppShell'
+import { AppShell, type ShellHandle } from '@/components/layout/AppShell'
 import { RouteError } from '@/components/layout/RouteError'
 import { BoardPage } from '@/pages/BoardPage'
 import { EditorRoute } from '@/pages/EditorRoute'
@@ -46,7 +46,12 @@ export const router = createBrowserRouter([
           },
           { path: 'join/:code', element: <JoinPage /> },
           { path: 'me', element: <ProfilePage /> },
-          { path: 'b/:boardId', element: <BoardPage /> },
+          // One header: the board's own (app name and menu included)
+          {
+            path: 'b/:boardId',
+            element: <BoardPage />,
+            handle: { ownHeader: true } satisfies ShellHandle,
+          },
           { path: 'b/:boardId/s/:studentId', element: <SpacePage /> },
           {
             path: 'b/:boardId/s/:studentId/edit',

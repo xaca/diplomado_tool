@@ -42,6 +42,7 @@ export function UserMenu() {
             size="icon"
             className="rounded-full"
             aria-label={user.email ?? ''}
+            data-testid="user-menu"
           />
         }
       >
