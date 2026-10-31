@@ -132,6 +132,45 @@ export async function restoreBoardFile(
         remindedAt: serverTimestamp(),
       },
     ])
+  // M10: classes come back with their slides, notes and reactions (closed, not followed)
+  for (const klass of file.classes ?? []) {
+    const classDoc = doc(collection(db, paths.classes(boardId)))
+    const slideIds = klass.slides.map(
+      () => doc(collection(db, paths.classSlides(boardId, classDoc.id))).id,
+    )
+    writes.push([
+      classDoc,
+      {
+        title: klass.title,
+        date: klass.date,
+        status: klass.status,
+        slideOrder: slideIds,
+        follow: false,
+        liveSlideId: null,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      },
+    ])
+    klass.slides.forEach(({ notes, ...slide }, index) => {
+      writes.push([
+        doc(db, paths.classSlide(boardId, classDoc.id, slideIds[index])),
+        {
+          ...slide,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        },
+      ])
+      for (const { id, ...note } of notes)
+        writes.push([
+          doc(db, paths.stickyNote(boardId, classDoc.id, slideIds[index], id)),
+          {
+            ...note,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          },
+        ])
+    })
+  }
   for (let start = 0; start < writes.length; start += 450) {
     const batch = writeBatch(db)
     for (const [ref, data] of writes.slice(start, start + 450))

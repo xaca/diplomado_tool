@@ -4,6 +4,7 @@ import { FieldValue, type DocumentReference } from 'firebase-admin/firestore'
 import { isArchived, lifecycleOf } from '@/features/boards/lifecycle'
 import {
   buildBackup,
+  classBackupOf,
   type BoardSnapshot,
 } from '@/features/data-transfer/backup'
 import { analyzeStorage, type AssetRow } from '@/features/storage/analysis'
@@ -15,7 +16,10 @@ import type {
   SlideDoc,
   AttendanceDoc,
   AnnouncementDoc,
+  ClassDoc,
+  ClassSlideDoc,
   SpaceDoc,
+  StickyNoteDoc,
   StudentDoc,
 } from '@/model'
 import { deleteFolder, deleteImages } from './cloudinary.ts'
@@ -57,6 +61,7 @@ export async function loadBoard(boardId: string) {
     summaries,
     announcements,
     announcementStates,
+    classes,
   ] = await Promise.all([
     ref.collection('students').get(),
     ref.collection('spaces').get(),
@@ -69,7 +74,19 @@ export async function loadBoard(boardId: string) {
     // M19: announcements and each member's read state
     ref.collection('announcements').get(),
     ref.collection('announcementState').get(),
+    // M10: class walls, their slides and notes
+    ref.collection('classes').get(),
   ])
+  const classSlides = await Promise.all(
+    classes.docs.map((item) => item.ref.collection('slides').get()),
+  )
+  const classNotes = await Promise.all(
+    classSlides.map((slides) =>
+      Promise.all(
+        slides.docs.map((slide) => slide.ref.collection('notes').get()),
+      ),
+    ),
+  )
   // M16: polls and their votes go with the board too
   const polls = await Promise.all(
     spaces.docs.map((space) => space.ref.collection('polls').get()),
@@ -141,6 +158,32 @@ export async function loadBoard(boardId: string) {
         link,
         important,
       })),
+    classes: classes.docs.map((item, index) =>
+      classBackupOf(
+        item.data() as ClassDoc,
+        new Map(
+          classSlides[index].docs.map((slide) => [
+            slide.id,
+            slide.data() as ClassSlideDoc,
+          ]),
+        ),
+        new Map(
+          classSlides[index].docs.map((slide, slideIndex) => [
+            slide.id,
+            classNotes[index][slideIndex].docs
+              .map((note) => ({
+                id: note.id,
+                data: note.data() as StickyNoteDoc,
+              }))
+              .sort(
+                (a, b) =>
+                  toDate(a.data.createdAt).getTime() -
+                  toDate(b.data.createdAt).getTime(),
+              ),
+          ]),
+        ),
+      ),
+    ),
   }
   const assetRows: AssetRow[] = assets.docs.map((doc) => {
     const data = doc.data() as AssetDoc
@@ -166,7 +209,10 @@ export async function loadBoard(boardId: string) {
         spaces.docs[index].ref.collection('locks').doc(slide.id),
       ]),
     ),
+    ...classNotes.flat().flatMap((s) => s.docs.map((doc) => doc.ref)),
+    ...classSlides.flatMap((s) => s.docs.map((doc) => doc.ref)),
     ...[
+      classes,
       spaces,
       members,
       emails,

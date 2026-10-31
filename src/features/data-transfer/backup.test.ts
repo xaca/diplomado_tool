@@ -3,6 +3,7 @@ import {
   BoardFileError,
   buildBackup,
   buildTemplate,
+  classBackupOf,
   parseBoardFile,
   slideAssetIds,
   type BoardSnapshot,
@@ -214,6 +215,113 @@ describe('announcements in backups (M19)', () => {
         ...backup,
         announcements: [{ ...note, link: 'javascript:alert(1)' }],
       }),
+    ).toThrow()
+  })
+})
+
+describe('class walls in backups (M10)', () => {
+  const now = { seconds: 1, nanoseconds: 0 }
+  const note = (id: string, text: string, overrides = {}) => ({
+    id,
+    data: {
+      text,
+      color: 'yellow' as const,
+      x: 0.1,
+      y: 0.2,
+      authorUid: id.split('_')[0],
+      authorStudentId: 'st_laura',
+      authorName: 'Laura',
+      authorRole: 'student' as const,
+      reactions: { u2: { name: 'Elma', emojis: ['👍' as const] } },
+      editedByTeacher: false,
+      createdAt: now,
+      updatedAt: now,
+      ...overrides,
+    },
+  })
+  const klass = classBackupOf(
+    {
+      title: 'Clase 3',
+      date: '2026-11-12',
+      status: 'open',
+      slideOrder: ['s2', 's1', 'gone'],
+    },
+    new Map([
+      [
+        's1',
+        {
+          title: 'Uno',
+          instructions: '',
+          layout: 'free' as const,
+          zones: [],
+          locked: false,
+          createdAt: now,
+          updatedAt: now,
+        },
+      ],
+      [
+        's2',
+        {
+          title: 'Dos',
+          instructions: 'Una idea por nota',
+          layout: 'columns2' as const,
+          zones: ['Sí', 'No'],
+          locked: true,
+          createdAt: now,
+          updatedAt: now,
+        },
+      ],
+    ]),
+    new Map([['s2', [note('u1_1', 'Hola'), note('u1_2', 'Chao')]]]),
+  )
+
+  it('keeps each class with its slides in order, notes, authors and reactions', () => {
+    expect(klass.slides.map((slide) => slide.title)).toEqual(['Dos', 'Uno'])
+    expect(klass.slides[0].notes).toHaveLength(2)
+    expect(klass.slides[0].notes[0]).toMatchObject({
+      id: 'u1_1',
+      authorUid: 'u1',
+      reactions: { u2: { name: 'Elma', emojis: ['👍'] } },
+    })
+    expect(klass.slides[1].notes).toEqual([])
+
+    const backup = buildBackup({
+      ...snapshot,
+      classes: [klass, { ...klass, title: 'Clase 1', date: '2026-10-01' }],
+    })
+    expect(backup.classes?.map((item) => item.title)).toEqual([
+      'Clase 1',
+      'Clase 3',
+    ])
+    expect(parseBoardFile(JSON.parse(JSON.stringify(backup))).kind).toBe(
+      'backup',
+    )
+    // old files without classes still restore
+    expect(buildBackup(snapshot).classes).toEqual([])
+  })
+
+  it('refuses notes with an id that is not their author’s, or unknown emojis', () => {
+    const backup = buildBackup({ ...snapshot, classes: [klass] })
+    const broken = (patch: object) => ({
+      ...backup,
+      classes: [
+        {
+          ...klass,
+          slides: [
+            {
+              ...klass.slides[0],
+              notes: [{ ...klass.slides[0].notes[0], ...patch }],
+            },
+          ],
+        },
+      ],
+    })
+    expect(() => parseBoardFile(broken({ id: 'u1_21' }))).toThrow()
+    expect(() => parseBoardFile(broken({ id: 'u9_1' }))).toThrow()
+    expect(() =>
+      parseBoardFile(
+        broken({ reactions: { u2: { name: 'E', emojis: ['🤬'] } } }),
+      ),
     ).toThrow()
   })
 })

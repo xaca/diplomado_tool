@@ -400,7 +400,8 @@
           "Lo que publicas: el título y resumen de tu tarjeta, la etapa del proyecto en la que vas, tus diapositivas y las imágenes que subes.",
           "Datos técnicos de seguridad: Google reCAPTCHA comprueba que las solicitudes vienen de esta aplicación.",
           "Tus votos en las encuestas de los espacios: el docente ve quién votó; el autor de la encuesta también, salvo que sea anónima.",
-          "Tu asistencia a clase (presente, tarde, ausente o excusa, con una nota opcional del docente): la registra tu docente; tú ves solo la tuya (sin las notas) y tus compañeros nunca la ven. Tu docente puede copiar tu correo para escribirte desde su propio correo; la app no envía correos."
+          "Tu asistencia a clase (presente, tarde, ausente o excusa, con una nota opcional del docente): la registra tu docente; tú ves solo la tuya (sin las notas) y tus compañeros nunca la ven. Tu docente puede copiar tu correo para escribirte desde su propio correo; la app no envía correos.",
+          "Tus notas adhesivas y reacciones en las clases: las ven tu docente y todos los compañeros del tablero, con tu nombre. Tu docente puede moverlas, editarlas o eliminarlas."
         ]
       },
       {

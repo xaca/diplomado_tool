@@ -2511,6 +2511,24 @@ describe('class participation (M10)', () => {
     await assertFails(
       updateDoc(lauras, { authorName: 'Otro', updatedAt: serverTimestamp() }),
     )
+    // restoring a board backup: the teacher writes a student's note with its reactions
+    await assertSucceeds(
+      setDoc(
+        note(db, `${SEB.uid}_2`),
+        noteData(SEB, {
+          authorStudentId: 'st_seb',
+          authorRole: 'student',
+          reactions: { [LAURA.uid]: { name: 'Laura', emojis: ['👍'] } },
+        }),
+      ),
+    )
+    // …but the id must still be the author's
+    await assertFails(
+      setDoc(
+        note(db, `${LAURA.uid}_9`),
+        noteData(SEB, { authorRole: 'student' }),
+      ),
+    )
     await assertSucceeds(deleteDoc(lauras))
   })
 

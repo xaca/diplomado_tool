@@ -775,18 +775,19 @@ service cloud.firestore {
             }
 
             allow read: if isBoardTeacher(boardId) || isMember(boardId);
-            // My note: my id ({uid}_{1..20} caps it at 20 per slide), my name, no reactions yet
-            allow create: if validNote() && mine()
-              && noteId.matches(request.auth.uid + '_([1-9]|1[0-9]|20)')
-              && request.resource.data.reactions.size() == 0
-              && request.resource.data.editedByTeacher == false
+            // The id is {authorUid}_{1..20}: at most 20 notes per person per slide
+            allow create: if validNote()
+              && noteId.matches(request.resource.data.authorUid + '_([1-9]|1[0-9]|20)')
               && request.resource.data.createdAt == request.time
               && request.resource.data.updatedAt == request.time
               && (
-                (isBoardTeacher(boardId) && request.resource.data.authorRole == 'teacher'
-                  && request.resource.data.authorStudentId == null)
-                || (isMember(boardId) && request.resource.data.authorRole == 'student'
+                // the teacher: their own notes, and restoring a board backup (any author, reactions)
+                isBoardTeacher(boardId)
+                // a student: my own note, with my name and student id, no reactions yet
+                || (isMember(boardId) && mine() && request.resource.data.authorRole == 'student'
                   && request.resource.data.authorStudentId == get(memberPath(boardId, request.auth.uid)).data.studentId
+                  && request.resource.data.reactions.size() == 0
+                  && request.resource.data.editedByTeacher == false
                   && classWritable(classId, slideId))
               );
             allow update: if validNote() && sameAuthor() && (

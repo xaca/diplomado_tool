@@ -8,7 +8,10 @@ import {
   writeBatch,
   type DocumentReference,
 } from 'firebase/firestore'
-import type { BoardSnapshot } from '@/features/data-transfer/backup'
+import {
+  classBackupOf,
+  type BoardSnapshot,
+} from '@/features/data-transfer/backup'
 import { chunk, type AssetRow } from '@/features/storage/analysis'
 import { db } from '@/lib/firebase'
 import { MAX_DELETE_BATCH, mediaApi } from '@/lib/media-api'
@@ -20,6 +23,9 @@ import {
   type SlideDoc,
   type AttendanceDoc,
   type AnnouncementDoc,
+  type ClassDoc,
+  type ClassSlideDoc,
+  type StickyNoteDoc,
   type SpaceDoc,
   type StudentDoc,
   VERSION_KINDS,
@@ -60,6 +66,7 @@ export async function loadBoardData(boardId: string): Promise<BoardData> {
     summaries,
     announcements,
     announcementStates,
+    classes,
   ] = await Promise.all([
     getDoc(doc(db, paths.board(boardId))),
     getDocs(collection(db, paths.students(boardId))),
@@ -73,8 +80,29 @@ export async function loadBoardData(boardId: string): Promise<BoardData> {
     // M19: announcements go into the backup; everything goes with the board on purge
     getDocs(collection(db, paths.announcements(boardId))),
     getDocs(collection(db, paths.announcementStates(boardId))),
+    // M10: class walls, their slides and notes
+    getDocs(collection(db, paths.classes(boardId))),
   ])
   if (!board.exists()) throw new Error('board not found')
+  const classSlides = await Promise.all(
+    classes.docs.map((item) =>
+      getDocs(collection(db, paths.classSlides(boardId, item.id))),
+    ),
+  )
+  const classNotes = await Promise.all(
+    classSlides.map((slides, index) =>
+      Promise.all(
+        slides.docs.map((slide) =>
+          getDocs(
+            collection(
+              db,
+              paths.stickyNotes(boardId, classes.docs[index].id, slide.id),
+            ),
+          ),
+        ),
+      ),
+    ),
+  )
   // M16: polls and their votes go with the board too
   const polls = await Promise.all(
     spaces.docs.map((space) =>
@@ -152,6 +180,26 @@ export async function loadBoardData(boardId: string): Promise<BoardData> {
           important: data.important,
         }
       }),
+      classes: classes.docs.map((item, index) =>
+        classBackupOf(
+          item.data() as ClassDoc,
+          new Map(
+            classSlides[index].docs.map((slide) => [
+              slide.id,
+              slide.data() as ClassSlideDoc,
+            ]),
+          ),
+          new Map(
+            classSlides[index].docs.map((slide, slideIndex) => [
+              slide.id,
+              oldestFirst(classNotes[index][slideIndex].docs).map((note) => ({
+                id: note.id,
+                data: note.data() as StickyNoteDoc,
+              })),
+            ]),
+          ),
+        ),
+      ),
     },
     assets: assets.docs.map((asset) => {
       const data = asset.data() as AssetDoc
@@ -202,6 +250,11 @@ export async function loadBoardData(boardId: string): Promise<BoardData> {
       ...summaries.docs.map((d) => d.ref),
       ...announcements.docs.map((d) => d.ref),
       ...announcementStates.docs.map((d) => d.ref),
+      ...classNotes
+        .flat()
+        .flatMap((snapshot) => snapshot.docs.map((d) => d.ref)),
+      ...classSlides.flatMap((snapshot) => snapshot.docs.map((d) => d.ref)),
+      ...classes.docs.map((d) => d.ref),
     ],
   }
 }

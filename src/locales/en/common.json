@@ -400,7 +400,8 @@
           "What you publish: your card's title and summary, the project stage you're in, your slides and the images you upload.",
           "Technical security data: Google reCAPTCHA checks that requests come from this app.",
           "Your votes in space polls: the teacher sees who voted; so does the poll’s author, unless it is anonymous.",
-          "Your class attendance (present, late, absent or excused, with an optional note by the teacher): your teacher records it; you see only yours (without the notes) and classmates never see it. Your teacher may copy your email to write to you from their own mail account; the app doesn't send email."
+          "Your class attendance (present, late, absent or excused, with an optional note by the teacher): your teacher records it; you see only yours (without the notes) and classmates never see it. Your teacher may copy your email to write to you from their own mail account; the app doesn't send email.",
+          "Your sticky notes and reactions in classes: your teacher and every classmate on the board see them, with your name. Your teacher can move, edit or delete them."
         ]
       },
       {

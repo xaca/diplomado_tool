@@ -17,6 +17,14 @@ import {
   type StageDef,
   type AttendanceMark,
   type AnnouncementInput,
+  CLASS_LAYOUTS,
+  MAX_CLASS_SLIDES,
+  MAX_STICKY_TEXT,
+  NOTE_COLORS,
+  REACTIONS,
+  type ClassDoc,
+  type ClassSlideDoc,
+  type StickyNoteDoc,
 } from '@/model'
 
 // Board backup and template files (PLAN.md → Import / export). Pure: shared with the admin CLI.
@@ -49,6 +57,52 @@ const slideSchema = z.object({
     .record(z.string(), imageRefSchema)
     .refine((files) => Object.keys(files).length <= MAX_IMAGES_PER_SLIDE),
 })
+
+const uidSchema = z.string().regex(/^[A-Za-z0-9_-]{1,128}$/)
+
+const stickyNoteBackupSchema = z
+  .object({
+    /** {authorUid}_{n}: kept so the author still owns it after a restore */
+    id: z.string().regex(/^[A-Za-z0-9_-]{1,128}_([1-9]|1[0-9]|20)$/),
+    text: z.string().min(1).max(MAX_STICKY_TEXT),
+    color: z.enum(NOTE_COLORS),
+    x: z.number().min(0).max(1),
+    y: z.number().min(0).max(1),
+    authorUid: uidSchema,
+    authorStudentId: z.string().max(128).nullable(),
+    authorName: z.string().min(1).max(120),
+    authorRole: z.enum(['student', 'teacher']),
+    reactions: z.record(
+      uidSchema,
+      z.object({
+        name: z.string().min(1).max(120),
+        emojis: z.array(z.enum(REACTIONS)).min(1).max(REACTIONS.length),
+      }),
+    ),
+    editedByTeacher: z.boolean(),
+  })
+  .refine((note) => note.id.startsWith(`${note.authorUid}_`), {
+    message: 'a note id starts with its author',
+  })
+
+const classBackupSchema = z.object({
+  title: z.string().min(1).max(80),
+  date: z.string().regex(ATTENDANCE_DATE),
+  status: z.enum(['open', 'closed']),
+  slides: z
+    .array(
+      z.object({
+        title: z.string().min(1).max(120),
+        instructions: z.string().max(500),
+        layout: z.enum(CLASS_LAYOUTS),
+        zones: z.array(z.string().max(40)).max(4),
+        locked: z.boolean(),
+        notes: z.array(stickyNoteBackupSchema).max(2000),
+      }),
+    )
+    .max(MAX_CLASS_SLIDES),
+})
+export type ClassBackup = z.infer<typeof classBackupSchema>
 
 export const boardBackupSchema = z.object({
   type: z.literal('pbl.boardBackup'),
@@ -95,6 +149,8 @@ export const boardBackupSchema = z.object({
     .optional(),
   /** M19: the teacher's announcements (students' read state is not kept) */
   announcements: z.array(announcementInputSchema).max(200).optional(),
+  /** M10: class walls with their notes and reactions (optional: files from before keep restoring) */
+  classes: z.array(classBackupSchema).max(500).optional(),
 })
 export type BoardBackup = z.infer<typeof boardBackupSchema>
 
@@ -142,6 +198,47 @@ export type BoardSnapshot = {
   }[]
   /** M19: oldest first */
   announcements?: AnnouncementInput[]
+  /** M10: class walls, oldest date first */
+  classes?: ClassBackup[]
+}
+
+/** A class as it goes into the backup: its slides in order, each with its notes (oldest first). */
+export function classBackupOf(
+  klass: Pick<ClassDoc, 'title' | 'date' | 'status' | 'slideOrder'>,
+  slides: ReadonlyMap<string, ClassSlideDoc>,
+  notes: ReadonlyMap<string, { id: string; data: StickyNoteDoc }[]>,
+): ClassBackup {
+  return {
+    title: klass.title,
+    date: klass.date,
+    status: klass.status,
+    slides: klass.slideOrder.flatMap((id) => {
+      const slide = slides.get(id)
+      if (!slide) return []
+      return [
+        {
+          title: slide.title,
+          instructions: slide.instructions,
+          layout: slide.layout,
+          zones: slide.zones,
+          locked: slide.locked,
+          notes: (notes.get(id) ?? []).map(({ id: noteId, data }) => ({
+            id: noteId,
+            text: data.text,
+            color: data.color,
+            x: data.x,
+            y: data.y,
+            authorUid: data.authorUid,
+            authorStudentId: data.authorStudentId,
+            authorName: data.authorName,
+            authorRole: data.authorRole,
+            reactions: data.reactions ?? {},
+            editedByTeacher: data.editedByTeacher,
+          })),
+        },
+      ]
+    }),
+  }
 }
 
 export function buildBackup(
@@ -195,6 +292,9 @@ export function buildBackup(
       }))
       .sort((a, b) => a.date.localeCompare(b.date)),
     announcements: snapshot.announcements ?? [],
+    classes: [...(snapshot.classes ?? [])].sort((a, b) =>
+      a.date.localeCompare(b.date),
+    ),
   })
 }
 
