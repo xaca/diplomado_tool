@@ -144,9 +144,10 @@ export async function uploadImage(options: {
 
   let signed: SignedUpload
   try {
-    // The board logo (M12) is signed for the board's teacher, into the board's folder
+    // The board logo (M12) and class drawings (M10b) are signed for the board's teacher, into
+    // the board's folder (studentId 'board')
     signed =
-      kind === 'logo'
+      kind === 'logo' || kind === 'class'
         ? await mediaApi.signBoardUpload(boardId)
         : await mediaApi.signUpload(boardId, studentId)
   } catch (error) {

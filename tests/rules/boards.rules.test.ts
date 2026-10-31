@@ -2532,6 +2532,83 @@ describe('class participation (M10)', () => {
     await assertSucceeds(deleteDoc(lauras))
   })
 
+  it('M10b: only the teacher draws the slide; members react to it with their own key while the class is open', async () => {
+    await withClass()
+    const drawing = {
+      content: '{"elements":[]}',
+      files: {},
+      bytes: 15,
+      title: '',
+      updatedAt: serverTimestamp(),
+    }
+    await assertSucceeds(updateDoc(slide(as(TEACHER)), drawing))
+    await assertFails(
+      updateDoc(slide(as(TEACHER)), {
+        content: 'x'.repeat(900_001),
+        updatedAt: serverTimestamp(),
+      }),
+    )
+    await assertFails(updateDoc(slide(as(LAURA)), drawing))
+
+    const react = (user: { uid: string; email: string }, value: unknown) =>
+      updateDoc(slide(as(user)), new FieldPath('reactions', user.uid), value)
+    await assertSucceeds(react(LAURA, { name: 'Laura', emojis: ['🎉'] }))
+    await assertSucceeds(react(SEB, { name: 'Seb', emojis: ['👍', '💡'] }))
+    await assertFails(
+      updateDoc(slide(as(SEB)), new FieldPath('reactions', LAURA.uid), {
+        name: 'Laura',
+        emojis: ['❓'],
+      }),
+    )
+    await assertFails(react(SEB, { name: 'Seb', emojis: ['🤬'] }))
+    await assertFails(
+      updateDoc(slide(as(SEB)), { locked: true, updatedAt: serverTimestamp() }),
+    )
+    await assertFails(react(STRANGER, { name: 'X', emojis: ['👍'] }))
+
+    // closed class: no more reactions
+    await env.withSecurityRulesDisabled(async (context) => {
+      await updateDoc(klass(context.firestore() as unknown as Firestore), {
+        status: 'closed',
+      })
+    })
+    await assertFails(react(LAURA, { name: 'Laura', emojis: ['👍'] }))
+  })
+
+  it('M10b: the teacher registers images of class drawings in the board folder; students can not', async () => {
+    await withClass()
+    const asset = (overrides: Record<string, unknown> = {}) => ({
+      publicId: 'pbl/dev/board1/board/a1',
+      studentId: 'board',
+      kind: 'class',
+      width: 100,
+      height: 100,
+      format: 'png',
+      bytes: 1000,
+      status: 'active',
+      createdAt: serverTimestamp(),
+      ...overrides,
+    })
+    await assertSucceeds(
+      setDoc(doc(as(TEACHER), 'boards', BOARD, 'assets', 'a1'), asset()),
+    )
+    await assertFails(
+      setDoc(
+        doc(as(LAURA), 'boards', BOARD, 'assets', 'a2'),
+        asset({ publicId: 'pbl/dev/board1/board/a2' }),
+      ),
+    )
+    await assertFails(
+      setDoc(
+        doc(as(LAURA), 'boards', BOARD, 'assets', 'a3'),
+        asset({
+          publicId: 'pbl/dev/board1/st_laura/a3',
+          studentId: 'st_laura',
+        }),
+      ),
+    )
+  })
+
   it('closed class, locked slide or archived board: students only read', async () => {
     for (const [classOverrides, slideOverrides, boardOverrides] of [
       [{ status: 'closed' }, {}, {}],

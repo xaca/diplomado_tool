@@ -703,12 +703,18 @@ service cloud.firestore {
 
       function validClassSlide() {
         let data = request.resource.data;
-        return data.keys().hasOnly(['title', 'instructions', 'layout', 'zones', 'locked', 'createdAt', 'updatedAt'])
-          && isString(data.title, 1, 120)
+        return data.keys().hasOnly(['title', 'instructions', 'layout', 'zones', 'locked', 'content', 'files', 'bytes',
+            'reactions', 'createdAt', 'updatedAt'])
+          && isString(data.title, 0, 120)
           && isString(data.instructions, 0, 500)
           && data.layout in ['free', 'columns2', 'columns3', 'matrix']
           && data.zones is list && data.zones.size() <= 4
           && data.locked is bool
+          // M10b: the teacher's drawing, same limits as a student's slide
+          && (!('content' in data) || (data.content is string && data.content.size() <= 900000))
+          && (!('files' in data) || (data.files is map && data.files.size() <= 30))
+          && (!('bytes' in data) || (data.bytes is int && data.bytes >= 0 && data.bytes <= 900000))
+          && (!('reactions' in data) || (data.reactions is map && data.reactions.size() <= 300))
           && data.updatedAt == request.time;
       }
 
@@ -725,6 +731,20 @@ service cloud.firestore {
           && (data.authorStudentId == null || isString(data.authorStudentId, 1, 128))
           && data.reactions is map && data.reactions.size() <= 300
           && data.editedByTeacher is bool;
+      }
+
+      // Only my own key in `reactions` (of a note or a slide), known emojis, several, no repeats
+      function onlyMyReaction() {
+        let uid = request.auth.uid;
+        let after = request.resource.data.get('reactions', {});
+        return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions'])
+          && after.diff(resource.data.get('reactions', {})).affectedKeys().hasOnly([uid])
+          && (!(uid in after) || (after[uid] is map
+            && after[uid].keys().hasOnly(['name', 'emojis'])
+            && isString(after[uid].name, 1, 120)
+            && after[uid].emojis is list
+            && after[uid].emojis.size() >= 1 && after[uid].emojis.size() <= 6
+            && after[uid].emojis.hasOnly(['👍', '❤️', '💡', '😂', '🎉', '❓'])));
       }
 
       // Students write while the class is open, the slide unlocked and the board active
@@ -746,8 +766,10 @@ service cloud.firestore {
           allow read: if isBoardTeacher(boardId) || isMember(boardId);
           allow create: if isBoardTeacher(boardId) && validClassSlide()
             && request.resource.data.createdAt == request.time;
-          allow update: if isBoardTeacher(boardId) && validClassSlide()
-            && request.resource.data.createdAt == resource.data.createdAt;
+          allow update: if (isBoardTeacher(boardId) && validClassSlide()
+              && request.resource.data.createdAt == resource.data.createdAt)
+            // M10b: a member reacts to the slide (own key only) while they may write (D89)
+            || (isMember(boardId) && classWritable(classId, slideId) && onlyMyReaction());
           allow delete: if isBoardTeacher(boardId);
 
           match /notes/{noteId} {
@@ -758,20 +780,6 @@ service cloud.firestore {
             function sameAuthor() {
               return request.resource.data.diff(resource.data).affectedKeys()
                 .hasAny(['authorUid', 'authorStudentId', 'authorName', 'authorRole', 'createdAt']) == false;
-            }
-
-            // Only my own key in `reactions`, with known emojis (several, no repeats)
-            function onlyMyReaction() {
-              let uid = request.auth.uid;
-              let after = request.resource.data.reactions;
-              return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions'])
-                && after.diff(resource.data.reactions).affectedKeys().hasOnly([uid])
-                && (!(uid in after) || (after[uid] is map
-                  && after[uid].keys().hasOnly(['name', 'emojis'])
-                  && isString(after[uid].name, 1, 120)
-                  && after[uid].emojis is list
-                  && after[uid].emojis.size() >= 1 && after[uid].emojis.size() <= 6
-                  && after[uid].emojis.hasOnly(['👍', '❤️', '💡', '😂', '🎉', '❓'])));
             }
 
             allow read: if isBoardTeacher(boardId) || isMember(boardId);
@@ -845,7 +853,7 @@ service cloud.firestore {
         return data.keys().hasOnly(['publicId', 'studentId', 'kind', 'width', 'height', 'format', 'bytes', 'status', 'createdAt'])
           && data.studentId is string
           && data.publicId is string && data.publicId.matches(studentPublicId(boardId, data.studentId, assetId))
-          && data.kind in ['cover', 'slide', 'logo']
+          && data.kind in ['cover', 'slide', 'logo', 'class']
           && data.width is int && data.height is int && data.format is string
           && data.bytes is int && data.bytes > 0 && data.bytes <= 10 * 1024 * 1024
           && data.status == 'active'
@@ -857,12 +865,12 @@ service cloud.firestore {
           || (isMember(boardId) && resource.data.studentId == get(memberPath(boardId, request.auth.uid)).data.studentId);
         allow create: if validNewAsset(boardId, assetId) && boardIsActive(boardId)
           && (
-            (isSpaceOwner(boardId, request.resource.data.studentId) && request.resource.data.kind != 'logo')
+            (isSpaceOwner(boardId, request.resource.data.studentId) && !(request.resource.data.kind in ['logo', 'class']))
             // M15: an image the teacher adds to a student's slide (the student's folder)
             || (isBoardTeacher(boardId) && request.resource.data.kind == 'slide'
               && exists(/databases/$(database)/documents/boards/$(boardId)/spaces/$(request.resource.data.studentId)))
-            // M12: the board logo, by the board's teacher, in the board's own folder
-            || (isBoardTeacher(boardId) && request.resource.data.kind == 'logo'
+            // M12: the board logo, and M10b: images in class drawings, by the board's teacher, in the board's own folder
+            || (isBoardTeacher(boardId) && request.resource.data.kind in ['logo', 'class']
               && request.resource.data.studentId == 'board')
           );
         // The owner marks an image unused; the teacher (via cleanup, M7) may also mark it deleted

@@ -232,6 +232,12 @@ export type ClassSlideDoc = {
   /** Column / quadrant titles (as many as the layout has zones) */
   zones: string[]
   locked: boolean
+  /** M10b: the teacher's Excalidraw drawing (same format as a student's slide); missing = none */
+  content?: string
+  files?: Record<string, ImageRef>
+  bytes?: number
+  /** M10b: emoji reactions to the slide itself, one key per person */
+  reactions?: NoteReactions
   createdAt: unknown
   updatedAt: unknown
 }
@@ -263,7 +269,8 @@ export const classInputSchema = z.object({
 export type ClassInput = z.infer<typeof classInputSchema>
 
 export const classSlideInputSchema = z.object({
-  title: z.string().trim().min(1).max(120),
+  /** Optional since M10b: the drawing can carry the question (D91) */
+  title: z.string().trim().max(120),
   instructions: z.string().trim().max(500),
   layout: z.enum(CLASS_LAYOUTS),
   zones: z.array(z.string().trim().max(40)).max(4),
@@ -744,7 +751,8 @@ export const MAX_NOTE_LENGTH = 2000
 
 export const noteTextSchema = z.string().trim().min(1).max(MAX_NOTE_LENGTH)
 
-export type AssetKind = 'cover' | 'slide' | 'logo'
+/** M10b: `class` = an image in the teacher's class drawing (the board's own folder) */
+export type AssetKind = 'cover' | 'slide' | 'logo' | 'class'
 /** Registry `studentId` (and Cloudinary folder) of board-level images, e.g. the logo (M12) */
 export const BOARD_ASSET_OWNER = 'board'
 export type AssetStatus = 'active' | 'orphaned' | 'deleted'
