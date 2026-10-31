@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   addMinute,
+  clockClosed,
   clockProgress,
   clockStatus,
   formatClock,
@@ -29,6 +30,22 @@ describe('class clock (M16)', () => {
     expect(remainingMs(clock(), 60_000)).toBe(9 * 60_000)
     expect(remainingMs(clock(), 11 * 60_000)).toBe(0)
     expect(clockProgress(clock(), 5 * 60_000)).toBe(0.5)
+  })
+
+  it('closes 15 s after the end, not while paused', () => {
+    expect(clockClosed(clock(), 10 * 60_000)).toBe(false)
+    expect(clockClosed(clock(), 10 * 60_000 + 14_000)).toBe(false)
+    expect(clockClosed(clock(), 10 * 60_000 + 15_000)).toBe(true)
+    // resumed after 4 min of pause-time: the end moves with the new run
+    const resumed = clock({
+      elapsedBeforeMs: 4 * 60_000,
+      startedAt: at(60_000),
+    })
+    expect(clockClosed(resumed, 7 * 60_000 + 20_000)).toBe(true)
+    expect(clockClosed(resumed, 7 * 60_000 + 10_000)).toBe(false)
+    expect(
+      clockClosed(clock({ paused: true, elapsedBeforeMs: 10 * 60_000 }), 1e9),
+    ).toBe(false)
   })
 
   it('pauses keeping what ran, and resumes from there', () => {

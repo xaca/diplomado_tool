@@ -70,7 +70,7 @@ test.describe('M16 · class clock', () => {
     await expect(banner).toHaveCount(0)
   })
 
-  test('"¡Tiempo!" at zero; students can\'t start the clock', async ({
+  test('"¡Tiempo!" at zero, then the clock closes; students can\'t start the clock', async ({
     page,
   }) => {
     await setClock({
@@ -78,7 +78,8 @@ test.describe('M16 · class clock', () => {
       label: 'Prototipo rápido',
       instructions: '',
       durationMs: 60_000,
-      startedAt: Timestamp.fromMillis(Date.now() - 120_000),
+      // Ended 3 s ago: "¡Tiempo!" for a moment, closed 15 s after the end
+      startedAt: Timestamp.fromMillis(Date.now() - 63_000),
       elapsedBeforeMs: 0,
       paused: false,
     })
@@ -90,6 +91,9 @@ test.describe('M16 · class clock', () => {
     )
     await expect(page.getByTestId('clock-time')).toHaveText('¡Tiempo!')
     await expect(page.getByRole('button', { name: 'Reloj' })).toHaveCount(0)
+    await expect(page.getByTestId('clock-banner')).toHaveCount(0, {
+      timeout: 20_000,
+    })
   })
 
   test('focus view for the projector, and the break screen with a Lottie animation', async ({
@@ -124,6 +128,36 @@ test.describe('M16 · class clock', () => {
     const animation = page.getByTestId('break-animation')
     await expect(animation).not.toHaveAttribute('data-animation', '')
     await expect(animation.locator('svg')).toHaveCount(1)
+    // …and a funny one beside it
+    const fun = page.getByTestId('break-fun')
+    await expect(fun).not.toHaveAttribute('data-animation', '')
+    await expect(fun.locator('svg')).toHaveCount(1)
+  })
+
+  test('the focus view goes back to the board when the clock closes', async ({
+    page,
+  }) => {
+    await setClock({
+      mode: 'break',
+      label: '',
+      instructions: '',
+      durationMs: 60_000,
+      startedAt: Timestamp.fromMillis(Date.now() - 62_000),
+      elapsedBeforeMs: 0,
+      paused: false,
+    })
+    await signIn(page, DEMO.teacher)
+    await page.goto(`${boardUrl}/focus`)
+    await expect(page.getByTestId('focus-time')).toHaveText('¡Volvemos!')
+    // The teacher's device clears it and the projector returns to the board
+    await expect(page).toHaveURL(new RegExp(`${boardUrl}$`), {
+      timeout: 20_000,
+    })
+    await expect
+      .poll(async () =>
+        (await emulatorDb.doc(`boards/${DEMO.boardId}`).get()).get('clock'),
+      )
+      .toBeNull()
   })
 })
 
@@ -191,14 +225,16 @@ test.describe('M16 · polls and ready to present', () => {
 
     await signIn(page, DEMO.teacher)
     await page.goto(boardUrl)
-    const filters = page.getByTestId('ready-filters')
+    // "Avance: Todos ▾" opens the counts
+    await page.getByTestId('ready-filters').click()
+    const menu = page.getByRole('menu')
     await expect(
-      filters.getByRole('button', { name: /Listos\s*1/ }),
+      menu.getByRole('menuitemradio', { name: /Listos\s*1/ }),
     ).toBeVisible()
     await expect(
-      filters.getByRole('button', { name: /Con diapositivas\s*2/ }),
+      menu.getByRole('menuitemradio', { name: /Con diapositivas\s*2/ }),
     ).toBeVisible()
-    await filters.getByRole('button', { name: /Listos/ }).click()
+    await menu.getByRole('menuitemradio', { name: /Listos/ }).click()
     await expect(page.getByTestId('space-card')).toHaveCount(1)
     await expect(page.getByTestId('ready-badge')).toHaveCount(1)
 

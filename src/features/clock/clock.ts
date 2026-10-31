@@ -5,6 +5,8 @@ import { MAX_CLOCK_MS, type ClassClock } from '@/model'
 // device from the shared state, so nobody writes every second.
 
 export const ENDING_MS = 60_000
+/** "¡Tiempo!" stays this long, then the clock closes (the teacher's device clears it) */
+export const CLOSE_AFTER_MS = 15_000
 
 export function remainingMs(
   clock: Pick<
@@ -26,6 +28,14 @@ export function clockStatus(clock: ClassClock, now = Date.now()): ClockStatus {
   if (left === 0) return 'ended'
   if (clock.paused) return 'paused'
   return left <= ENDING_MS ? 'ending' : 'running'
+}
+
+/** Ended long enough ago to close: everyone hides it, the teacher's device clears it. */
+export function clockClosed(clock: ClassClock, now = Date.now()) {
+  if (clock.paused || remainingMs(clock, now) > 0) return false
+  const endsAt =
+    toDate(clock.startedAt).getTime() + clock.durationMs - clock.elapsedBeforeMs
+  return now - endsAt >= CLOSE_AFTER_MS
 }
 
 /** 0 → 1 as time passes (progress ring). */

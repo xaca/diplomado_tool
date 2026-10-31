@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, Navigate, useParams } from 'react-router'
+import { Link, Navigate, useNavigate, useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, BellRing, Coffee, Timer } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -9,7 +9,7 @@ import { useBoard } from '@/features/boards/hooks'
 import { formatClock } from '@/features/clock/clock'
 import { BreakAnimation } from '@/features/clock/components/BreakAnimation'
 import { ClockControls } from '@/features/clock/components/ClockControls'
-import { useClockNow } from '@/features/clock/hooks'
+import { useClockNow, useCloseEndedClock } from '@/features/clock/hooks'
 import { normalizeEmail } from '@/lib/collections'
 import { gsap, motionAllowed } from '@/lib/gsap'
 import { cn } from '@/lib/utils'
@@ -35,7 +35,8 @@ function chime() {
 
 /**
  * Focus view for the projector (M16, F19 / F22): the class clock full screen, with a progress ring,
- * the activity and its instructions; during a break, random Lottie animations.
+ * the activity and its instructions; during a break, random Lottie animations (a calm one and a
+ * funny one). When the clock closes (or the teacher ends it) it goes back to the board.
  */
 export function FocusPage() {
   const { t } = useTranslation()
@@ -47,9 +48,21 @@ export function FocusPage() {
   const [controls, setControls] = useState(false)
   const [sound, setSound] = useState(false)
   const time = useRef<HTMLParagraphElement>(null)
+  const navigate = useNavigate()
   const isBoardTeacher =
     isTeacherRole(role) &&
     !!board.data?.teacherEmails.includes(normalizeEmail(user?.email ?? ''))
+
+  // Time's up and shown long enough: close it (the teacher's device clears it) and leave
+  const closed = !!now?.closed
+  useCloseEndedClock(boardId, closed, isBoardTeacher)
+  const hadClock = useRef(false)
+  const live = !!clock && !closed
+  useEffect(() => {
+    if (live) hadClock.current = true
+    else if (hadClock.current && boardId)
+      void navigate(`/b/${boardId}`, { replace: true })
+  }, [live, boardId, navigate])
 
   // "¡Tiempo!": a pulse (and the chime, if on)
   const ended = now?.status === 'ended'
@@ -102,7 +115,12 @@ export function FocusPage() {
               (isBreak ? t('clock.breakLabel') : t('clock.activity'))}
             {clock.paused && ` · ${t('clock.paused')}`}
           </p>
-          {isBreak && !ended && <BreakAnimation />}
+          {isBreak && !ended && (
+            <div className="flex items-center justify-center gap-[4vw]">
+              <BreakAnimation className="w-[min(40vw,42svh)]" />
+              <BreakAnimation kind="fun" className="w-[min(40vw,42svh)]" />
+            </div>
+          )}
           <div className="relative flex items-center justify-center">
             {!isBreak && (
               <svg

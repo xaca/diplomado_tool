@@ -4,32 +4,93 @@
       "file": "respira.json",
       "name": "Respira",
       "license": "Original (PBL Diplomado, MIT)",
-      "source": null
+      "source": null,
+      "kind": "calm"
     },
     {
       "file": "sol.json",
       "name": "Sol",
       "license": "Original (PBL Diplomado, MIT)",
-      "source": null
+      "source": null,
+      "kind": "calm"
     },
     {
       "file": "burbujas.json",
       "name": "Burbujas",
       "license": "Original (PBL Diplomado, MIT)",
-      "source": null
+      "source": null,
+      "kind": "calm"
     },
     {
       "file": "cafe.json",
       "name": "Café",
       "license": "Original (PBL Diplomado, MIT)",
-      "source": null
+      "source": null,
+      "kind": "calm"
     },
     {
       "file": "puntos.json",
       "name": "Puntos",
       "license": "Original (PBL Diplomado, MIT)",
-      "source": null
+      "source": null,
+      "kind": "calm"
+    },
+    {
+      "file": "cafetera.json",
+      "name": "Cafetera feliz",
+      "kind": "fun",
+      "license": "Lottie Simple License (LottieFiles), by Kelly Loh",
+      "source": "https://lottiefiles.com/animations/coffee-break-lpqK2U1U8h"
+    },
+    {
+      "file": "moka.json",
+      "name": "Moka",
+      "kind": "fun",
+      "license": "Lottie Simple License (LottieFiles), by Anna Molchanova",
+      "source": "https://lottiefiles.com/animations/coffee-time-w7Xa30qg7a"
+    },
+    {
+      "file": "taza-dormida.json",
+      "name": "Taza dormida",
+      "kind": "fun",
+      "license": "Lottie Simple License (LottieFiles), by Nadejda Yordanova",
+      "source": "https://lottiefiles.com/animations/cofee-time-UD65kaXsMD"
+    },
+    {
+      "file": "gato-cafe.json",
+      "name": "Gato con café",
+      "kind": "fun",
+      "license": "Lottie Simple License (LottieFiles), by April Margarette Martinez-Lim",
+      "source": "https://lottiefiles.com/animations/breaktime-HbIUVTwbgU"
+    },
+    {
+      "file": "gato-silba.json",
+      "name": "Gato silbando",
+      "kind": "fun",
+      "license": "Lottie Simple License (LottieFiles), by Christine Somkunwar",
+      "source": "https://lottiefiles.com/animations/funny-cat-d184bQuDaM"
+    },
+    {
+      "file": "gato-risa.json",
+      "name": "Gato riendo",
+      "kind": "fun",
+      "license": "Lottie Simple License (LottieFiles), by Dhruv",
+      "source": "https://lottiefiles.com/animations/animation-cuImjvGwBS"
+    },
+    {
+      "file": "chill.json",
+      "name": "Chill",
+      "kind": "fun",
+      "license": "Lottie Simple License (LottieFiles), by Didar Aizharyk",
+      "source": "https://lottiefiles.com/animations/chill-sXEmauKktv"
+    },
+    {
+      "file": "break-time.json",
+      "name": "Break Time",
+      "kind": "fun",
+      "license": "Lottie Simple License (LottieFiles), by Christine Chan",
+      "source": "https://lottiefiles.com/animations/text-animation-break-time-AMLV8vVTW9"
     }
   ],
-  "_how": "Add free LottieFiles animations here: download the Lottie JSON, check its license (Lottie Simple License), save it in public/lottie/ and add {file, name, license, source}."
+  "_how": "Add free LottieFiles animations here: download the Lottie JSON, check its license (Lottie Simple License) and that it has no expressions (the light player skips them), save it in public/lottie/ and add {file, name, kind, license, source}. kind: 'calm' (beside the time) or 'fun' (the funny companion)."
 }

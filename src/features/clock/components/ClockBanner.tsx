@@ -1,14 +1,16 @@
+import { useLayoutEffect, useRef } from 'react'
 import { Link } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { Coffee, Expand, Pause, Timer } from 'lucide-react'
 import { formatClock } from '@/features/clock/clock'
-import { useClockNow } from '@/features/clock/hooks'
+import { useClockNow, useCloseEndedClock } from '@/features/clock/hooks'
 import { cn } from '@/lib/utils'
 import type { ClassClock } from '@/model'
 
 /**
  * The class clock for everyone (M16, D49): a slim sticky bar on the board, the space page and the
- * slide editor. Amber in the last minute, "¡Tiempo!" at zero. The teacher gets "Vista enfocada".
+ * slide editor. Amber in the last minute, "¡Tiempo!" at zero, then it closes (CLOSE_AFTER_MS). The
+ * teacher gets "Vista enfocada". Its height is published as --clock-banner-h for sticky headers.
  */
 export function ClockBanner({
   boardId,
@@ -21,13 +23,27 @@ export function ClockBanner({
 }) {
   const { t } = useTranslation()
   const now = useClockNow(clock)
-  if (!clock || !now) return null
+  const bar = useRef<HTMLDivElement>(null)
+  const visible = !!clock && !!now && !now.closed
+  useCloseEndedClock(boardId, !!now?.closed, teacher)
+  useLayoutEffect(() => {
+    const root = document.documentElement.style
+    root.setProperty(
+      '--clock-banner-h',
+      `${visible ? (bar.current?.offsetHeight ?? 0) : 0}px`,
+    )
+    return () => {
+      root.removeProperty('--clock-banner-h')
+    }
+  }, [visible])
+  if (!clock || !now || !visible) return null
   const isBreak = clock.mode === 'break'
   const Icon = clock.paused ? Pause : isBreak ? Coffee : Timer
   const ended = now.status === 'ended'
 
   return (
     <div
+      ref={bar}
       role="timer"
       aria-live={ended ? 'assertive' : 'off'}
       className={cn(
