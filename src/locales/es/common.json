@@ -914,5 +914,54 @@
     "noneYet": "Aún no has publicado anuncios.",
     "importantBadge": "Importante",
     "remindedOn": "recordado {{when}}"
+  },
+  "fun": {
+    "switch": "Mensajes de ánimo",
+    "switchHint": "Un mensaje (y confeti en los grandes momentos) cuando avanzas. Solo tú los ves.",
+    "firstSlide": {
+      "a": "¡Primera diapositiva! Así empiezan los grandes proyectos",
+      "b": "¡Arrancaste! Tu primera diapositiva ya existe",
+      "c": "Primera diapositiva lista. ¡Vamos por más!"
+    },
+    "slides": {
+      "a": "¡{{count}} diapositivas! Vas con todo",
+      "b": "{{count}} diapositivas y contando",
+      "c": "¡Ya tienes {{count}} diapositivas! Buen ritmo"
+    },
+    "ready": {
+      "a": "¡Listo para presentar! Gran trabajo",
+      "b": "Tus diapositivas están listas. ¡A brillar!",
+      "c": "¡Lo lograste! Ya puedes presentar"
+    },
+    "stage": {
+      "a": "¡Pasaste a {{stage}}!",
+      "b": "Nueva etapa: {{stage}}. ¡Sigue así!",
+      "c": "{{stage}}: un paso más en tu proyecto"
+    },
+    "photo": {
+      "a": "¡Qué buena foto! Ahora tu tarjeta tiene cara",
+      "b": "Foto lista: tus compañeros ya te reconocen",
+      "c": "¡Esa foto te queda genial!"
+    },
+    "firstVote": {
+      "a": "¡Tu primer voto! Tu opinión cuenta",
+      "b": "Votaste por primera vez. ¡Gracias por participar!",
+      "c": "¡Primer voto registrado!"
+    },
+    "firstEmbed": {
+      "a": "¡Primer contenido insertado! Tu presentación cobra vida",
+      "b": "Insertaste tu primer contenido. ¡Se ve pro!",
+      "c": "¡Bien! Ya sabes insertar contenido"
+    },
+    "teacherNote": {
+      "a": "Tu docente te dejó una nota",
+      "b": "Tienes una nota nueva de tu docente",
+      "c": "Nota nueva de tu docente: échale un ojo"
+    },
+    "teacherEdit": {
+      "a": "Tu docente hizo cambios en tus diapositivas",
+      "b": "Tu docente editó tus diapositivas: revisa qué cambió",
+      "c": "Hay cambios de tu docente en tus diapositivas"
+    }
   }
 }

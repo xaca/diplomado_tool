@@ -914,5 +914,54 @@
     "noneYet": "You haven't published announcements yet.",
     "importantBadge": "Important",
     "remindedOn": "reminded {{when}}"
+  },
+  "fun": {
+    "switch": "Encouraging messages",
+    "switchHint": "A message (and confetti for the big moments) when you make progress. Only you see them.",
+    "firstSlide": {
+      "a": "First slide! That's how great projects start",
+      "b": "You're off! Your first slide exists",
+      "c": "First slide done. Keep going!"
+    },
+    "slides": {
+      "a": "{{count}} slides! You're on a roll",
+      "b": "{{count}} slides and counting",
+      "c": "{{count}} slides already! Great pace"
+    },
+    "ready": {
+      "a": "Ready to present! Great work",
+      "b": "Your slides are ready. Time to shine!",
+      "c": "You did it! You can present now"
+    },
+    "stage": {
+      "a": "You moved to {{stage}}!",
+      "b": "New stage: {{stage}}. Keep it up!",
+      "c": "{{stage}}: one more step in your project"
+    },
+    "photo": {
+      "a": "Nice photo! Your card has a face now",
+      "b": "Photo set: your classmates will recognize you",
+      "c": "That photo looks great!"
+    },
+    "firstVote": {
+      "a": "Your first vote! Your opinion counts",
+      "b": "You voted for the first time. Thanks for taking part!",
+      "c": "First vote counted!"
+    },
+    "firstEmbed": {
+      "a": "First embed! Your presentation comes alive",
+      "b": "You inserted your first content. Looks pro!",
+      "c": "Nice! Now you know how to embed content"
+    },
+    "teacherNote": {
+      "a": "Your teacher left you a note",
+      "b": "You have a new note from your teacher",
+      "c": "New note from your teacher: take a look"
+    },
+    "teacherEdit": {
+      "a": "Your teacher made changes to your slides",
+      "b": "Your teacher edited your slides: see what changed",
+      "c": "There are changes from your teacher in your slides"
+    }
   }
 }
