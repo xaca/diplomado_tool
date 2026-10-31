@@ -276,13 +276,17 @@ export function AttendanceHistory({
                               >
                                 {ATTENDANCE_STATUSES.map((option) => (
                                   <DropdownMenuRadioItem
+                                    closeOnClick
                                     key={option}
                                     value={option}
                                   >
                                     {t(`attendance.status.${option}`)}
                                   </DropdownMenuRadioItem>
                                 ))}
-                                <DropdownMenuRadioItem value={NONE}>
+                                <DropdownMenuRadioItem
+                                  closeOnClick
+                                  value={NONE}
+                                >
                                   {t('attendance.clear')}
                                 </DropdownMenuRadioItem>
                               </DropdownMenuRadioGroup>

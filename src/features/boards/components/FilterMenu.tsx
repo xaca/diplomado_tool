@@ -84,10 +84,16 @@ export function FilterMenu({
           value={value ?? ALL}
           onValueChange={(next) => onChange(next === ALL ? null : String(next))}
         >
-          <DropdownMenuRadioItem value={ALL}>{allLabel}</DropdownMenuRadioItem>
+          <DropdownMenuRadioItem closeOnClick value={ALL}>
+            {allLabel}
+          </DropdownMenuRadioItem>
           <DropdownMenuSeparator />
           {options.map((option) => (
-            <DropdownMenuRadioItem key={option.id} value={option.id}>
+            <DropdownMenuRadioItem
+              closeOnClick
+              key={option.id}
+              value={option.id}
+            >
               <Dot option={option} />
               <span className="flex-1">{option.label}</span>
               <span className="font-semibold tabular-nums">{option.count}</span>
