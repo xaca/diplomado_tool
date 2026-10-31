@@ -41,26 +41,28 @@ npm run worker:dev           # http://localhost:8787 — set VITE_MEDIA_API_URL=
 
 ## Scripts
 
-| Script                            | What it does                                            |
-| --------------------------------- | ------------------------------------------------------- |
-| `npm run dev`                     | Dev server (real Firebase project)                      |
-| `npm run dev:emulators`           | Dev server against the local emulators                  |
-| `npm run emulators` / `seed`      | Start Auth + Firestore emulators / load demo data       |
-| `npm run build`                   | Type-check + production build to `dist/`                |
-| `npm run lint` / `npm run format` | ESLint / Prettier                                       |
-| `npm test`                        | Unit tests                                              |
-| `npm run test:rules`              | Firestore Security Rules tests (emulator)               |
-| `npm run test:e2e`                | Playwright end-to-end tests (emulators)                 |
-| `npm run test:worker`             | Worker type-check + offline tests                       |
-| `npm run test:worker-integration` | Real Worker + emulators + rules                         |
-| `npm run test:admin`              | Real admin CLI + Firestore emulator + fake Cloudinary   |
-| `npm run check`                   | Full quality gate (all of the above + build)            |
-| `npm run worker:dev`              | Run the media-api Worker locally                        |
-| `npm run worker:deploy`           | Deploy the media-api Worker to Cloudflare               |
-| `npm run deploy:rules`            | Deploy Firestore rules + indexes                        |
-| `npm run deploy`                  | Build and deploy Hosting + Firestore rules              |
-| `npm run admin`                   | Admin CLI — see below                                   |
-| `npm run emulators:free`          | Stop leftover emulator/test processes holding the ports |
+| Script                            | What it does                                                                                   |
+| --------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `npm run dev`                     | Dev server (real Firebase project)                                                             |
+| `npm run dev:emulators`           | Dev server against the local emulators                                                         |
+| `npm run emulators` / `seed`      | Start Auth + Firestore emulators / load demo data                                              |
+| `npm run build`                   | Type-check + production build to `dist/`                                                       |
+| `npm run lint` / `npm run format` | ESLint / Prettier                                                                              |
+| `npm test`                        | Unit tests                                                                                     |
+| `npm run test:rules`              | Firestore Security Rules tests (emulator)                                                      |
+| `npm run test:e2e`                | Playwright end-to-end tests (emulators)                                                        |
+| `npm run test:worker`             | Worker type-check + offline tests                                                              |
+| `npm run test:worker-integration` | Real Worker + emulators + rules                                                                |
+| `npm run test:admin`              | Real admin CLI + Firestore emulator + fake Cloudinary                                          |
+| `npm run check`                   | Full quality gate (all of the above + build)                                                   |
+| `npm run worker:dev`              | Run the media-api Worker locally                                                               |
+| `npm run worker:deploy`           | Deploy the media-api Worker to Cloudflare                                                      |
+| `npm run deploy:rules`            | Deploy Firestore rules + indexes                                                               |
+| `npm run deploy`                  | Build and deploy Hosting + Firestore rules                                                     |
+| `npm run deploy:all`              | Worker → Firestore rules + indexes → build → Hosting (in this order, stops at the first error) |
+| `npm run release`                 | `npm run check` (all tests) and then `deploy:all`                                              |
+| `npm run admin`                   | Admin CLI — see below                                                                          |
+| `npm run emulators:free`          | Stop leftover emulator/test processes holding the ports                                        |
 
 ## Admin CLI
 

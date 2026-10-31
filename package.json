@@ -15,6 +15,8 @@
     "admin": "tsx scripts/admin/index.ts",
     "test:rules": "firebase emulators:exec --only firestore --project demo-pbl \"vitest run --project rules\"",
     "deploy:rules": "firebase deploy --only firestore:rules,firestore:indexes",
+    "deploy:all": "npm run worker:deploy && npm run deploy:rules && npm run build && firebase deploy --only hosting",
+    "release": "npm run check && npm run deploy:all",
     "dev:emulators": "vite --mode emulators",
     "seed": "tsx scripts/seed.ts",
     "test": "vitest run --project unit",
