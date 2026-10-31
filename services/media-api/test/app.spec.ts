@@ -1,5 +1,5 @@
 import { env } from 'cloudflare:test';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { handle, MAX_DELETE_BATCH, type Deps } from '../src/app';
 import { AppCheckError, AuthError, verifyIdToken } from '../src/auth';
 import { signParams, uploadParams } from '../src/cloudinary';
@@ -367,9 +367,16 @@ describe("teacher edits a student's slide (M15)", () => {
 
 	it('refuses a missing space, a locked board and teachers of other boards', async () => {
 		expect((await handle(sign({ boardId: BOARD, studentId: 'st_nobody' }, { token: TEACHER.token }), env, deps(docs()))).status).toBe(403);
-		expect((await handle(sign({ boardId: BOARD, studentId: 'st_laura' }, { token: TEACHER.token }), env, deps(docs('locked')))).status).toBe(403);
-		const otherBoard: Docs = { ...docs(), [`boards/${BOARD}`]: { status: 'active', teacherEmails: ['otro@gmail.com'], lastActivityAt: NOW, archiveAfterDays: 90 } };
-		expect((await handle(sign({ boardId: BOARD, studentId: 'st_laura' }, { token: TEACHER.token }), env, deps(otherBoard))).status).toBe(403);
+		expect(
+			(await handle(sign({ boardId: BOARD, studentId: 'st_laura' }, { token: TEACHER.token }), env, deps(docs('locked')))).status,
+		).toBe(403);
+		const otherBoard: Docs = {
+			...docs(),
+			[`boards/${BOARD}`]: { status: 'active', teacherEmails: ['otro@gmail.com'], lastActivityAt: NOW, archiveAfterDays: 90 },
+		};
+		expect((await handle(sign({ boardId: BOARD, studentId: 'st_laura' }, { token: TEACHER.token }), env, deps(otherBoard))).status).toBe(
+			403,
+		);
 	});
 });
 
@@ -389,16 +396,19 @@ describe('board logo (M12)', () => {
 	it('students, other boards and locked boards are refused', async () => {
 		const asStudent = await handle(sign({ scope: 'board', boardId: BOARD }), env, deps({ ...joinedLaura, ...teacherDocs() }));
 		expect(asStudent.status).toBe(403);
-		expect((await handle(sign({ scope: 'board', boardId: BOARD }, { token: TEACHER.token }), env, deps(teacherDocs('locked')))).status).toBe(403);
+		expect(
+			(await handle(sign({ scope: 'board', boardId: BOARD }, { token: TEACHER.token }), env, deps(teacherDocs('locked')))).status,
+		).toBe(403);
 		expect((await handle(sign({ scope: 'board', boardId: '../x' }, { token: TEACHER.token }), env, deps(teacherDocs()))).status).toBe(400);
 	});
 });
 
 describe('short links (M14)', () => {
 	const resolve = (url: unknown, token = LAURA.token) => post('/links/resolve', { url }, { token });
-	const hops =
-		(chain: Record<string, string | null>) =>
-		async (url: string) => ({ status: chain[url] ? 302 : 200, location: chain[url] ?? null });
+	const hops = (chain: Record<string, string | null>) => async (url: string) => ({
+		status: chain[url] ? 302 : 200,
+		location: chain[url] ?? null,
+	});
 
 	it('follows the redirects of an allow-listed shortener and returns the final address', async () => {
 		const d = { ...deps(), followRedirect: hops({ 'https://canva.link/abc': 'https://www.canva.com/design/DAG123/xyz/view' }) };
@@ -408,7 +418,10 @@ describe('short links (M14)', () => {
 	});
 
 	it('refuses other hosts, non-https, loops and anonymous callers', async () => {
-		const loop = { ...deps(), followRedirect: hops({ 'https://canva.link/a': 'https://canva.link/b', 'https://canva.link/b': 'https://canva.link/a' }) };
+		const loop = {
+			...deps(),
+			followRedirect: hops({ 'https://canva.link/a': 'https://canva.link/b', 'https://canva.link/b': 'https://canva.link/a' }),
+		};
 		expect((await handle(resolve('https://bit.ly/abc'), env, deps())).status).toBe(400);
 		expect((await handle(resolve('http://canva.link/abc'), env, deps())).status).toBe(400);
 		expect((await handle(resolve('not a url'), env, deps())).status).toBe(400);
@@ -416,6 +429,57 @@ describe('short links (M14)', () => {
 		const insecure = { ...deps(), followRedirect: hops({ 'https://forms.gle/x': 'http://docs.google.com/forms' }) };
 		expect((await handle(resolve('https://forms.gle/x'), env, insecure)).status).toBe(400);
 		expect((await handle(resolve('https://canva.link/abc', 'fake'), env, deps())).status).toBe(401);
+	});
+});
+
+describe('Canva designs (M17)', () => {
+	const VIEW = 'https://www.canva.com/design/DAFTFxhLLPw/ddljelrvwHm5zBTlNywJMQ/view';
+	const ask = (url: unknown, token = LAURA.token) => post('/links/canva', { url }, { token });
+	const canva =
+		(status: number, body: Record<string, unknown> | null = null) =>
+		async (viewUrl: string) => {
+			asked.push(viewUrl);
+			return { status, body };
+		};
+	let asked: string[] = [];
+	beforeEach(() => {
+		asked = [];
+	});
+
+	it('a shared design: its size and title, from the view link only', async () => {
+		const d = { ...deps(), canvaOembed: canva(200, { width: 794, height: 1123, title: 'Currículo', html: '<iframe…>' }) };
+		const response = await handle(ask(VIEW), env, d);
+		expect(response.status).toBe(200);
+		expect(await response.json()).toEqual({ shared: true, width: 794, height: 1123, title: 'Currículo' });
+		expect(asked).toEqual([VIEW]);
+	});
+
+	it('not found → not shared; other answers are "unknown" (502), never "private"', async () => {
+		expect(await (await handle(ask(VIEW), env, { ...deps(), canvaOembed: canva(404) })).json()).toEqual({ shared: false });
+		expect((await handle(ask(VIEW), env, { ...deps(), canvaOembed: canva(403) })).status).toBe(502);
+		expect((await handle(ask(VIEW), env, { ...deps(), canvaOembed: canva(200, { title: 'no size' }) })).status).toBe(502);
+		const down = {
+			...deps(),
+			canvaOembed: async () => {
+				throw new Error('network');
+			},
+		};
+		expect((await handle(ask(VIEW), env, down)).status).toBe(502);
+	});
+
+	it('refuses anything but a design view link, and anonymous callers', async () => {
+		const d = { ...deps(), canvaOembed: canva(200, { width: 1, height: 1 }) };
+		for (const url of [
+			`${VIEW}?embed`,
+			'https://www.canva.com/design/DAFTFxhLLPw/ddljelrvwHm5zBTlNywJMQ/edit',
+			'http://www.canva.com/design/DAFTFxhLLPw/view',
+			'https://evil.example/design/DAFTFxhLLPw/view',
+			'https://www.canva.com/_oembed?url=x',
+			42,
+		])
+			expect((await handle(ask(url), env, d)).status).toBe(400);
+		expect((await handle(ask(VIEW, 'fake'), env, d)).status).toBe(401);
+		expect(asked).toEqual([]);
 	});
 });
 
@@ -429,7 +493,11 @@ describe('profile photos (M11)', () => {
 		expect(body.params.overwrite).toBe('true');
 		expect(body.signature).toBe(await signParams(body.params, env.CLOUDINARY_API_SECRET));
 		// the deployed app uploads to the prod folder
-		const prod = await handle(sign({ scope: 'avatar', boardId: BOARD }, { origin: 'https://diplomado-fc679.web.app' }), env, deps(joinedLaura));
+		const prod = await handle(
+			sign({ scope: 'avatar', boardId: BOARD }, { origin: 'https://diplomado-fc679.web.app' }),
+			env,
+			deps(joinedLaura),
+		);
 		expect(((await prod.json()) as { params: Record<string, string> }).params.public_id).toBe(`pbl/prod/users/${LAURA.uid}/avatar`);
 	});
 

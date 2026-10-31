@@ -15,6 +15,8 @@ export type Deps = {
 	newId: () => string;
 	/** One redirect hop of a short link (M14): status + Location only, the body is never read */
 	followRedirect?: (url: string) => Promise<{ status: number; location: string | null }>;
+	/** Canva's oEmbed for a design view link (M17): status + parsed JSON body (null if not JSON) */
+	canvaOembed?: (viewUrl: string) => Promise<{ status: number; body: Record<string, unknown> | null }>;
 };
 
 /** Short links the app may ask to expand (keep in sync with SHORT_LINK_HOSTS in src/features/slides/embeds.ts) */
@@ -25,6 +27,18 @@ export async function defaultFollowRedirect(url: string) {
 	const response = await fetch(url, { method: 'GET', redirect: 'manual' });
 	await response.body?.cancel();
 	return { status: response.status, location: response.headers.get('Location') };
+}
+
+/** A Canva design's view link, the only thing sent to Canva's oEmbed (M17) */
+const CANVA_VIEW_URL = /^https:\/\/www\.canva\.com\/design\/[A-Za-z0-9_-]{6,}(\/[A-Za-z0-9_-]{6,})?\/view$/;
+
+export async function defaultCanvaOembed(viewUrl: string) {
+	const response = await fetch(`https://www.canva.com/_oembed?url=${encodeURIComponent(viewUrl)}`, {
+		headers: { Accept: 'application/json' },
+	});
+	const body = response.ok ? ((await response.json().catch(() => null)) as Record<string, unknown> | null) : null;
+	if (!response.ok) await response.body?.cancel();
+	return { status: response.status, body };
 }
 
 type Handler = (request: Request, env: Env, deps: Deps) => Promise<Response> | Response;
@@ -342,6 +356,31 @@ const routes: Record<string, Handler> = {
 			current = next.toString();
 		}
 		throw new HttpError(400, 'too many redirects');
+	},
+
+	/**
+	 * M17: is a Canva design shared with anyone with the link, and what shape is it? Asks Canva's
+	 * public oEmbed (the browser can't: no CORS). Signed-in users, design view links only; returns
+	 * { shared: false } when Canva doesn't know it publicly (404), else its size and title.
+	 */
+	'POST /links/canva': async (request, env, deps) => {
+		await authenticate(request, env, deps);
+		const body = await readBody(request);
+		const url = typeof body.url === 'string' ? body.url : '';
+		if (!CANVA_VIEW_URL.test(url)) throw new HttpError(400, 'not a canva design');
+		let answer: Awaited<ReturnType<NonNullable<Deps['canvaOembed']>>>;
+		try {
+			answer = await (deps.canvaOembed ?? defaultCanvaOembed)(url);
+		} catch {
+			throw new HttpError(502, 'canva unreachable');
+		}
+		// Only "not found" means private: anything else (bot checks, outages) is "don't know"
+		if (answer.status === 404) return json({ shared: false });
+		const width = Number(answer.body?.width);
+		const height = Number(answer.body?.height);
+		if (answer.status !== 200 || !(width > 0) || !(height > 0)) throw new HttpError(502, 'canva answer unknown');
+		const title = typeof answer.body?.title === 'string' ? answer.body.title.slice(0, 200) : '';
+		return json({ shared: true, width, height, title });
 	},
 
 	/** Cloudinary credits used this month (teacher dashboard meter). Any teacher. */
