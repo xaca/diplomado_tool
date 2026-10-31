@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { InvitePanel } from '@/features/boards/components/InvitePanel'
 import { LifecyclePanel } from '@/features/boards/components/LifecyclePanel'
 import { useBoard } from '@/features/boards/hooks'
+import { StagesPanel } from '@/features/stages/components/StagesPanel'
 import { ImportDialog } from '@/features/students/components/ImportDialog'
 import { StudentFormDialog } from '@/features/students/components/StudentFormDialog'
 import { StudentsTable } from '@/features/students/components/StudentsTable'
@@ -83,6 +84,11 @@ export function TeacherBoardPage() {
       <InvitePanel board={board.data} />
 
       <LifecyclePanel board={board.data} />
+
+      <StagesPanel
+        key={JSON.stringify(board.data.stages ?? null)}
+        board={board.data}
+      />
 
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-2">

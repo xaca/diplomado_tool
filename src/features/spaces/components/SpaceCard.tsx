@@ -1,12 +1,12 @@
 import { Link } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { ArrowUpRight, Pencil, Presentation } from 'lucide-react'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import type { Space } from '@/features/spaces/api'
+import { StageAvatar } from '@/features/stages/components/StageAvatar'
 import { IMAGE_SIZES, imageUrl } from '@/lib/cloudinary'
-import { initials } from '@/lib/initials'
+import type { StageDef } from '@/model'
 import { formatRelative, toDate } from '@/lib/time'
 
 type Props = {
@@ -16,6 +16,8 @@ type Props = {
   onEdit?: () => void
   /** The teacher presents this student's slides (M6) */
   canPresent?: boolean
+  /** The student's stage on this board (M11), already resolved */
+  stage?: StageDef | null
 }
 
 /** One student's card on the board (Padlet-like). */
@@ -25,6 +27,7 @@ export function SpaceCard({
   isMine,
   onEdit,
   canPresent = false,
+  stage = null,
 }: Props) {
   const { t, i18n } = useTranslation()
   const updated = formatRelative(
@@ -51,16 +54,29 @@ export function SpaceCard({
         />
       )}
       <header className="flex items-center gap-2 p-3 pb-0">
-        <Avatar className="size-7">
-          <AvatarImage
-            src={space.ownerPhotoURL ?? undefined}
-            alt=""
-            referrerPolicy="no-referrer"
+        {isMine && onEdit ? (
+          // My own ring: a shortcut to change my stage
+          <button
+            type="button"
+            onClick={onEdit}
+            className="rounded-full"
+            aria-label={t('stages.question')}
+          >
+            <StageAvatar
+              name={space.ownerName}
+              photoURL={space.ownerPhotoURL}
+              stage={stage}
+              size={34}
+            />
+          </button>
+        ) : (
+          <StageAvatar
+            name={space.ownerName}
+            photoURL={space.ownerPhotoURL}
+            stage={stage}
+            size={34}
           />
-          <AvatarFallback className="text-xs">
-            {initials(space.ownerName)}
-          </AvatarFallback>
-        </Avatar>
+        )}
         <div className="min-w-0 flex-1 leading-tight">
           <p className="truncate text-sm font-semibold text-neutral-900">
             {space.ownerName}

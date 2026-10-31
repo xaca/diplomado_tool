@@ -33,6 +33,8 @@ import { SlidePreview } from '@/features/slides/components/SlidePreview'
 import { preloadSlide } from '@/features/slides/engine/use-slide-svg'
 import { useSlides } from '@/features/slides/hooks'
 import { useMyStudentId, useSpaces } from '@/features/spaces/hooks'
+import { StageAvatar } from '@/features/stages/components/StageAvatar'
+import { boardStages, findStage } from '@/features/stages/stages'
 import { gsap, useGSAP } from '@/lib/gsap'
 import { cn } from '@/lib/utils'
 import { isTeacherRole, useAuth } from '@/providers/auth-context'
@@ -255,6 +257,14 @@ export function PresenterPage() {
           idle && 'opacity-0',
         )}
       >
+        {space && (
+          <StageAvatar
+            name={space.ownerName}
+            photoURL={space.ownerPhotoURL}
+            stage={findStage(boardStages(board.data), space.stage)}
+            size={36}
+          />
+        )}
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold" data-testid="presenter-student">
             {space?.ownerName}

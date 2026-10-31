@@ -51,6 +51,7 @@ export const DEMO_CARDS = [
     summary:
       'Una plataforma donde los clientes conozcan los servicios de la agencia, soliciten cotizaciones y hagan seguimiento a sus proyectos.',
     color: '#FFFFFF',
+    stage: 'prototype',
     joinedDaysAgo: 30,
     updatedDaysAgo: 30,
   },
@@ -60,6 +61,7 @@ export const DEMO_CARDS = [
     summary:
       'Una aplicación enfocada en la seguridad y bienestar de las mascotas, con una experiencia UI/UX intuitiva y con personalidad propia.',
     color: '#EDE9FE',
+    stage: 'ideate',
     joinedDaysAgo: 29,
     updatedDaysAgo: 3,
   },
@@ -69,6 +71,7 @@ export const DEMO_CARDS = [
     summary:
       'Quiero optimizar procesos y hacer que el análisis de datos sea más sencillo, dinámico y gráfico.',
     color: '#FCE7F3',
+    stage: 'browsing',
     joinedDaysAgo: 28,
     updatedDaysAgo: 9,
   },
@@ -137,6 +140,10 @@ export async function seedDemo() {
         title: card.title,
         summary: card.summary,
         color: card.color,
+        // M11: a demo class in several Design Thinking stages
+        stage: card.stage,
+        stageSetBy: 'student',
+        stageUpdatedAt: daysAgo(card.updatedDaysAgo),
         slideOrder: [],
         slideCount: 0,
         createdAt: daysAgo(card.joinedDaysAgo),

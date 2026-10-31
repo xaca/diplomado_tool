@@ -67,6 +67,7 @@ export async function loadBoardData(boardId: string): Promise<BoardData> {
         title: boardData.title,
         description: boardData.description,
         archiveAfterDays: boardData.archiveAfterDays,
+        stages: boardData.stages ?? null,
       },
       students: students.docs.map((student) => {
         const data = student.data() as StudentDoc
@@ -85,6 +86,7 @@ export async function loadBoardData(boardId: string): Promise<BoardData> {
           summary: data.summary,
           color: data.color,
           cover: data.cover ?? null,
+          stage: data.stage ?? null,
           slideOrder: data.slideOrder,
         }
       }),

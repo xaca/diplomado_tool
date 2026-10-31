@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, Pencil, Play, Presentation } from 'lucide-react'
+import { toast } from 'sonner'
 import { doc } from 'firebase/firestore'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useBoard } from '@/features/boards/hooks'
@@ -14,10 +14,13 @@ import { SlidePreview } from '@/features/slides/components/SlidePreview'
 import { useSlides } from '@/features/slides/hooks'
 import { SpaceProfileDialog } from '@/features/spaces/components/SpaceProfileDialog'
 import { useMyStudentId } from '@/features/spaces/hooks'
+import { setSpaceStage } from '@/features/stages/api'
+import { StageAvatar } from '@/features/stages/components/StageAvatar'
+import { StagePicker } from '@/features/stages/components/StagePicker'
+import { boardStages, findStage } from '@/features/stages/stages'
 import { db } from '@/lib/firebase'
 import { useLiveDoc } from '@/lib/firestore-hooks'
 import { IMAGE_SIZES, imageUrl } from '@/lib/cloudinary'
-import { initials } from '@/lib/initials'
 import { formatRelative, toDate } from '@/lib/time'
 import { paths, type SpaceDoc } from '@/model'
 import { isTeacherRole, useAuth } from '@/providers/auth-context'
@@ -56,7 +59,21 @@ export function SpacePage() {
   }
 
   const spaceId = space.data.id
-  const canEdit = isMine && !!board.data && isWritable(lifecycleOf(board.data))
+  const writable = !!board.data && isWritable(lifecycleOf(board.data))
+  const canEdit = isMine && writable
+  const stages = boardStages(board.data)
+  const stage = findStage(stages, space.data.stage)
+  const language = i18n.resolvedLanguage ?? 'es'
+
+  async function changeStage(next: string | null) {
+    if (!boardId) return
+    try {
+      await setSpaceStage(boardId, spaceId, next, 'teacher')
+      toast.success(t('stages.saved'))
+    } catch {
+      toast.error(t('errors.generic'))
+    }
+  }
 
   return (
     <section className="mx-auto flex max-w-3xl flex-col gap-4 p-4 sm:p-6">
@@ -81,24 +98,31 @@ export function SpacePage() {
           />
         )}
         <header className="mb-4 flex items-center gap-3">
-          <Avatar>
-            <AvatarImage
-              src={space.data.ownerPhotoURL ?? undefined}
-              alt=""
-              referrerPolicy="no-referrer"
-            />
-            <AvatarFallback>{initials(space.data.ownerName)}</AvatarFallback>
-          </Avatar>
+          <StageAvatar
+            name={space.data.ownerName}
+            photoURL={space.data.ownerPhotoURL}
+            stage={stage}
+            size={stage ? 88 : 48}
+          />
           <div className="flex-1">
             <p className="font-semibold text-neutral-900">
               {space.data.ownerName}
             </p>
             <p className="text-xs text-neutral-500">
-              {formatRelative(
-                toDate(space.data.updatedAt),
-                i18n.resolvedLanguage ?? 'es',
-              )}
+              {formatRelative(toDate(space.data.updatedAt), language)}
             </p>
+            {stage && space.data.stageUpdatedAt != null && (
+              <p className="text-xs text-neutral-500" data-testid="stage-since">
+                {t('stages.since', {
+                  when: formatRelative(
+                    toDate(space.data.stageUpdatedAt),
+                    language,
+                  ),
+                })}
+                {space.data.stageSetBy === 'teacher' &&
+                  ` · ${t('stages.setByTeacher')}`}
+              </p>
+            )}
           </div>
           {canEdit && (
             <Button variant="outline" onClick={() => setEditing(true)}>
@@ -115,6 +139,16 @@ export function SpacePage() {
           <p className="whitespace-pre-line text-neutral-800">
             {space.data.summary}
           </p>
+        )}
+        {teacher && writable && (
+          <div className="mt-4 rounded-xl bg-white/70 p-3">
+            <StagePicker
+              stages={stages}
+              value={stage?.id ?? null}
+              onChange={(next) => void changeStage(next)}
+              legend={t('stages.teacherLegend')}
+            />
+          </div>
         )}
       </article>
 
@@ -179,6 +213,7 @@ export function SpacePage() {
         <SpaceProfileDialog
           boardId={boardId}
           space={space.data}
+          stages={stages}
           open
           onOpenChange={(open) => !open && setEditing(false)}
         />

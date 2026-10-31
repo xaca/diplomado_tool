@@ -9,6 +9,8 @@ import { isWritable, lifecycleOf } from '@/features/boards/lifecycle'
 import { SpaceCard } from '@/features/spaces/components/SpaceCard'
 import { SpaceProfileDialog } from '@/features/spaces/components/SpaceProfileDialog'
 import { useMyStudentId, useSpaces } from '@/features/spaces/hooks'
+import { StageSummary } from '@/features/stages/components/StageSummary'
+import { boardStages, findStage, matchesStage } from '@/features/stages/stages'
 import { gsap, useGSAP } from '@/lib/gsap'
 import { isTeacherRole, useAuth } from '@/providers/auth-context'
 
@@ -22,6 +24,8 @@ export function BoardPage() {
   const spaces = useSpaces(boardId, me.studentId)
   // Keep the id, not a copy: the dialog must see live changes (e.g. a new cover)
   const [editingId, setEditingId] = useState<string | null>(null)
+  // Teacher's stage filter (M11): a stage id, NO_STAGE, or null for everyone
+  const [stageFilter, setStageFilter] = useState<string | null>(null)
   const grid = useRef<HTMLDivElement>(null)
   const ready = !spaces.loading && !me.loading
 
@@ -62,6 +66,10 @@ export function BoardPage() {
   const writable = isWritable(lifecycleOf(board.data))
   const mySpace = spaces.data.find((space) => space.id === me.studentId)
   const editing = spaces.data.find((space) => space.id === editingId)
+  const stages = boardStages(board.data)
+  const shown = spaces.data.filter((space) =>
+    matchesStage(space, stages, stageFilter),
+  )
 
   return (
     <div className="board-background min-h-[calc(100svh-3.5rem)]">
@@ -113,6 +121,15 @@ export function BoardPage() {
           </div>
         </header>
 
+        {teacher && spaces.data.length > 0 && (
+          <StageSummary
+            spaces={spaces.data}
+            stages={stages}
+            filter={stageFilter}
+            onFilter={setStageFilter}
+          />
+        )}
+
         {!writable && (
           <p className="rounded-lg bg-white/80 p-3 text-sm">
             {t('dashboard.readOnly')}
@@ -144,11 +161,12 @@ export function BoardPage() {
             className="columns-1 gap-4 sm:columns-2 lg:columns-3 xl:columns-4"
             data-testid="board-grid"
           >
-            {spaces.data.map((space) => (
+            {shown.map((space) => (
               <SpaceCard
                 key={space.id}
                 boardId={boardId}
                 space={space}
+                stage={findStage(stages, space.stage)}
                 isMine={space.id === me.studentId}
                 canPresent={teacher}
                 onEdit={writable ? () => setEditingId(space.id) : undefined}
@@ -163,6 +181,7 @@ export function BoardPage() {
           key={editing.id}
           boardId={boardId}
           space={editing}
+          stages={stages}
           open
           onOpenChange={(open) => !open && setEditingId(null)}
         />

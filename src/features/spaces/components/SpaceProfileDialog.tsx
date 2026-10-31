@@ -17,12 +17,15 @@ import { Textarea } from '@/components/ui/textarea'
 import { recordBoardActivity } from '@/features/boards/api'
 import { updateSpaceProfile, type Space } from '@/features/spaces/api'
 import { CoverPicker } from '@/features/spaces/components/CoverPicker'
+import { StagePicker } from '@/features/stages/components/StagePicker'
+import { findStage } from '@/features/stages/stages'
 import { cn } from '@/lib/utils'
 import {
   SPACE_COLOR_NAMES,
   SPACE_COLORS,
   spaceProfileSchema,
   type SpaceProfile,
+  type StageDef,
 } from '@/model'
 
 type Props = {
@@ -30,6 +33,8 @@ type Props = {
   space: Space
   open: boolean
   onOpenChange: (open: boolean) => void
+  /** The board's stages (M11) */
+  stages: StageDef[]
 }
 
 export function SpaceProfileDialog({
@@ -37,6 +42,7 @@ export function SpaceProfileDialog({
   space,
   open,
   onOpenChange,
+  stages,
 }: Props) {
   const { t } = useTranslation()
   const [title, setTitle] = useState(space.title)
@@ -46,6 +52,9 @@ export function SpaceProfileDialog({
       ? (space.color as SpaceProfile['color'])
       : SPACE_COLORS[0],
   )
+  // A stage the teacher removed from the list shows as "no stage"
+  const initialStage = findStage(stages, space.stage)?.id ?? null
+  const [stage, setStage] = useState<string | null>(initialStage)
   const [saving, setSaving] = useState(false)
 
   const valid = spaceProfileSchema.safeParse({ title, summary, color }).success
@@ -55,7 +64,12 @@ export function SpaceProfileDialog({
     if (!valid) return
     setSaving(true)
     try {
-      await updateSpaceProfile(boardId, space.id, { title, summary, color })
+      await updateSpaceProfile(
+        boardId,
+        space.id,
+        { title, summary, color },
+        stage === initialStage ? undefined : stage,
+      )
       void recordBoardActivity(boardId)
       toast.success(t('space.saved'))
       onOpenChange(false)
@@ -68,7 +82,8 @@ export function SpaceProfileDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      {/* Scrolls on short screens: with the stage picker (M11) the form is taller than a phone */}
+      <DialogContent className="max-h-[calc(100svh-2rem)] overflow-y-auto">
         <form onSubmit={submit} className="flex flex-col gap-4">
           <DialogHeader>
             <DialogTitle>{t('space.editTitle')}</DialogTitle>
@@ -101,6 +116,14 @@ export function SpaceProfileDialog({
               {summary.length}/1000
             </span>
           </div>
+
+          <StagePicker
+            stages={stages}
+            value={stage}
+            onChange={setStage}
+            legend={t('stages.question')}
+            hint={t('stages.questionHint')}
+          />
 
           <CoverPicker boardId={boardId} space={space} />
 

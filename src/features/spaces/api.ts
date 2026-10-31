@@ -11,6 +11,7 @@ import { toDate } from '@/lib/time'
 import {
   paths,
   spaceProfileSchema,
+  STAGE_ID_PATTERN,
   type ImageRef,
   type SpaceDoc,
   type SpaceProfile,
@@ -21,17 +22,28 @@ export type Space = WithId<SpaceDoc>
 export const spacesCollection = (boardId: string) =>
   collection(db, paths.spaces(boardId))
 
-/** The student edits their card. Only touches the space doc (PLAN.md review R2: no fan-out on slide saves). */
+/**
+ * The student edits their card, and their stage (M11) when `stage` is given (null = no stage).
+ * Only touches the space doc (PLAN.md review R2: no fan-out on slide saves).
+ */
 export function updateSpaceProfile(
   boardId: string,
   studentId: string,
   profile: SpaceProfile,
+  stage?: string | null,
 ) {
   const { title, summary, color } = spaceProfileSchema.parse(profile)
+  if (stage != null && !STAGE_ID_PATTERN.test(stage))
+    throw new Error(`invalid stage id: ${stage}`)
   return updateDoc(doc(db, paths.space(boardId, studentId)), {
     title,
     summary,
     color,
+    ...(stage !== undefined && {
+      stage,
+      stageUpdatedAt: serverTimestamp(),
+      stageSetBy: 'student',
+    }),
     updatedAt: serverTimestamp(),
   })
 }

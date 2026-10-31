@@ -6,7 +6,10 @@ import {
   MAX_SLIDE_BYTES,
   MAX_SLIDES,
   SPACE_COLORS,
+  STAGE_ID_PATTERN,
+  stageListSchema,
   type ImageRef,
+  type StageDef,
 } from '@/model'
 
 // Board backup and template files (PLAN.md → Import / export). Pure: shared with the admin CLI.
@@ -26,6 +29,8 @@ const boardSettingsSchema = z.object({
   title: z.string().trim().min(1).max(120),
   description: z.string().max(500).default(''),
   archiveAfterDays: z.number().int().min(7).max(3650).default(90),
+  /** M11: the board's own stage list (missing / null = Design Thinking defaults) */
+  stages: stageListSchema.nullable().optional(),
 })
 
 const slideSchema = z.object({
@@ -59,6 +64,8 @@ export const boardBackupSchema = z.object({
         summary: z.string().max(1000),
         color: z.enum(SPACE_COLORS),
         cover: imageRefSchema.nullable(),
+        /** M11 (optional: files from before keep restoring) */
+        stage: z.string().regex(STAGE_ID_PATTERN).nullable().optional(),
         slides: z.array(slideSchema).max(MAX_SLIDES),
       }),
     )
@@ -75,7 +82,12 @@ export type BoardTemplate = z.infer<typeof boardTemplateSchema>
 
 /** What the backup is built from (plain data, read by the app or the CLI). */
 export type BoardSnapshot = {
-  board: { title: string; description: string; archiveAfterDays: number }
+  board: {
+    title: string
+    description: string
+    archiveAfterDays: number
+    stages?: StageDef[] | null
+  }
   students: {
     id: string
     displayName: string
@@ -88,6 +100,7 @@ export type BoardSnapshot = {
     summary: string
     color: string
     cover?: ImageRef | null
+    stage?: string | null
     slideOrder: string[]
   }[]
   /** Slides per student id */
@@ -126,6 +139,7 @@ export function buildBackup(
         summary: space.summary,
         color: space.color,
         cover: space.cover ?? null,
+        stage: space.stage ?? null,
         // In the space's order; slides without a document are skipped
         slides: space.slideOrder.flatMap((id) => {
           const slide = byId.get(id)

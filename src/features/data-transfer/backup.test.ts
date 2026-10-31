@@ -95,6 +95,31 @@ describe('board backup', () => {
     expect(parseBoardFile(template).kind).toBe('template')
   })
 
+  it('keeps the board stage list and each student stage (M11)', () => {
+    const stages = [
+      { id: 'explore', label: 'Explorando', color: '#E11D48', kind: 'stage' },
+      { id: 'browsing', color: '#64748B', kind: 'browsing' },
+    ] as const
+    const withStages: BoardSnapshot = {
+      ...snapshot,
+      board: { ...snapshot.board, stages: [...stages] },
+      spaces: [{ ...snapshot.spaces[0], stage: 'explore' }],
+    }
+    const backup = buildBackup(withStages)
+    expect(backup.board.stages).toEqual(stages)
+    expect(backup.spaces[0].stage).toBe('explore')
+    expect(parseBoardFile(JSON.parse(JSON.stringify(backup))).file).toEqual(
+      backup,
+    )
+    // a template of a Design Thinking course keeps its stages
+    expect(buildTemplate(withStages.board).board.stages).toEqual(stages)
+    // files from before M11 (no stage fields) still restore
+    const old = JSON.parse(JSON.stringify(buildBackup(snapshot)))
+    delete old.spaces[0].stage
+    delete old.board.stages
+    expect(parseBoardFile(old).kind).toBe('backup')
+  })
+
   it('refuses other files, newer versions and broken data', () => {
     const backup = buildBackup(snapshot)
     expect(() => parseBoardFile({ type: 'pbl.students', version: 1 })).toThrow(

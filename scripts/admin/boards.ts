@@ -65,6 +65,7 @@ export async function loadBoard(boardId: string) {
       title: board.title,
       description: board.description,
       archiveAfterDays: board.archiveAfterDays,
+      stages: board.stages ?? null,
     },
     students: students.docs.map((doc) => {
       const data = doc.data() as StudentDoc
@@ -83,6 +84,7 @@ export async function loadBoard(boardId: string) {
         summary: data.summary,
         color: data.color,
         cover: data.cover ?? null,
+        stage: data.stage ?? null,
         slideOrder: data.slideOrder,
       }
     }),
