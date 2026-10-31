@@ -1691,3 +1691,168 @@ describe("teacher edits students' slides (M15)", () => {
     )
   })
 })
+
+describe("teacher's class tools (M16)", () => {
+  const SEB = { uid: 'seb', email: 'seb@gmail.com' }
+  const boardOf = (db: Firestore) => doc(db, 'boards', BOARD)
+  const pollRef = (db: Firestore, pollId = 'p1') =>
+    doc(db, 'boards', BOARD, 'spaces', 'st_laura', 'polls', pollId)
+  const voteRef = (db: Firestore, voterId: string, pollId = 'p1') =>
+    doc(pollRef(db, pollId), 'votes', voterId)
+  const clock = (overrides: Record<string, unknown> = {}) => ({
+    mode: 'activity',
+    label: 'Lluvia de ideas',
+    instructions: '',
+    durationMs: 600_000,
+    startedAt: serverTimestamp(),
+    elapsedBeforeMs: 0,
+    paused: false,
+    ...overrides,
+  })
+  const poll = (overrides: Record<string, unknown> = {}) => ({
+    question: '¿Qué idea desarrollo?',
+    options: [
+      { id: 'a', label: 'Idea 1' },
+      { id: 'b', label: 'Idea 2' },
+    ],
+    optionIds: ['a', 'b'],
+    counts: {},
+    anonymous: false,
+    status: 'open',
+    authorUid: LAURA.uid,
+    authorName: 'Laura',
+    authorRole: 'student',
+    createdAt: serverTimestamp(),
+    ...overrides,
+  })
+
+  /** Laura and Seb joined; Laura has poll p1 (optionally anonymous / closed) */
+  async function withPoll(overrides: Record<string, unknown> = {}) {
+    await seed()
+    await autoJoin(as(LAURA), LAURA, 'st_laura')
+    await env.withSecurityRulesDisabled(async (context) => {
+      const db = context.firestore()
+      await setDoc(
+        doc(db, 'boards', BOARD, 'students', 'st_seb'),
+        student([SEB.email]),
+      )
+      await setDoc(doc(db, 'boards', BOARD, 'studentEmails', SEB.email), {
+        email: SEB.email,
+        studentId: 'st_seb',
+      })
+      await setDoc(
+        doc(db, 'boards', BOARD, 'spaces', 'st_laura', 'polls', 'p1'),
+        poll({ createdAt: Timestamp.now(), ...overrides }),
+      )
+    })
+    await autoJoin(as(SEB), SEB, 'st_seb')
+  }
+
+  function vote(
+    db: Firestore,
+    voterId: string,
+    optionId: string,
+    counts: Record<string, number>,
+  ) {
+    const batch = writeBatch(db)
+    batch.set(voteRef(db, voterId), { optionId, votedAt: serverTimestamp() })
+    batch.update(pollRef(db), { counts })
+    return batch.commit()
+  }
+
+  it('only the board teacher runs the class clock, with valid values', async () => {
+    await seed()
+    await assertSucceeds(updateDoc(boardOf(as(TEACHER)), { clock: clock() }))
+    await assertSucceeds(updateDoc(boardOf(as(TEACHER)), { clock: null }))
+    await assertFails(
+      updateDoc(boardOf(as(TEACHER)), { clock: clock({ mode: 'party' }) }),
+    )
+    await assertFails(
+      updateDoc(boardOf(as(TEACHER)), {
+        clock: clock({ durationMs: 4 * 3600_000 }),
+      }),
+    )
+    await assertFails(
+      updateDoc(boardOf(as(TEACHER)), {
+        clock: clock({ elapsedBeforeMs: 700_000 }),
+      }),
+    )
+    await autoJoin(as(LAURA), LAURA, 'st_laura')
+    await assertFails(updateDoc(boardOf(as(LAURA)), { clock: clock() }))
+  })
+
+  it('the student marks their slides ready; classmates and the teacher cannot', async () => {
+    await withPoll()
+    const ready = {
+      readyToPresent: true,
+      readyAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    }
+    await assertSucceeds(
+      updateDoc(doc(as(LAURA), 'boards', BOARD, 'spaces', 'st_laura'), ready),
+    )
+    await assertFails(
+      updateDoc(doc(as(SEB), 'boards', BOARD, 'spaces', 'st_laura'), ready),
+    )
+    await assertFails(
+      updateDoc(doc(as(TEACHER), 'boards', BOARD, 'spaces', 'st_laura'), ready),
+    )
+  })
+
+  it('polls: the owner and the teacher create them; classmates cannot; counts start empty', async () => {
+    await withPoll()
+    await assertSucceeds(setDoc(pollRef(as(LAURA), 'p2'), poll()))
+    await assertSucceeds(
+      setDoc(
+        pollRef(as(TEACHER), 'p3'),
+        poll({ authorUid: TEACHER.uid, authorRole: 'teacher' }),
+      ),
+    )
+    await assertFails(
+      setDoc(pollRef(as(SEB), 'p4'), poll({ authorUid: SEB.uid })),
+    )
+    await assertFails(
+      setDoc(pollRef(as(LAURA), 'p5'), poll({ counts: { a: 10 } })),
+    )
+    await assertFails(
+      setDoc(pollRef(as(LAURA), 'p6'), poll({ authorRole: 'teacher' })),
+    )
+  })
+
+  it('a classmate votes once (counts follow), can change it, cannot inflate or vote for others', async () => {
+    await withPoll()
+    await assertFails(vote(as(SEB), 'st_laura', 'a', { a: 1 }))
+    await assertFails(vote(as(SEB), 'st_seb', 'a', { a: 2 }))
+    await assertFails(vote(as(SEB), 'st_seb', 'zzz', { zzz: 1 }))
+    await assertFails(updateDoc(pollRef(as(SEB)), { counts: { a: 1 } }))
+    await assertSucceeds(vote(as(SEB), 'st_seb', 'a', { a: 1 }))
+    // change: one down, one up
+    await assertSucceeds(vote(as(SEB), 'st_seb', 'b', { a: 0, b: 1 }))
+    // voting again for the same option changes nothing (refused)
+    await assertFails(vote(as(SEB), 'st_seb', 'b', { a: 0, b: 2 }))
+  })
+
+  it('no votes on a closed poll; the author closes and reopens', async () => {
+    await withPoll()
+    await assertSucceeds(updateDoc(pollRef(as(LAURA)), { status: 'closed' }))
+    await assertFails(vote(as(SEB), 'st_seb', 'a', { a: 1 }))
+    await assertFails(updateDoc(pollRef(as(SEB)), { status: 'open' }))
+    await assertSucceeds(updateDoc(pollRef(as(TEACHER)), { status: 'open' }))
+  })
+
+  it('who voted: the teacher, the author unless anonymous, each student their own', async () => {
+    await withPoll()
+    await assertSucceeds(vote(as(SEB), 'st_seb', 'a', { a: 1 }))
+    await assertSucceeds(getDoc(voteRef(as(SEB), 'st_seb')))
+    await assertFails(getDocs(collection(pollRef(as(SEB)), 'votes')))
+    await assertSucceeds(getDocs(collection(pollRef(as(LAURA)), 'votes')))
+    await assertSucceeds(getDocs(collection(pollRef(as(TEACHER)), 'votes')))
+  })
+
+  it('anonymous polls hide the votes from the author', async () => {
+    await withPoll({ anonymous: true })
+    await assertSucceeds(vote(as(SEB), 'st_seb', 'a', { a: 1 }))
+    await assertFails(getDocs(collection(pollRef(as(LAURA)), 'votes')))
+    await assertFails(getDoc(voteRef(as(LAURA), 'st_seb')))
+  })
+})

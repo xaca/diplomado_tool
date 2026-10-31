@@ -136,11 +136,24 @@ service cloud.firestore {
           && existsAfter(/databases/$(database)/documents/boards/$(boardId)/assets/$(logo.assetId)));
     }
 
+    // M16: the class clock (keep in sync with ClassClock / MAX_CLOCK_MS in src/model/index.ts)
+    function validClock(clock) {
+      return clock == null
+        || (clock is map
+          && clock.keys().hasOnly(['mode', 'label', 'instructions', 'durationMs', 'startedAt', 'elapsedBeforeMs', 'paused'])
+          && clock.mode in ['activity', 'break']
+          && isString(clock.label, 0, 80) && isString(clock.instructions, 0, 300)
+          && clock.durationMs is int && clock.durationMs >= 10000 && clock.durationMs <= 10800000
+          && clock.elapsedBeforeMs is int && clock.elapsedBeforeMs >= 0 && clock.elapsedBeforeMs <= clock.durationMs
+          && clock.paused is bool
+          && clock.startedAt is timestamp);
+    }
+
     function validBoard(boardId) {
       let data = request.resource.data;
       return data.keys().hasOnly(['title', 'description', 'teacherEmails', 'joinCode', 'joinCodeEnabled', 'status',
           'archiveAfterDays', 'background', 'createdAt', 'updatedAt', 'lastActivityAt', 'archivedAt', 'stages',
-          'pattern', 'layout', 'sortBy', 'stickyHeader', 'logo', 'teacherProfiles'])
+          'pattern', 'layout', 'sortBy', 'stickyHeader', 'logo', 'teacherProfiles', 'clock'])
         && isString(data.title, 1, 120)
         && isString(data.description, 0, 500)
         && data.teacherEmails is list && myEmail() in data.teacherEmails
@@ -157,7 +170,8 @@ service cloud.firestore {
         && (!('sortBy' in data) || data.sortBy in ['joined', 'name', 'updated'])
         && (!('stickyHeader' in data) || data.stickyHeader is bool)
         && (!('logo' in data) || validBoardLogo(data.logo, boardId))
-        && (!('teacherProfiles' in data) || (data.teacherProfiles is map && data.teacherProfiles.size() <= 10));
+        && (!('teacherProfiles' in data) || (data.teacherProfiles is map && data.teacherProfiles.size() <= 10))
+        && (!('clock' in data) || validClock(data.clock));
     }
 
     match /boards/{boardId} {
@@ -294,7 +308,7 @@ service cloud.firestore {
         let data = request.resource.data;
         return data.keys().hasOnly(['studentId', 'ownerName', 'ownerPhotoURL', 'title', 'summary', 'color',
             'slideOrder', 'slideCount', 'cover', 'stage', 'stageUpdatedAt', 'stageSetBy', 'group', 'teacherEditsUnseen',
-            'createdAt', 'updatedAt'])
+            'readyToPresent', 'readyAt', 'createdAt', 'updatedAt'])
           && (!('cover' in data) || data.cover == null || validImageRef(data.cover, boardId, studentId))
           && data.studentId == studentId
           && isString(data.ownerName, 1, 120)
@@ -308,7 +322,8 @@ service cloud.firestore {
           && (!('stage' in data) || data.stage == null || (data.stage is string && data.stage.matches('[a-z0-9-]{1,40}')))
           && (!('stageSetBy' in data) || data.stageSetBy in ['student', 'teacher'])
           && (!('group' in data) || isString(data.group, 0, 60))
-          && (!('teacherEditsUnseen' in data) || data.teacherEditsUnseen is bool);
+          && (!('teacherEditsUnseen' in data) || data.teacherEditsUnseen is bool)
+          && (!('readyToPresent' in data) || data.readyToPresent is bool);
       }
 
       // M11: whoever changes the stage signs it, with the server time
@@ -344,7 +359,7 @@ service cloud.firestore {
             && request.resource.data.updatedAt == request.time
             && request.resource.data.diff(resource.data).affectedKeys()
                  .hasOnly(['title', 'summary', 'color', 'ownerName', 'ownerPhotoURL', 'cover', 'slideOrder',
-                   'slideCount', 'stage', 'stageUpdatedAt', 'stageSetBy', 'updatedAt'])
+                   'slideCount', 'stage', 'stageUpdatedAt', 'stageSetBy', 'readyToPresent', 'readyAt', 'updatedAt'])
             && stageSignedBy('student'))
           // the teacher renames the student or changes their group → keep the card in sync (M12)
           || (isBoardTeacher(boardId)
@@ -449,6 +464,86 @@ service cloud.firestore {
               || (request.resource.data.role == 'student' && isSpaceOwner(boardId, studentId)));
           // the teacher may always clear one (e.g. purge); the student their own or a stale one
           allow delete: if isBoardTeacher(boardId) || (isSpaceOwner(boardId, studentId) && freeOrMine());
+        }
+
+        // ---------- M16: polls in a student's space, one vote per student ----------
+
+        function pollPath(pollId) {
+          return /databases/$(database)/documents/boards/$(boardId)/spaces/$(studentId)/polls/$(pollId);
+        }
+
+        function votePath(pollId, voterId) {
+          return /databases/$(database)/documents/boards/$(boardId)/spaces/$(studentId)/polls/$(pollId)/votes/$(voterId);
+        }
+
+        function myStudentId() {
+          return get(memberPath(boardId, request.auth.uid)).data.studentId;
+        }
+
+        function validNewPoll() {
+          let data = request.resource.data;
+          return data.keys().hasOnly(['question', 'options', 'optionIds', 'counts', 'anonymous', 'status', 'authorUid',
+              'authorName', 'authorRole', 'createdAt'])
+            && isString(data.question, 1, 200)
+            && data.options is list && data.options.size() >= 2 && data.options.size() <= 6
+            && data.optionIds is list && data.optionIds.size() == data.options.size()
+            && data.counts == {}
+            && data.anonymous is bool
+            && data.status == 'open'
+            && data.authorUid == request.auth.uid
+            && isString(data.authorName, 1, 200)
+            && data.createdAt == request.time;
+        }
+
+        // A vote moves the counts by exactly one (a change of vote: one down, one up), in the same batch
+        function countsFollowVote(pollId, voterId) {
+          let before = resource.data.counts;
+          let after = request.resource.data.counts;
+          let next = getAfter(votePath(pollId, voterId)).data.optionId;
+          return after.get(next, 0) == before.get(next, 0) + 1
+            && (exists(votePath(pollId, voterId))
+              ? (get(votePath(pollId, voterId)).data.optionId != next
+                && after.get(get(votePath(pollId, voterId)).data.optionId, 0)
+                     == before.get(get(votePath(pollId, voterId)).data.optionId, 0) - 1
+                && after.diff(before).affectedKeys()
+                     .hasOnly([next, get(votePath(pollId, voterId)).data.optionId]))
+              : after.diff(before).affectedKeys().hasOnly([next]));
+        }
+
+        match /polls/{pollId} {
+          allow read: if isBoardTeacher(boardId) || isMember(boardId);
+          allow create: if boardIsActive(boardId) && validNewPoll()
+            && ((isSpaceOwner(boardId, studentId) && request.resource.data.authorRole == 'student')
+              || (isBoardTeacher(boardId) && request.resource.data.authorRole == 'teacher'));
+          allow update: if boardIsActive(boardId) && (
+            // the author or the teacher opens / closes it
+            ((isBoardTeacher(boardId) || resource.data.authorUid == request.auth.uid)
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+              && request.resource.data.status in ['open', 'closed'])
+            // a student votes: the counts follow their vote
+            || (isMember(boardId) && resource.data.status == 'open'
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['counts'])
+              && countsFollowVote(pollId, myStudentId())));
+          allow delete: if isBoardTeacher(boardId) || resource.data.authorUid == request.auth.uid;
+
+          match /votes/{voterId} {
+            // Who voted: the teacher; the author too unless the poll is anonymous; each student their own
+            allow get: if isBoardTeacher(boardId)
+              || (isMember(boardId) && voterId == myStudentId())
+              || (get(pollPath(pollId)).data.authorUid == request.auth.uid && get(pollPath(pollId)).data.anonymous == false);
+            allow list: if isBoardTeacher(boardId)
+              || (get(pollPath(pollId)).data.authorUid == request.auth.uid && get(pollPath(pollId)).data.anonymous == false);
+            allow create, update: if isMember(boardId) && boardIsActive(boardId)
+              && voterId == myStudentId()
+              && get(pollPath(pollId)).data.status == 'open'
+              && request.resource.data.keys().hasOnly(['optionId', 'votedAt'])
+              && request.resource.data.optionId in get(pollPath(pollId)).data.optionIds
+              && request.resource.data.votedAt == request.time
+              && getAfter(pollPath(pollId)).data.counts != get(pollPath(pollId)).data.counts;
+            // with the poll (same batch), or by the teacher (student removed, purge)
+            allow delete: if isBoardTeacher(boardId)
+              || (get(pollPath(pollId)).data.authorUid == request.auth.uid && !existsAfter(pollPath(pollId)));
+          }
         }
 
         // ---------- notes/{noteId}: the teacher's annotations on a slide ----------

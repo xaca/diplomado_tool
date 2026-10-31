@@ -33,6 +33,13 @@ export const paths = {
     `${COLLECTIONS.boards}/${boardId}/spaces/${studentId}/notes`,
   note: (boardId: string, studentId: string, noteId: string) =>
     `${COLLECTIONS.boards}/${boardId}/spaces/${studentId}/notes/${noteId}`,
+  /** M16: polls in a student's space, and their votes (one per student) */
+  polls: (boardId: string, studentId: string) =>
+    `${COLLECTIONS.boards}/${boardId}/spaces/${studentId}/polls`,
+  poll: (boardId: string, studentId: string, pollId: string) =>
+    `${COLLECTIONS.boards}/${boardId}/spaces/${studentId}/polls/${pollId}`,
+  vote: (boardId: string, studentId: string, pollId: string, voterId: string) =>
+    `${COLLECTIONS.boards}/${boardId}/spaces/${studentId}/polls/${pollId}/votes/${voterId}`,
   /** M15: a slide's saved version ('student' = before the teacher's changes) */
   version: (
     boardId: string,
@@ -100,7 +107,62 @@ export type BoardDoc = {
   logo?: ImageRef | null
   /** Name and photo of each teacher, by email, for the #DOCENTE ring in the header (M12) */
   teacherProfiles?: Record<string, TeacherProfile>
+  /** The class clock: a timed activity or a break, shown to everyone (M16) */
+  clock?: ClassClock | null
 }
+
+// ---------- class tools (M16) ----------
+
+/**
+ * Running: remaining = durationMs - elapsedBeforeMs - (now - startedAt).
+ * Paused: remaining = durationMs - elapsedBeforeMs.
+ */
+export type ClassClock = {
+  mode: 'activity' | 'break'
+  label: string
+  instructions: string
+  durationMs: number
+  startedAt: unknown
+  elapsedBeforeMs: number
+  paused: boolean
+}
+export const CLOCK_PRESETS_MIN = {
+  activity: [3, 5, 10, 15, 25],
+  break: [5, 10, 15],
+} as const
+/** Keep in sync with firestore.rules (validClock) */
+export const MAX_CLOCK_MS = 3 * 60 * 60_000
+export const clockInputSchema = z.object({
+  mode: z.enum(['activity', 'break']),
+  label: z.string().trim().max(80),
+  instructions: z.string().trim().max(300),
+  minutes: z.number().min(1).max(180),
+})
+
+/** spaces/{studentId}/polls/{pollId}: a quick vote in a student's space */
+export type PollDoc = {
+  question: string
+  options: { id: string; label: string }[]
+  /** Same ids as `options` (the rules can't read inside a list of maps) */
+  optionIds: string[]
+  /** Votes per option id, kept in step with the votes by the rules */
+  counts: Record<string, number>
+  anonymous: boolean
+  status: 'open' | 'closed'
+  authorUid: string
+  authorName: string
+  authorRole: 'student' | 'teacher'
+  createdAt: unknown
+}
+/** polls/{pollId}/votes/{studentId}: one per student (both accounts of a person count once) */
+export type VoteDoc = { optionId: string; votedAt: unknown }
+export const MAX_OPEN_POLLS = 3
+export const pollInputSchema = z.object({
+  question: z.string().trim().min(1).max(200),
+  options: z.array(z.string().trim().min(1).max(80)).min(2).max(6),
+  anonymous: z.boolean(),
+})
+export type PollInput = z.infer<typeof pollInputSchema>
 
 export type TeacherProfile = { name: string; photoURL: string | null }
 
@@ -199,6 +261,9 @@ export type SpaceDoc = {
   slideCount: number
   /** Card cover image (M4) */
   cover?: ImageRef | null
+  /** M16: the student marked their slides ready to present */
+  readyToPresent?: boolean
+  readyAt?: unknown
   /** M15: the teacher changed the student's slides and the student hasn't looked yet */
   teacherEditsUnseen?: boolean
   /** The student's group (e.g. "Equipo 1"), copied from the roster for the "Por grupo" layout (M12) */
