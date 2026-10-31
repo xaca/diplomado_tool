@@ -65,10 +65,24 @@ export type SlideCanvasHandle = {
   convertTextLinks: () => number
 }
 
+/**
+ * M10b: where a drawing that isn't a student's slide is saved and its images uploaded (the
+ * teacher's class slides). Without it the canvas saves the student's slide as before.
+ */
+export type CanvasPersist = {
+  save: (
+    content: string,
+    bytes: number,
+    files: Record<string, ImageRef>,
+  ) => Promise<void>
+  upload: (file: File) => Promise<ImageRef>
+}
+
 type Props = {
   boardId: string
   studentId: string
-  slide: Slide
+  /** A student's slide; with `persist`, any drawing with an id (the rest is only read for students) */
+  slide: Pick<Slide, 'id' | 'content' | 'files'> & Partial<Slide>
   language: string
   onStatus: (status: SaveStatus, error?: unknown) => void
   onSize?: (bytes: number) => void
@@ -76,6 +90,7 @@ type Props = {
   onImageError: (error: unknown) => void
   /** M15: the board's teacher editing a student's slide (their first save keeps the student's version) */
   editor?: 'student' | 'teacher'
+  persist?: CanvasPersist
   ref?: Ref<SlideCanvasHandle>
 }
 
@@ -91,6 +106,7 @@ export default function SlideCanvas({
   onSize,
   onImageError,
   editor = 'student',
+  persist,
   ref,
 }: Props) {
   const slideId = slide.id
@@ -101,9 +117,9 @@ export default function SlideCanvas({
   const known = useRef(new Map(Object.entries(slide.files ?? {})))
   const uploads = useRef(new Map<string, Promise<ImageRef | null>>())
   const signature = useRef<string | null>(null)
-  const callbacks = useRef({ onStatus, onSize, onImageError })
+  const callbacks = useRef({ onStatus, onSize, onImageError, persist })
   useLayoutEffect(() => {
-    callbacks.current = { onStatus, onSize, onImageError }
+    callbacks.current = { onStatus, onSize, onImageError, persist }
   })
   const autosave = useRef<Autosave | null>(null)
 
@@ -227,10 +243,15 @@ export default function SlideCanvas({
         const { content, bytes } = serializeScene(kept, background)
         callbacks.current.onSize?.(bytes)
         if (bytes > MAX_SLIDE_BYTES) throw new SlideTooLargeError()
+        const custom = callbacks.current.persist
+        if (custom) {
+          await custom.save(content, bytes, files)
+          return
+        }
         const keep =
           editor === 'teacher' &&
           needsStudentSnapshot(opened, studentKept.current)
-            ? opened
+            ? (opened as Slide)
             : undefined
         await saveSlide(
           boardId,
@@ -319,12 +340,13 @@ export default function SlideCanvas({
 
   function upload(fileId: string, dataURL: string) {
     const extension = dataURL.slice(11, dataURL.indexOf(';')) || 'png'
-    const pending = uploadImage({
-      file: dataUrlToFile(dataURL, `${fileId}.${extension}`),
-      boardId,
-      studentId,
-      kind: 'slide',
-    })
+    const file = dataUrlToFile(dataURL, `${fileId}.${extension}`)
+    const custom = callbacks.current.persist
+    const pending = (
+      custom
+        ? custom.upload(file)
+        : uploadImage({ file, boardId, studentId, kind: 'slide' })
+    )
       .then((ref) => {
         known.current.set(fileId, ref)
         return ref

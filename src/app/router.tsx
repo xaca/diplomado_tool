@@ -3,6 +3,7 @@ import { HomeRedirect, RequireAuth, RequireTeacher } from '@/app/guards'
 import { AppShell, type ShellHandle } from '@/components/layout/AppShell'
 import { RouteError } from '@/components/layout/RouteError'
 import { BoardPage } from '@/pages/BoardPage'
+import { ClassDesignPage } from '@/pages/ClassDesignPage'
 import { ClassesPage } from '@/pages/ClassesPage'
 import { ClassPage } from '@/pages/ClassPage'
 import { ClassPresentPage } from '@/pages/ClassPresentPage'
@@ -65,6 +66,11 @@ export const router = createBrowserRouter([
           // M10: class participation (sticky-note walls)
           { path: 'b/:boardId/class', element: <ClassesPage /> },
           { path: 'b/:boardId/class/:classId', element: <ClassPage /> },
+          // M10b: the teacher designs a class slide with Excalidraw
+          {
+            path: 'b/:boardId/class/:classId/s/:slideId/design',
+            element: <ClassDesignPage />,
+          },
           {
             path: 'b/:boardId/s/:studentId/edit',
             element: <EditorRoute />,

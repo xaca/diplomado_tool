@@ -23,6 +23,7 @@ import {
   type ClassInput,
   type ClassSlideDoc,
   type ClassSlideInput,
+  type ImageRef,
   type NoteColor,
   type NoteReactions,
   type Reaction,
@@ -60,6 +61,7 @@ function newSlide(input: ClassSlideInput) {
   return {
     ...classSlideInputSchema.parse(input),
     locked: false,
+    reactions: {},
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   }
@@ -329,4 +331,34 @@ export async function tidyStickyNotes(
       })
     await batch.commit()
   }
+}
+
+/** M10b: the teacher's drawing of a class slide (autosaved by the slide canvas). */
+export function saveClassDrawing(
+  boardId: string,
+  classId: string,
+  slideId: string,
+  drawing: { content: string; bytes: number; files: Record<string, ImageRef> },
+) {
+  return updateDoc(slideRef(boardId, classId, slideId), {
+    ...drawing,
+    updatedAt: serverTimestamp(),
+  })
+}
+
+/** M10b: tap an emoji on the slide itself (my own key only, like on notes). */
+export function reactToClassSlide(
+  boardId: string,
+  classId: string,
+  slideId: string,
+  reactions: NoteReactions | undefined,
+  me: { uid: string; name: string },
+  emoji: Reaction,
+) {
+  const entry = toggleReaction(reactions, me.uid, me.name.slice(0, 120), emoji)
+  return updateDoc(
+    slideRef(boardId, classId, slideId),
+    new FieldPath('reactions', me.uid),
+    entry ?? deleteField(),
+  )
 }
