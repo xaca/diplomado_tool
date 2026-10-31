@@ -119,9 +119,22 @@ test.describe('M5 · slides', () => {
     const before = (await savedSlides('st_laura')).order
     const handle = page.getByRole('button', { name: 'Mover diapositiva 1' })
     await handle.focus()
+    // dnd-kit announces each step in a live region; wait for it so the keys never outrun the
+    // drag measurements (this was the flaky part of this test)
+    const announcer = page.locator('[id^="DndLiveRegion"]')
     await page.keyboard.press('Space')
     await expect(handle).toHaveAttribute('aria-pressed', 'true')
-    await page.keyboard.press('ArrowDown')
+    // picked up: measured over itself…
+    await expect(announcer).toContainText(`over droppable area ${before[0]}.`)
+    // …then over the next slide. The keyboard sensor attaches its listener a moment after the
+    // pick-up, so an early ArrowDown can be lost: retry it (with 2 slides it can't overshoot)
+    await expect(async () => {
+      await page.keyboard.press('ArrowDown')
+      await expect(announcer).toContainText(
+        `over droppable area ${before[1]}.`,
+        { timeout: 500 },
+      )
+    }).toPass()
     await page.keyboard.press('Space')
     await expect(handle).not.toHaveAttribute('aria-pressed', 'true')
     await expect
