@@ -1,7 +1,6 @@
 import { useNavigate } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { LogOut, RefreshCw, UserRound } from 'lucide-react'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -17,9 +16,9 @@ import {
 import { useAuthActions, useLanguage } from '@/features/auth/hooks'
 import { cardPhoto, displayNameOf } from '@/features/profile/api'
 import { useProfile } from '@/features/profile/hooks'
+import { StageAvatar } from '@/features/stages/components/StageAvatar'
 import { SUPPORTED_LANGUAGES } from '@/lib/i18n'
-import { initials } from '@/lib/initials'
-import { useAuth } from '@/providers/auth-context'
+import { isTeacherRole, useAuth } from '@/providers/auth-context'
 
 export function UserMenu() {
   const { t } = useTranslation()
@@ -46,14 +45,13 @@ export function UserMenu() {
           />
         }
       >
-        <Avatar>
-          <AvatarImage
-            src={photoURL ?? undefined}
-            alt=""
-            referrerPolicy="no-referrer"
-          />
-          <AvatarFallback>{initials(name)}</AvatarFallback>
-        </Avatar>
+        {/* Teachers wear the #DOCENTE ring (M12) */}
+        <StageAvatar
+          name={name}
+          photoURL={photoURL}
+          teacher={isTeacherRole(role)}
+          size={32}
+        />
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end" className="w-64">

@@ -12,6 +12,7 @@ import { lifecycleOf, splitByLifecycle } from '@/features/boards/lifecycle'
 import { useMyBoards } from '@/features/membership/hooks'
 import type { WithId } from '@/lib/firestore-hooks'
 import type { BoardDoc } from '@/model'
+import { IMAGE_SIZES, imageUrl } from '@/lib/cloudinary'
 
 export function StudentHomePage() {
   const { t } = useTranslation()
@@ -67,6 +68,13 @@ function BoardGrid({
         <Link key={board.id} to={`/b/${board.id}`} className="group">
           <Card className="h-full transition-colors group-hover:border-primary">
             <CardHeader>
+              {board.logo && (
+                <img
+                  src={imageUrl(board.logo, IMAGE_SIZES.logo)}
+                  alt=""
+                  className="mb-2 max-h-12 max-w-28 object-contain"
+                />
+              )}
               <CardTitle>{board.title}</CardTitle>
               {board.description && (
                 <CardDescription className="line-clamp-2">

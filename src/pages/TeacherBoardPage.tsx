@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { InvitePanel } from '@/features/boards/components/InvitePanel'
 import { LifecyclePanel } from '@/features/boards/components/LifecyclePanel'
 import { useBoard } from '@/features/boards/hooks'
+import { useTeacherBoardSync } from '@/features/boards/sync'
 import { StagesPanel } from '@/features/stages/components/StagesPanel'
 import { ImportDialog } from '@/features/students/components/ImportDialog'
 import { StudentFormDialog } from '@/features/students/components/StudentFormDialog'
@@ -29,6 +30,12 @@ export function TeacherBoardPage() {
     [spaces.loading, spaces.data],
   )
   const [adding, setAdding] = useState(false)
+  // M12: my name / photo on the board header, and each card's group from the roster
+  useTeacherBoardSync(
+    board.data,
+    spaces.loading ? null : spaces.data,
+    students.loading ? null : students.data,
+  )
 
   if (board.loading) {
     return (

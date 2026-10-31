@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import type { Space } from '@/features/spaces/api'
 import { StageAvatar } from '@/features/stages/components/StageAvatar'
 import { IMAGE_SIZES, imageUrl } from '@/lib/cloudinary'
+import { cn } from '@/lib/utils'
 import type { StageDef } from '@/model'
 import { formatRelative, toDate } from '@/lib/time'
 
@@ -18,6 +19,8 @@ type Props = {
   canPresent?: boolean
   /** The student's stage on this board (M11), already resolved */
   stage?: StageDef | null
+  /** `flow`: masonry / column flow (spacing below); `cell`: fills a grid cell (M12) */
+  fit?: 'flow' | 'cell'
 }
 
 /** One student's card on the board (Padlet-like). */
@@ -28,6 +31,7 @@ export function SpaceCard({
   onEdit,
   canPresent = false,
   stage = null,
+  fit = 'flow',
 }: Props) {
   const { t, i18n } = useTranslation()
   const updated = formatRelative(
@@ -38,8 +42,12 @@ export function SpaceCard({
   return (
     <article
       data-card
+      data-flip-id={space.id}
       data-testid="space-card"
-      className="mb-4 break-inside-avoid rounded-xl border border-black/5 shadow-sm transition-shadow hover:shadow-md"
+      className={cn(
+        'flex flex-col rounded-xl border border-black/5 shadow-sm transition-shadow hover:shadow-md',
+        fit === 'flow' ? 'mb-4 break-inside-avoid' : 'h-full',
+      )}
       style={{ backgroundColor: space.color }}
     >
       {space.cover && (
@@ -103,7 +111,7 @@ export function SpaceCard({
         )}
       </div>
 
-      <footer className="flex items-center gap-1 border-t border-black/5 px-2 py-1.5">
+      <footer className="mt-auto flex items-center gap-1 border-t border-black/5 px-2 py-1.5">
         <span className="flex-1 px-1 text-xs text-neutral-500">
           {t('space.slides', { count: space.slideCount })}
         </span>

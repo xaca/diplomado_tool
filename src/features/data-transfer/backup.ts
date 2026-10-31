@@ -7,6 +7,8 @@ import {
   MAX_SLIDES,
   SPACE_COLORS,
   STAGE_ID_PATTERN,
+  boardLookSchema,
+  type BoardLook,
   stageListSchema,
   type ImageRef,
   type StageDef,
@@ -31,6 +33,8 @@ const boardSettingsSchema = z.object({
   archiveAfterDays: z.number().int().min(7).max(3650).default(90),
   /** M11: the board's own stage list (missing / null = Design Thinking defaults) */
   stages: stageListSchema.nullable().optional(),
+  /** M12: the board's look (missing = today's look); the logo isn't restored, like covers */
+  look: boardLookSchema.optional(),
 })
 
 const slideSchema = z.object({
@@ -87,6 +91,7 @@ export type BoardSnapshot = {
     description: string
     archiveAfterDays: number
     stages?: StageDef[] | null
+    look?: BoardLook
   }
   students: {
     id: string

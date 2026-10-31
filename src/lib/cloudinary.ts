@@ -17,6 +17,8 @@ export const IMAGE_SIZES = {
   cardCover: { w: 400, h: 225, crop: 'fill' },
   slide: { w: 1280, crop: 'limit' },
   present: { w: 1920, crop: 'limit' },
+  /** Board logo (M12): header, "Mis tableros", presenter */
+  logo: { w: 320, h: 160, crop: 'fit' },
 } as const satisfies Record<string, ImageSize>
 
 export function imageUrl(

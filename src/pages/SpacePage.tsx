@@ -202,6 +202,7 @@ export function SpacePage() {
                   slideId={slide.id}
                   notes={notes.bySlide.get(slide.id) ?? []}
                   canWrite={teacher}
+                  teacherProfiles={board.data?.teacherProfiles}
                 />
               )}
             </li>

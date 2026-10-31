@@ -2,6 +2,7 @@ import {
   collection,
   deleteField,
   doc,
+  FieldPath,
   getDoc,
   query,
   serverTimestamp,
@@ -12,8 +13,19 @@ import {
 import { COLLECTIONS, normalizeEmail } from '@/lib/collections'
 import { db } from '@/lib/firebase'
 import { shouldRecordActivity } from '@/features/boards/lifecycle'
+import type { WithId } from '@/lib/firestore-hooks'
 import { toDate } from '@/lib/time'
-import { boardInputSchema, newJoinCode, paths, type BoardInput } from '@/model'
+import {
+  boardInputSchema,
+  boardLookSchema,
+  newJoinCode,
+  paths,
+  type BoardDoc,
+  type BoardInput,
+  type BoardLook,
+  type ImageRef,
+  type TeacherProfile,
+} from '@/model'
 
 export const boardsQueryFor = (email: string) =>
   query(
@@ -75,6 +87,51 @@ export async function updateBoardInfo(
   // The invite page shows the title before the student is a member
   batch.update(doc(db, paths.joinCode(joinCode)), { boardTitle: title })
   await batch.commit()
+}
+
+/** The board's look (M12): background, pattern, layout, order, sticky header. */
+export function saveBoardLook(boardId: string, look: BoardLook) {
+  return updateDoc(boardRef(boardId), {
+    ...boardLookSchema.parse(look),
+    updatedAt: serverTimestamp(),
+  })
+}
+
+/** Sets (or removes, with null) the board logo; the previous one is marked unused (M7 cleanup). */
+export async function setBoardLogo(
+  boardId: string,
+  next: ImageRef | null,
+  previous: ImageRef | null | undefined,
+) {
+  const batch = writeBatch(db)
+  batch.update(boardRef(boardId), { logo: next, updatedAt: serverTimestamp() })
+  if (previous && previous.assetId !== next?.assetId)
+    batch.update(doc(db, paths.asset(boardId, previous.assetId)), {
+      status: 'orphaned',
+    })
+  await batch.commit()
+}
+
+/**
+ * Keeps my name and photo on the boards I teach up to date (the header shows them with the
+ * #DOCENTE ring). Writes only when something changed. The email has dots: a FieldPath, not a string.
+ */
+export function syncTeacherProfile(
+  board: WithId<BoardDoc>,
+  email: string,
+  profile: TeacherProfile,
+) {
+  const current = board.teacherProfiles?.[email]
+  if (
+    !board.teacherEmails.includes(email) ||
+    (current?.name === profile.name && current?.photoURL === profile.photoURL)
+  )
+    return Promise.resolve()
+  return updateDoc(
+    boardRef(board.id),
+    new FieldPath('teacherProfiles', email),
+    profile,
+  )
 }
 
 export function setInviteEnabled(boardId: string, enabled: boolean) {

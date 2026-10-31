@@ -163,7 +163,12 @@ function ProfileForm({ profile }: { profile: UserDoc | null }) {
             className="flex items-center gap-3"
             data-testid="profile-preview"
           >
-            <StageAvatar name={shownName} photoURL={preview} size={48} />
+            <StageAvatar
+              name={shownName}
+              photoURL={preview}
+              teacher={isTeacherRole(role)}
+              size={48}
+            />
             <div className="flex min-w-0 flex-col">
               <span className="truncate font-medium">{shownName}</span>
               <span className="truncate text-sm text-muted-foreground">

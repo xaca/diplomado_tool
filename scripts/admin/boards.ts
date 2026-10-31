@@ -18,6 +18,7 @@ import type {
 } from '@/model'
 import { deleteFolder, deleteImages } from './cloudinary.ts'
 import { db } from './firebase.ts'
+import { resolveLook } from '@/features/boards/look'
 
 // Board lifecycle from the console (PLAN.md → Admin CLI). Same rules as the teacher dashboard
 // (purge only archived boards, backup first), but with admin credentials: no Security Rules.
@@ -66,6 +67,7 @@ export async function loadBoard(boardId: string) {
       description: board.description,
       archiveAfterDays: board.archiveAfterDays,
       stages: board.stages ?? null,
+      look: resolveLook(board),
     },
     students: students.docs.map((doc) => {
       const data = doc.data() as StudentDoc
@@ -122,7 +124,11 @@ export async function loadBoard(boardId: string) {
     assets: assetRows,
     report: analyzeStorage({
       assets: assetRows,
-      covers: spaces.docs.map((doc) => (doc.data() as SpaceDoc).cover),
+      // the board logo (M12) counts like a card cover
+      covers: [
+        ...spaces.docs.map((doc) => (doc.data() as SpaceDoc).cover),
+        board.logo,
+      ],
       slideAssetIds: slides.flatMap((s) =>
         s.docs.map((doc) => (doc.data() as SlideDoc).assetIds ?? []),
       ),

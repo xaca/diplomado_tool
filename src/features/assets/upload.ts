@@ -128,21 +128,27 @@ export async function uploadImage(options: {
   studentId: string
   kind: AssetKind
   onProgress?: (percent: number) => void
+  /** Longest side after resizing in the browser (logos are small) */
+  maxDimension?: number
 }): Promise<ImageRef> {
-  const { file, boardId, studentId, kind, onProgress } = options
+  const { file, boardId, studentId, kind, onProgress, maxDimension } = options
   const problem = checkFile(file)
   if (problem) throw new UploadError(problem)
 
   let prepared: Blob
   try {
-    prepared = await prepareImage(file)
+    prepared = await prepareImage(file, maxDimension)
   } catch {
     throw new UploadError('tooLarge')
   }
 
   let signed: SignedUpload
   try {
-    signed = await mediaApi.signUpload(boardId, studentId)
+    // The board logo (M12) is signed for the board's teacher, into the board's folder
+    signed =
+      kind === 'logo'
+        ? await mediaApi.signBoardUpload(boardId)
+        : await mediaApi.signUpload(boardId, studentId)
   } catch (error) {
     const status = (error as { status?: number }).status
     throw new UploadError(

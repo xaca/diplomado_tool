@@ -45,6 +45,8 @@ async function newSpace(
       cardName(user, profile, student),
       cardPhoto(user, profile),
     ),
+    // M12: the roster's group, for the "Por grupo" layout
+    ...(student?.group ? { group: student.group } : {}),
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   }

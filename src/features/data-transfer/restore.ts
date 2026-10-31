@@ -1,5 +1,9 @@
 import { doc, serverTimestamp, setDoc, writeBatch } from 'firebase/firestore'
-import { createBoard, setArchiveAfterDays } from '@/features/boards/api'
+import {
+  createBoard,
+  saveBoardLook,
+  setArchiveAfterDays,
+} from '@/features/boards/api'
 import { slideAssetIds, type BoardFile } from '@/features/data-transfer/backup'
 import { saveBoardStages } from '@/features/stages/api'
 import { db } from '@/lib/firebase'
@@ -23,6 +27,7 @@ export async function restoreBoardFile(
   if (file.board.archiveAfterDays !== 90)
     await setArchiveAfterDays(boardId, file.board.archiveAfterDays)
   if (file.board.stages) await saveBoardStages(boardId, file.board.stages)
+  if (file.board.look) await saveBoardLook(boardId, file.board.look)
   if (kind === 'template') return boardId
 
   const spaces = new Map(file.spaces.map((space) => [space.studentId, space]))
@@ -52,6 +57,7 @@ export async function restoreBoardFile(
         studentId: student.id,
         ownerName: student.name,
         ownerPhotoURL: null,
+        ...(student.group ? { group: student.group } : {}),
         title: space.title,
         summary: space.summary,
         color: space.color,

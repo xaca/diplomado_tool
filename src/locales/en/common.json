@@ -466,6 +466,82 @@
     "down": "Move down",
     "remove": "Remove stage",
     "add": "Add stage",
-    "reset": "Back to Design Thinking"
+    "reset": "Back to Design Thinking",
+    "teacher": "Teacher"
+  },
+  "look": {
+    "customize": "Customize",
+    "title": "Customize board",
+    "hint": "Changes show on the board as you choose. Nobody else sees them until you save.",
+    "info": "Name and description",
+    "name": "Board name",
+    "description": "Description",
+    "logo": "Logo",
+    "logoHint": "Square or wide; shown in the header, in “My boards” and when presenting.",
+    "logoUpload": "Upload logo",
+    "logoChange": "Change logo",
+    "logoRemove": "Remove logo",
+    "logoSaved": "Logo updated",
+    "logoRemoved": "Logo removed",
+    "background": "Background",
+    "pattern": "Texture",
+    "patterns": {
+      "dots": "Dots",
+      "grid": "Grid",
+      "none": "Plain"
+    },
+    "backgrounds": {
+      "yellow": "Yellow",
+      "mint": "Mint",
+      "sky": "Sky",
+      "lavender": "Lavender",
+      "peach": "Peach",
+      "sand": "Sand",
+      "white": "White",
+      "charcoal": "Charcoal",
+      "sunset": "Sunset",
+      "ocean": "Ocean",
+      "forest": "Forest",
+      "night": "Night"
+    },
+    "layout": "Layout",
+    "layouts": {
+      "masonry": "Wall",
+      "grid": "Grid",
+      "list": "List",
+      "stages": "By stage",
+      "groups": "By group"
+    },
+    "sortBy": "Order",
+    "sorts": {
+      "joined": "Joining order",
+      "name": "Name",
+      "updated": "Last updated"
+    },
+    "sticky": "Sticky header",
+    "stickyHint": "Title, logo and stages stay visible while scrolling.",
+    "saved": "Board updated",
+    "cancel": "Cancel",
+    "close": "Close",
+    "teachers_one": "Teacher",
+    "teachers_other": "Teachers",
+    "noGroup": "No group",
+    "columnCount_one": "{{count}} student",
+    "columnCount_other": "{{count}} students",
+    "emptyColumn": "Nobody here yet"
+  },
+  "presenterNotes": {
+    "open": "Notes",
+    "close": "Close notes",
+    "onScreen": "Visible on screen",
+    "count_one": "{{count}} note",
+    "count_other": "{{count}} notes",
+    "console": "Teacher view",
+    "consoleTitle": "Teacher view",
+    "next": "Next",
+    "end": "End of the presentation",
+    "elapsed": "Time",
+    "projected": "On screen",
+    "noSlide": "No slide"
   }
 }

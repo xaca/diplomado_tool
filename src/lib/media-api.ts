@@ -92,6 +92,18 @@ export const mediaApi = {
       true,
     ),
 
+  /** Signs the board logo upload (M12). Board teacher only. */
+  signBoardUpload: (boardId: string) =>
+    request<SignedUpload>(
+      '/uploads/sign',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scope: 'board', boardId }),
+      },
+      true,
+    ),
+
   /**
    * Signs my profile photo upload (M11): one fixed file per person. Students name one board they
    * belong to (proof they're in a class); teachers don't need to.

@@ -35,21 +35,24 @@ export function needsResize(
   file: { type: string; size: number },
   width: number,
   height: number,
+  max = MAX_DIMENSION,
 ) {
   if (file.type === 'image/gif') return false
-  return (
-    Math.max(width, height) > MAX_DIMENSION || file.size > 1.5 * 1024 * 1024
-  )
+  return Math.max(width, height) > max || file.size > 1.5 * 1024 * 1024
 }
 
-export async function prepareImage(file: File): Promise<Blob> {
+/** `max`: longest side in px (2560 for slides; smaller for logos). */
+export async function prepareImage(
+  file: File,
+  max = MAX_DIMENSION,
+): Promise<Blob> {
   const bitmap = await createImageBitmap(file)
   try {
-    if (!needsResize(file, bitmap.width, bitmap.height)) {
+    if (!needsResize(file, bitmap.width, bitmap.height, max)) {
       if (file.size > MAX_UPLOAD_BYTES) throw new Error('tooLarge')
       return file
     }
-    const { width, height } = fitWithin(bitmap.width, bitmap.height)
+    const { width, height } = fitWithin(bitmap.width, bitmap.height, max)
     const canvas = document.createElement('canvas')
     canvas.width = width
     canvas.height = height

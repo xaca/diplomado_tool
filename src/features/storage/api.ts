@@ -21,6 +21,7 @@ import {
   type SpaceDoc,
   type StudentDoc,
 } from '@/model'
+import { resolveLook } from '@/features/boards/look'
 
 // Storage & cleanup, backup and purge (PLAN.md → Data lifecycle). Teacher only; one-shot reads
 // (not live): the storage page loads the board once, on demand.
@@ -68,6 +69,7 @@ export async function loadBoardData(boardId: string): Promise<BoardData> {
         description: boardData.description,
         archiveAfterDays: boardData.archiveAfterDays,
         stages: boardData.stages ?? null,
+        look: resolveLook(boardData),
       },
       students: students.docs.map((student) => {
         const data = student.data() as StudentDoc
@@ -112,7 +114,11 @@ export async function loadBoardData(boardId: string): Promise<BoardData> {
         createdAt: toDate(data.createdAt),
       }
     }),
-    covers: spaces.docs.map((space) => (space.data() as SpaceDoc).cover),
+    // the board logo (M12) counts like a card cover
+    covers: [
+      ...spaces.docs.map((space) => (space.data() as SpaceDoc).cover),
+      boardData.logo,
+    ],
     slideAssetIds: slides.flatMap((snapshot) =>
       snapshot.docs.map((slide) => (slide.data() as SlideDoc).assetIds ?? []),
     ),

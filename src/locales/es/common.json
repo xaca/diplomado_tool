@@ -466,6 +466,82 @@
     "down": "Bajar",
     "remove": "Quitar etapa",
     "add": "Agregar etapa",
-    "reset": "Volver a Design Thinking"
+    "reset": "Volver a Design Thinking",
+    "teacher": "Docente"
+  },
+  "look": {
+    "customize": "Personalizar",
+    "title": "Personalizar tablero",
+    "hint": "Los cambios se ven en el tablero mientras eliges. Nadie más los ve hasta que guardes.",
+    "info": "Nombre y descripción",
+    "name": "Nombre del tablero",
+    "description": "Descripción",
+    "logo": "Logo",
+    "logoHint": "Cuadrado o horizontal; se muestra en el encabezado, en «Mis tableros» y al presentar.",
+    "logoUpload": "Subir logo",
+    "logoChange": "Cambiar logo",
+    "logoRemove": "Quitar logo",
+    "logoSaved": "Logo actualizado",
+    "logoRemoved": "Logo eliminado",
+    "background": "Fondo",
+    "pattern": "Textura",
+    "patterns": {
+      "dots": "Puntos",
+      "grid": "Cuadrícula",
+      "none": "Lisa"
+    },
+    "backgrounds": {
+      "yellow": "Amarillo",
+      "mint": "Menta",
+      "sky": "Cielo",
+      "lavender": "Lavanda",
+      "peach": "Durazno",
+      "sand": "Arena",
+      "white": "Blanco",
+      "charcoal": "Carbón",
+      "sunset": "Atardecer",
+      "ocean": "Océano",
+      "forest": "Bosque",
+      "night": "Noche"
+    },
+    "layout": "Distribución",
+    "layouts": {
+      "masonry": "Muro",
+      "grid": "Cuadrícula",
+      "list": "Lista",
+      "stages": "Por etapa",
+      "groups": "Por grupo"
+    },
+    "sortBy": "Orden",
+    "sorts": {
+      "joined": "Orden de ingreso",
+      "name": "Nombre",
+      "updated": "Última actualización"
+    },
+    "sticky": "Encabezado fijo",
+    "stickyHint": "El título, el logo y las etapas quedan visibles al bajar.",
+    "saved": "Tablero actualizado",
+    "cancel": "Cancelar",
+    "close": "Cerrar",
+    "teachers_one": "Docente",
+    "teachers_other": "Docentes",
+    "noGroup": "Sin grupo",
+    "columnCount_one": "{{count}} estudiante",
+    "columnCount_other": "{{count}} estudiantes",
+    "emptyColumn": "Nadie aquí todavía"
+  },
+  "presenterNotes": {
+    "open": "Notas",
+    "close": "Cerrar notas",
+    "onScreen": "Visible en pantalla",
+    "count_one": "{{count}} nota",
+    "count_other": "{{count}} notas",
+    "console": "Vista del docente",
+    "consoleTitle": "Vista del docente",
+    "next": "Siguiente",
+    "end": "Fin de la presentación",
+    "elapsed": "Tiempo",
+    "projected": "En pantalla",
+    "noSlide": "Sin diapositiva"
   }
 }
