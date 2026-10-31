@@ -46,11 +46,21 @@ export type UserDoc = {
   locale?: 'es' | 'en'
   /** Name chosen on /me (null → the Google name) */
   profileName?: string | null
-  /** Show the Google photo on my cards (default true) */
+  /** Show the Google photo on my cards (default true). Replaced by photoSource (M11), still read. */
   showPhoto?: boolean
+  /** Which photo my cards show (M11). Missing → from showPhoto. */
+  photoSource?: PhotoSource
+  /** My uploaded photo: one per person, overwritten on change (M11) */
+  avatar?: AvatarRef | null
   createdAt: unknown
   lastLoginAt: unknown
 }
+
+export type PhotoSource = 'google' | 'upload' | 'initials'
+export const PHOTO_SOURCES = ['google', 'upload', 'initials'] as const
+
+/** Cloudinary image of an uploaded profile photo: pbl/{env}/users/{uid}/avatar */
+export type AvatarRef = { publicId: string; version: number }
 
 export type BoardStatus = 'active' | 'locked' | 'archived'
 
@@ -68,6 +78,8 @@ export type BoardDoc = {
   lastActivityAt: unknown
   /** Set by "archive now" (M7) */
   archivedAt?: unknown
+  /** The board's stage list (M11). Missing → DEFAULT_STAGES (Design Thinking). */
+  stages?: StageDef[] | null
 }
 
 export type StudentSource = 'import' | 'manual' | 'invite'
@@ -105,9 +117,71 @@ export type SpaceDoc = {
   slideCount: number
   /** Card cover image (M4) */
   cover?: ImageRef | null
+  /** Where the student is in the process (M11): a StageDef id of this board; null = no ring */
+  stage?: string | null
+  stageUpdatedAt?: unknown
+  stageSetBy?: 'student' | 'teacher'
   createdAt: unknown
   updatedAt: unknown
 }
+
+// ---------- stages (M11): the ring around the student's photo ----------
+
+/**
+ * One step of the board's process. Default stages have no `label` (translated as stages.<id>);
+ * stages the teacher renames or adds carry their own. `browsing` = only here to learn.
+ */
+export type StageDef = {
+  id: string
+  label?: string
+  color: string
+  kind: 'stage' | 'browsing'
+}
+
+/** Keep in sync with the stage id check in firestore.rules */
+export const STAGE_ID_PATTERN = /^[a-z0-9-]{1,40}$/
+export const MAX_STAGES = 9
+export const MAX_STAGE_LABEL = 24
+
+/** Ring colors: dark enough for white text on the ring */
+export const STAGE_COLORS = [
+  '#E11D48',
+  '#EA580C',
+  '#CA8A04',
+  '#16A34A',
+  '#2563EB',
+  '#7C3AED',
+  '#0891B2',
+  '#DB2777',
+  '#64748B',
+] as const
+
+/** Design Thinking (Stanford d.school) + "Vitrineando" */
+export const DEFAULT_STAGES: StageDef[] = [
+  { id: 'empathize', color: '#E11D48', kind: 'stage' },
+  { id: 'define', color: '#EA580C', kind: 'stage' },
+  { id: 'ideate', color: '#CA8A04', kind: 'stage' },
+  { id: 'prototype', color: '#16A34A', kind: 'stage' },
+  { id: 'test', color: '#2563EB', kind: 'stage' },
+  { id: 'browsing', color: '#64748B', kind: 'browsing' },
+]
+export const DEFAULT_STAGE_IDS = DEFAULT_STAGES.map((stage) => stage.id)
+
+export const stageListSchema = z
+  .array(
+    z.object({
+      id: z.string().regex(STAGE_ID_PATTERN),
+      label: z.string().trim().min(1).max(MAX_STAGE_LABEL).optional(),
+      color: z.enum(STAGE_COLORS),
+      kind: z.enum(['stage', 'browsing']),
+    }),
+  )
+  .min(1)
+  .max(MAX_STAGES)
+  .refine(
+    (stages) => new Set(stages.map((stage) => stage.id)).size === stages.length,
+    'duplicated stage id',
+  )
 
 /** Reference to an image stored in Cloudinary (never a URL; see lib/cloudinary.ts imageUrl) */
 export type ImageRef = {
@@ -200,7 +274,7 @@ export type BoardInput = z.infer<typeof boardInputSchema>
 /** Profile page (/me). An empty name means "use my Google name". */
 export const userProfileSchema = z.object({
   name: z.string().trim().max(120),
-  showPhoto: z.boolean(),
+  photoSource: z.enum(PHOTO_SOURCES),
 })
 export type UserProfile = z.infer<typeof userProfileSchema>
 

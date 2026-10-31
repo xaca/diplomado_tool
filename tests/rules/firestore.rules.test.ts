@@ -128,6 +128,53 @@ describe('users/{uid}', () => {
     await assertFails(setDoc(ref, { showPhoto: 'no' }, { merge: true }))
   })
 
+  it('photo source and uploaded photo (M11): only my own fixed Cloudinary file', async () => {
+    const ref = doc(as(STUDENT), 'users', STUDENT.uid)
+    await assertSucceeds(setDoc(ref, profile(STUDENT.email)))
+    const avatar = (publicId: string) => ({ publicId, version: 1730000000 })
+    await assertSucceeds(
+      setDoc(
+        ref,
+        {
+          photoSource: 'upload',
+          avatar: avatar(`pbl/prod/users/${STUDENT.uid}/avatar`),
+        },
+        { merge: true },
+      ),
+    )
+    await assertSucceeds(
+      setDoc(ref, { photoSource: 'initials', avatar: null }, { merge: true }),
+    )
+    await assertFails(setDoc(ref, { photoSource: 'gravatar' }, { merge: true }))
+    // someone else's photo, or a board image
+    await assertFails(
+      setDoc(
+        ref,
+        { avatar: avatar(`pbl/prod/users/${TEACHER.uid}/avatar`) },
+        { merge: true },
+      ),
+    )
+    await assertFails(
+      setDoc(
+        ref,
+        { avatar: avatar('pbl/prod/board1/st_x/asset1') },
+        { merge: true },
+      ),
+    )
+    await assertFails(
+      setDoc(
+        ref,
+        {
+          avatar: {
+            ...avatar(`pbl/prod/users/${STUDENT.uid}/avatar`),
+            url: 'https://x',
+          },
+        },
+        { merge: true },
+      ),
+    )
+  })
+
   it('signed-out visitors read nothing', async () => {
     await assertFails(
       getDoc(

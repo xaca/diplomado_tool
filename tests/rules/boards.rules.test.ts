@@ -1215,3 +1215,130 @@ describe("teacher's notes on slides", () => {
     await assertSucceeds(batch.commit())
   })
 })
+
+describe('Design Thinking stage (M11)', () => {
+  const SEB = { uid: 'seb', email: 'seb@gmail.com' }
+  const cardOf = (db: Firestore, studentId = 'st_laura') =>
+    doc(db, 'boards', BOARD, 'spaces', studentId)
+  const byStudent = (stage: string | null) => ({
+    stage,
+    stageUpdatedAt: serverTimestamp(),
+    stageSetBy: 'student',
+    updatedAt: serverTimestamp(),
+  })
+  const byTeacher = (stage: string | null) => ({
+    stage,
+    stageUpdatedAt: serverTimestamp(),
+    stageSetBy: 'teacher',
+  })
+
+  async function joined(boardOverrides: Record<string, unknown> = {}) {
+    await seed({ boardOverrides })
+    await autoJoin(as(LAURA), LAURA, 'st_laura')
+  }
+
+  it('the student sets and clears their own stage, signed as the student', async () => {
+    await joined()
+    await assertSucceeds(updateDoc(cardOf(as(LAURA)), byStudent('ideate')))
+    await assertSucceeds(updateDoc(cardOf(as(LAURA)), byStudent('browsing')))
+    await assertSucceeds(updateDoc(cardOf(as(LAURA)), byStudent(null)))
+    // can't pretend the teacher set it, or skip the server time
+    await assertFails(
+      updateDoc(cardOf(as(LAURA)), {
+        ...byStudent('ideate'),
+        stageSetBy: 'teacher',
+      }),
+    )
+    await assertFails(
+      updateDoc(cardOf(as(LAURA)), {
+        ...byStudent('define'),
+        stageUpdatedAt: Timestamp.fromMillis(0),
+      }),
+    )
+  })
+
+  it('stage ids follow the pattern', async () => {
+    await joined()
+    await assertFails(updateDoc(cardOf(as(LAURA)), byStudent('Ideate')))
+    await assertFails(updateDoc(cardOf(as(LAURA)), byStudent('x'.repeat(41))))
+    await assertFails(
+      updateDoc(cardOf(as(LAURA)), {
+        ...byStudent('ideate'),
+        stageSetBy: 'admin',
+      }),
+    )
+  })
+
+  it("a classmate can't change my stage", async () => {
+    await joined()
+    await env.withSecurityRulesDisabled(async (context) => {
+      const db = context.firestore()
+      await setDoc(
+        doc(db, 'boards', BOARD, 'students', 'st_seb'),
+        student([SEB.email]),
+      )
+      await setDoc(doc(db, 'boards', BOARD, 'studentEmails', SEB.email), {
+        email: SEB.email,
+        studentId: 'st_seb',
+      })
+    })
+    await autoJoin(as(SEB), SEB, 'st_seb')
+    await assertFails(updateDoc(cardOf(as(SEB)), byStudent('ideate')))
+    await assertFails(updateDoc(cardOf(as(SEB)), byTeacher('ideate')))
+  })
+
+  it('the board teacher sets any stage, signed as the teacher, and nothing else', async () => {
+    await joined()
+    await assertSucceeds(updateDoc(cardOf(as(TEACHER)), byTeacher('prototype')))
+    await assertFails(
+      updateDoc(cardOf(as(TEACHER)), {
+        ...byTeacher('test'),
+        stageSetBy: 'student',
+      }),
+    )
+    await assertFails(
+      updateDoc(cardOf(as(TEACHER)), { ...byTeacher('test'), title: 'x' }),
+    )
+    // another teacher (not of this board)
+    await assertFails(
+      updateDoc(cardOf(as(OTHER_TEACHER)), byTeacher('prototype')),
+    )
+  })
+
+  it('nobody changes stages on a locked board', async () => {
+    await joined({ status: 'locked' })
+    await assertFails(updateDoc(cardOf(as(LAURA)), byStudent('ideate')))
+    await assertFails(updateDoc(cardOf(as(TEACHER)), byTeacher('ideate')))
+  })
+
+  it('the teacher edits the board stage list (1 to 9) or resets it', async () => {
+    await seed()
+    const ref = doc(as(TEACHER), 'boards', BOARD)
+    const stage = (id: string) => ({ id, color: '#E11D48', kind: 'stage' })
+    await assertSucceeds(
+      updateDoc(ref, { stages: [stage('explore'), stage('build')] }),
+    )
+    await assertSucceeds(updateDoc(ref, { stages: null }))
+    await assertFails(updateDoc(ref, { stages: [] }))
+    await assertFails(
+      updateDoc(ref, {
+        stages: Array.from({ length: 10 }, (_, i) => stage(`s${i}`)),
+      }),
+    )
+    await autoJoin(as(LAURA), LAURA, 'st_laura')
+    await assertFails(
+      updateDoc(doc(as(LAURA), 'boards', BOARD), { stages: [stage('x')] }),
+    )
+  })
+
+  it('profile photos: the owner may put a Cloudinary URL on their card', async () => {
+    await joined()
+    await assertSucceeds(
+      updateDoc(cardOf(as(LAURA)), {
+        ownerPhotoURL:
+          'https://res.cloudinary.com/demo/image/upload/f_auto,q_auto,c_fill,w_256,h_256/v1/pbl/prod/users/laura-gmail/avatar',
+        updatedAt: serverTimestamp(),
+      }),
+    )
+  })
+})

@@ -70,21 +70,32 @@ service cloud.firestore {
 
     // ---------- users/{uid}: login account profile ----------
 
-    function validUser() {
+    // Uploaded profile photo (M11): one fixed Cloudinary file per person (see media-api avatarParams)
+    function validAvatar(avatar, uid) {
+      return avatar == null
+        || (avatar is map
+          && avatar.keys().hasOnly(['publicId', 'version'])
+          && avatar.publicId is string && avatar.publicId.matches('pbl/(dev|prod)/users/' + uid + '/avatar')
+          && avatar.version is int);
+    }
+
+    function validUser(uid) {
       let data = request.resource.data;
       return data.keys().hasOnly(['displayName', 'email', 'photoURL', 'locale', 'profileName', 'showPhoto',
-          'createdAt', 'lastLoginAt'])
+          'photoSource', 'avatar', 'createdAt', 'lastLoginAt'])
         && data.email == myEmail()
         && (!('displayName' in data) || data.displayName == null || isString(data.displayName, 0, 200))
         && (!('profileName' in data) || data.profileName == null || isString(data.profileName, 1, 120))
         && (!('showPhoto' in data) || data.showPhoto is bool)
+        && (!('photoSource' in data) || data.photoSource in ['google', 'upload', 'initials'])
+        && (!('avatar' in data) || validAvatar(data.avatar, uid))
         && (!('photoURL' in data) || data.photoURL == null || isHttpsUrl(data.photoURL))
         && (!('locale' in data) || data.locale in ['es', 'en']);
     }
 
     match /users/{uid} {
       allow read: if signedIn() && request.auth.uid == uid;
-      allow create, update: if signedIn() && request.auth.uid == uid && validUser();
+      allow create, update: if signedIn() && request.auth.uid == uid && validUser(uid);
       allow delete: if false;
     }
 
@@ -117,13 +128,15 @@ service cloud.firestore {
     function validBoard() {
       let data = request.resource.data;
       return data.keys().hasOnly(['title', 'description', 'teacherEmails', 'joinCode', 'joinCodeEnabled', 'status',
-          'archiveAfterDays', 'background', 'createdAt', 'updatedAt', 'lastActivityAt', 'archivedAt'])
+          'archiveAfterDays', 'background', 'createdAt', 'updatedAt', 'lastActivityAt', 'archivedAt', 'stages'])
         && isString(data.title, 1, 120)
         && isString(data.description, 0, 500)
         && data.teacherEmails is list && myEmail() in data.teacherEmails
         && data.joinCodeEnabled is bool
         && data.status in ['active', 'locked', 'archived']
-        && data.archiveAfterDays is int && data.archiveAfterDays >= 7 && data.archiveAfterDays <= 3650;
+        && data.archiveAfterDays is int && data.archiveAfterDays >= 7 && data.archiveAfterDays <= 3650
+        // M11: the board's stage list (null = Design Thinking defaults); entries are checked by the app
+        && (!('stages' in data) || data.stages == null || (data.stages is list && data.stages.size() >= 1 && data.stages.size() <= 9));
     }
 
     match /boards/{boardId} {
@@ -259,7 +272,7 @@ service cloud.firestore {
       function validSpace(studentId) {
         let data = request.resource.data;
         return data.keys().hasOnly(['studentId', 'ownerName', 'ownerPhotoURL', 'title', 'summary', 'color',
-            'slideOrder', 'slideCount', 'cover', 'createdAt', 'updatedAt'])
+            'slideOrder', 'slideCount', 'cover', 'stage', 'stageUpdatedAt', 'stageSetBy', 'createdAt', 'updatedAt'])
           && (!('cover' in data) || data.cover == null || validImageRef(data.cover, boardId, studentId))
           && data.studentId == studentId
           && isString(data.ownerName, 1, 120)
@@ -268,7 +281,16 @@ service cloud.firestore {
           && isString(data.summary, 0, 1000)
           && data.color in spaceColors()
           && data.slideOrder is list && data.slideOrder.size() <= 50
-          && data.slideCount == data.slideOrder.size();
+          && data.slideCount == data.slideOrder.size()
+          // M11: a stage id (same pattern as STAGE_ID_PATTERN), or null for no ring
+          && (!('stage' in data) || data.stage == null || (data.stage is string && data.stage.matches('[a-z0-9-]{1,40}')))
+          && (!('stageSetBy' in data) || data.stageSetBy in ['student', 'teacher']);
+      }
+
+      // M11: whoever changes the stage signs it, with the server time
+      function stageSignedBy(who) {
+        return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['stage', 'stageUpdatedAt', 'stageSetBy'])
+          || (request.resource.data.stageSetBy == who && request.resource.data.stageUpdatedAt == request.time);
       }
 
       function isSpaceOwner(boardId, studentId) {
@@ -298,10 +320,15 @@ service cloud.firestore {
             && request.resource.data.updatedAt == request.time
             && request.resource.data.diff(resource.data).affectedKeys()
                  .hasOnly(['title', 'summary', 'color', 'ownerName', 'ownerPhotoURL', 'cover', 'slideOrder',
-                   'slideCount', 'updatedAt']))
+                   'slideCount', 'stage', 'stageUpdatedAt', 'stageSetBy', 'updatedAt'])
+            && stageSignedBy('student'))
           // the teacher renames the student → keep the card name in sync
           || (isBoardTeacher(boardId)
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ownerName']))
+          // the teacher sets a student's stage (M11), while the board is writable
+          || (isBoardTeacher(boardId) && boardIsActive(boardId)
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stage', 'stageUpdatedAt', 'stageSetBy'])
+            && stageSignedBy('teacher'))
         );
         allow delete: if isBoardTeacher(boardId);
 
