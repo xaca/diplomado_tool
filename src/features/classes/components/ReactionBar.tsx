@@ -76,7 +76,7 @@ export function ReactionBar({
           >
             <SmilePlus className="size-[1.1em]" />
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="flex min-w-0 gap-0.5 p-1">
+          <DropdownMenuContent className="flex w-max min-w-0 gap-0.5 p-1">
             {REACTIONS.map((emoji) => (
               <DropdownMenuItem
                 key={emoji}
