@@ -21,7 +21,7 @@ test.describe('Profile', () => {
 
     await page.getByLabel('Nombre').fill('Lau Gómez')
     await page.getByRole('radio', { name: 'Iniciales' }).click()
-    await page.getByRole('button', { name: 'Guardar' }).click()
+    await page.getByRole('button', { name: 'Guardar', exact: true }).click()
     await expect(page.getByText('Perfil guardado')).toBeVisible()
 
     // Survives a reload (and a new login refreshing the Google fields)
@@ -40,7 +40,7 @@ test.describe('Profile', () => {
     // Empty name → back to the teacher's spelling on the card
     await page.goto('/me')
     await page.getByLabel('Nombre').fill('')
-    await page.getByRole('button', { name: 'Guardar' }).click()
+    await page.getByRole('button', { name: 'Guardar', exact: true }).click()
     await expect(page.getByText('Perfil guardado')).toBeVisible()
     await page.goto(`/b/${DEMO.boardId}`)
     await expect(page.getByTestId('space-card').first()).toContainText(
@@ -52,7 +52,7 @@ test.describe('Profile', () => {
     await signIn(page, DEMO.teacher)
     await page.goto('/me')
     await page.getByLabel('Nombre').fill('Profe Andrés')
-    await page.getByRole('button', { name: 'Guardar' }).click()
+    await page.getByRole('button', { name: 'Guardar', exact: true }).click()
     await expect(page.getByText('Perfil guardado')).toBeVisible()
     await expect(page.getByTestId('profile-preview')).toContainText(
       'Profe Andrés',

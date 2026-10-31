@@ -280,7 +280,7 @@ export function BoardPage() {
         data-background={look.background}
         data-board-style={theme.style?.id}
       >
-        {look.ambient && theme.style?.ambient && (
+        {look.ambient && theme.style?.ambient && motionAllowed() && (
           <Suspense>
             <AmbientEffects kind={theme.style.ambient} />
           </Suspense>
