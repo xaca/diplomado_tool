@@ -8,7 +8,16 @@ export function AppShell() {
   return (
     <div className="flex min-h-svh flex-col">
       <header className="flex h-14 items-center justify-between border-b px-4">
-        <span className="font-heading font-semibold">{t('appName')}</span>
+        {/* Home: "/" sends teachers to their dashboard and students to their boards */}
+        <Link
+          to="/"
+          className="rounded-md font-heading font-semibold hover:opacity-80"
+          aria-label={`${t('appName')} · ${t('common.home')}`}
+          title={t('common.home')}
+          data-testid="home-link"
+        >
+          {t('appName')}
+        </Link>
         <UserMenu />
       </header>
       <main className="flex-1">

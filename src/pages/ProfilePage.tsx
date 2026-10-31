@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import { ImageUp, Trash2 } from 'lucide-react'
+import { ArrowLeft, ImageUp, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
@@ -34,9 +35,20 @@ import { isTeacherRole, useAuth } from '@/providers/auth-context'
 export function ProfilePage() {
   const { t } = useTranslation()
   const profile = useProfile()
+  const navigate = useNavigate()
+  // Opened from the menu → back where I was; opened directly (new tab, reload) → home
+  const fromInsideApp = useLocation().key !== 'default'
 
   return (
     <section className="mx-auto flex max-w-2xl flex-col gap-6 p-6">
+      <button
+        type="button"
+        onClick={() => (fromInsideApp ? navigate(-1) : navigate('/'))}
+        className="flex items-center gap-1 self-start text-sm text-muted-foreground hover:underline"
+      >
+        <ArrowLeft className="size-4" />
+        {t('common.back')}
+      </button>
       <h1 className="font-heading text-2xl font-semibold">
         {t('profile.title')}
       </h1>

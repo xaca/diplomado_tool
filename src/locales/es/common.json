@@ -5,7 +5,9 @@
     "save": "Guardar",
     "saving": "Guardando…",
     "cancel": "Cancelar",
-    "remove": "Eliminar"
+    "remove": "Eliminar",
+    "back": "Volver",
+    "home": "Ir al inicio"
   },
   "errors": {
     "generic": "Algo salió mal. Inténtalo de nuevo.",

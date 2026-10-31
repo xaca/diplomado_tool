@@ -5,7 +5,9 @@
     "save": "Save",
     "saving": "Saving…",
     "cancel": "Cancel",
-    "remove": "Remove"
+    "remove": "Remove",
+    "back": "Back",
+    "home": "Go to home"
   },
   "errors": {
     "generic": "Something went wrong. Please try again.",

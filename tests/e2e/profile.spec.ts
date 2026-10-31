@@ -58,4 +58,26 @@ test.describe('Profile', () => {
       'Profe Andrés',
     )
   })
+
+  test('the profile goes back where you were; the app name goes home', async ({
+    page,
+  }) => {
+    await signIn(page, 'laura@gmail.com')
+    await page.getByText(DEMO.boardTitle).click()
+    await expect(page).toHaveURL(new RegExp(`/b/${DEMO.boardId}$`))
+
+    await page.getByRole('button', { name: 'laura@gmail.com' }).click()
+    await page.getByRole('menuitem', { name: 'Mi perfil' }).click()
+    await page.getByRole('button', { name: 'Volver' }).click()
+    await expect(page).toHaveURL(new RegExp(`/b/${DEMO.boardId}$`))
+
+    await page.getByTestId('home-link').click()
+    await expect(page).toHaveURL(/\/$/)
+    await expect(page.getByText(DEMO.boardTitle)).toBeVisible()
+
+    // Opened directly (no history in the app): "Volver" goes home
+    await page.goto('/me')
+    await page.getByRole('button', { name: 'Volver' }).click()
+    await expect(page).toHaveURL(/\/$/)
+  })
 })
