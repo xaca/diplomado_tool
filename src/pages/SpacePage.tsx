@@ -19,9 +19,15 @@ import { useMyStudentId, useSpaces } from '@/features/spaces/hooks'
 import { ReadyToggle } from '@/features/spaces/components/ReadyToggle'
 import { ClockBanner } from '@/features/clock/components/ClockBanner'
 import { PollsSection } from '@/features/polls/components/PollsSection'
+import {
+  DecorBanner,
+  DecorSticker,
+  StatusLine,
+} from '@/features/profile/components/ProfileExtras'
 import { MyAttendance } from '@/features/attendance/components/MyAttendance'
 import { displayNameOf } from '@/features/profile/api'
 import { useProfile } from '@/features/profile/hooks'
+import { clearCardStatus } from '@/features/spaces/api'
 import { setSpaceStage } from '@/features/stages/api'
 import { StageAvatar } from '@/features/stages/components/StageAvatar'
 import { StagePicker } from '@/features/stages/components/StagePicker'
@@ -125,6 +131,10 @@ export function SpacePage() {
           style={{ backgroundColor: space.data.color }}
           data-testid="space-detail"
         >
+          <DecorBanner
+            decor={space.data.ownerDecor}
+            className="-mx-6 -mt-6 mb-4 h-4 rounded-t-2xl"
+          />
           {space.data.cover && (
             <img
               src={imageUrl(space.data.cover, IMAGE_SIZES.slide)}
@@ -142,7 +152,31 @@ export function SpacePage() {
             <div className="flex-1">
               <p className="font-semibold text-neutral-900">
                 {space.data.ownerName}
+                <DecorSticker decor={space.data.ownerDecor} />
               </p>
+              {space.data.ownerStatus && (
+                <div className="flex items-center gap-2">
+                  <StatusLine
+                    status={space.data.ownerStatus}
+                    className="text-sm"
+                  />
+                  {isBoardTeacher && (
+                    <Button
+                      variant="ghost"
+                      size="xs"
+                      title={t('status.teacherClearHint')}
+                      onClick={() =>
+                        void clearCardStatus(boardId, spaceId).then(
+                          () => toast.success(t('status.teacherCleared')),
+                          () => toast.error(t('errors.generic')),
+                        )
+                      }
+                    >
+                      {t('status.teacherClear')}
+                    </Button>
+                  )}
+                </div>
+              )}
               <p className="text-xs text-neutral-500">
                 {formatRelative(toDate(space.data.updatedAt), language)}
               </p>

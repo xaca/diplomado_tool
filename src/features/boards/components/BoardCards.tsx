@@ -6,6 +6,10 @@ import { Button } from '@/components/ui/button'
 import { boardColumns } from '@/features/boards/look'
 import type { Space } from '@/features/spaces/api'
 import { SpaceCard } from '@/features/spaces/components/SpaceCard'
+import {
+  DecorSticker,
+  StatusLine,
+} from '@/features/profile/components/ProfileExtras'
 import { StageAvatar } from '@/features/stages/components/StageAvatar'
 import { findStage, stageLabel } from '@/features/stages/stages'
 import { formatRelative, toDate } from '@/lib/time'
@@ -181,6 +185,7 @@ function SpaceRow({
       <div className="min-w-0 flex-1 leading-tight">
         <p className="truncate text-sm font-semibold text-neutral-900">
           {space.ownerName}
+          <DecorSticker decor={space.ownerDecor} />
           {isMine && (
             <span className="ml-2 text-xs font-normal text-neutral-500">
               · {t('space.mine')}
@@ -192,6 +197,7 @@ function SpaceRow({
             <span className="text-neutral-500 italic">{t('space.empty')}</span>
           )}
         </p>
+        <StatusLine status={space.ownerStatus} />
       </div>
       <span className="hidden text-xs text-neutral-500 sm:inline">
         {t('space.slides', { count: space.slideCount })} ·{' '}

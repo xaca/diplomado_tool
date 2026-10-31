@@ -25,6 +25,8 @@ import {
 } from '@/features/profile/api'
 import { removeAvatar, uploadAvatar } from '@/features/profile/avatar'
 import { AvatarCropDialog } from '@/features/profile/components/AvatarCropDialog'
+import { DecorPicker } from '@/features/profile/components/DecorPicker'
+import { StatusEditor } from '@/features/profile/components/StatusEditor'
 import { useProfile } from '@/features/profile/hooks'
 import { StageAvatar } from '@/features/stages/components/StageAvatar'
 import { SUPPORTED_LANGUAGES } from '@/lib/i18n'
@@ -56,6 +58,28 @@ export function ProfilePage() {
         <Skeleton className="h-64" />
       ) : (
         <ProfileForm profile={profile.data} />
+      )}
+      {!profile.loading && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('status.title')}</CardTitle>
+            <CardDescription>{t('status.hint')}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <StatusEditor current={profile.data?.status} />
+          </CardContent>
+        </Card>
+      )}
+      {!profile.loading && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('decor.title')}</CardTitle>
+            <CardDescription>{t('decor.hint')}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <DecorPicker current={profile.data?.decor} />
+          </CardContent>
+        </Card>
       )}
       <LanguageCard />
     </section>

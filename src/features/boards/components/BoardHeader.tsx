@@ -154,6 +154,18 @@ export const BoardHeader = forwardRef<HTMLElement, Props>(function BoardHeader(
                   <span className="font-medium">
                     {teachers.map((teacher) => teacher.name).join(', ')}
                   </span>
+                  {teachers
+                    .filter((teacher) => teacher.status)
+                    .slice(0, 1)
+                    .map((teacher) => (
+                      <span
+                        key={teacher.name}
+                        className="ml-2 opacity-90"
+                        data-testid="teacher-status"
+                      >
+                        · {teacher.status!.emoji} {teacher.status!.text}
+                      </span>
+                    ))}
                 </span>
               )}
             </p>

@@ -1,7 +1,15 @@
 import { useNavigate } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import { LogOut, RefreshCw, UserRound } from 'lucide-react'
+import { useState } from 'react'
+import { LogOut, MessageCircleHeart, RefreshCw, UserRound } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +24,7 @@ import {
 import { useAuthActions, useLanguage } from '@/features/auth/hooks'
 import { cardPhoto, displayNameOf } from '@/features/profile/api'
 import { useProfile } from '@/features/profile/hooks'
+import { StatusEditor } from '@/features/profile/components/StatusEditor'
 import { StageAvatar } from '@/features/stages/components/StageAvatar'
 import { SUPPORTED_LANGUAGES } from '@/lib/i18n'
 import { isTeacherRole, useAuth } from '@/providers/auth-context'
@@ -27,6 +36,7 @@ export function UserMenu() {
   const { language, setLanguage } = useLanguage()
   const profile = useProfile()
   const navigate = useNavigate()
+  const [editingStatus, setEditingStatus] = useState(false)
 
   if (!user) return null
 
@@ -34,78 +44,100 @@ export function UserMenu() {
   const photoURL = cardPhoto(user, profile.data)
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <Button
-            variant="ghost"
-            size="icon"
-            className="rounded-full"
-            aria-label={user.email ?? ''}
-            data-testid="user-menu"
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full"
+              aria-label={user.email ?? ''}
+              data-testid="user-menu"
+            />
+          }
+        >
+          {/* Teachers wear the #DOCENTE ring (M12) */}
+          <StageAvatar
+            name={name}
+            photoURL={photoURL}
+            teacher={isTeacherRole(role)}
+            size={32}
           />
-        }
-      >
-        {/* Teachers wear the #DOCENTE ring (M12) */}
-        <StageAvatar
-          name={name}
-          photoURL={photoURL}
-          teacher={isTeacherRole(role)}
-          size={32}
-        />
-      </DropdownMenuTrigger>
+        </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" className="w-64">
-        <DropdownMenuGroup>
-          <DropdownMenuLabel className="flex flex-col gap-0.5">
-            <span className="text-xs font-normal text-muted-foreground">
-              {t('auth.signedInAs')}
-            </span>
-            <span className="truncate">{name}</span>
-            <span className="truncate text-xs font-normal text-muted-foreground">
-              {user.email}
-            </span>
-            {role && (
+        <DropdownMenuContent align="end" className="w-64">
+          <DropdownMenuGroup>
+            <DropdownMenuLabel className="flex flex-col gap-0.5">
               <span className="text-xs font-normal text-muted-foreground">
-                {t(`roles.${role}`)}
+                {t('auth.signedInAs')}
               </span>
-            )}
-          </DropdownMenuLabel>
-        </DropdownMenuGroup>
+              <span className="truncate">{name}</span>
+              <span className="truncate text-xs font-normal text-muted-foreground">
+                {user.email}
+              </span>
+              {role && (
+                <span className="text-xs font-normal text-muted-foreground">
+                  {t(`roles.${role}`)}
+                </span>
+              )}
+            </DropdownMenuLabel>
+          </DropdownMenuGroup>
 
-        <DropdownMenuSeparator />
+          <DropdownMenuSeparator />
 
-        <DropdownMenuGroup>
-          <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-            {t('language.label')}
-          </DropdownMenuLabel>
-          <DropdownMenuRadioGroup
-            value={language}
-            onValueChange={(value) => setLanguage(value as typeof language)}
-          >
-            {SUPPORTED_LANGUAGES.map((lng) => (
-              <DropdownMenuRadioItem key={lng} value={lng}>
-                {t(`language.${lng}`)}
-              </DropdownMenuRadioItem>
-            ))}
-          </DropdownMenuRadioGroup>
-        </DropdownMenuGroup>
+          <DropdownMenuGroup>
+            <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
+              {t('language.label')}
+            </DropdownMenuLabel>
+            <DropdownMenuRadioGroup
+              value={language}
+              onValueChange={(value) => setLanguage(value as typeof language)}
+            >
+              {SUPPORTED_LANGUAGES.map((lng) => (
+                <DropdownMenuRadioItem key={lng} value={lng}>
+                  {t(`language.${lng}`)}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuGroup>
 
-        <DropdownMenuSeparator />
+          <DropdownMenuSeparator />
 
-        <DropdownMenuItem onClick={() => void navigate('/me')}>
-          <UserRound />
-          {t('profile.title')}
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={switchAccount}>
-          <RefreshCw />
-          {t('auth.switchAccount')}
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={signOut}>
-          <LogOut />
-          {t('auth.signOut')}
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+          <DropdownMenuItem onClick={() => setEditingStatus(true)}>
+            <MessageCircleHeart />
+            {profile.data?.status
+              ? `${profile.data.status.emoji} ${profile.data.status.text}`.trim()
+              : t('status.menu')}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => void navigate('/me')}>
+            <UserRound />
+            {t('profile.title')}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={switchAccount}>
+            <RefreshCw />
+            {t('auth.switchAccount')}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={signOut}>
+            <LogOut />
+            {t('auth.signOut')}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {editingStatus && (
+        <Dialog open onOpenChange={(open) => !open && setEditingStatus(false)}>
+          <DialogContent className="max-h-[calc(100svh-2rem)] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{t('status.title')}</DialogTitle>
+              <DialogDescription>{t('status.hint')}</DialogDescription>
+            </DialogHeader>
+            <StatusEditor
+              current={profile.data?.status}
+              onDone={() => setEditingStatus(false)}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
   )
 }

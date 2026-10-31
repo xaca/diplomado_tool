@@ -4,6 +4,11 @@ import { ArrowUpRight, Pencil, Presentation } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import type { Space } from '@/features/spaces/api'
+import {
+  DecorBanner,
+  DecorSticker,
+  StatusLine,
+} from '@/features/profile/components/ProfileExtras'
 import { StageAvatar } from '@/features/stages/components/StageAvatar'
 import { IMAGE_SIZES, imageUrl } from '@/lib/cloudinary'
 import { cn } from '@/lib/utils'
@@ -50,6 +55,7 @@ export function SpaceCard({
       )}
       style={{ backgroundColor: space.color }}
     >
+      <DecorBanner decor={space.ownerDecor} className="rounded-t-xl" />
       {space.cover && (
         <img
           src={imageUrl(space.cover, IMAGE_SIZES.cardCover)}
@@ -57,7 +63,10 @@ export function SpaceCard({
           loading="lazy"
           width={400}
           height={225}
-          className="aspect-video w-full rounded-t-xl object-cover"
+          className={cn(
+            'aspect-video w-full object-cover',
+            !space.ownerDecor?.banner && 'rounded-t-xl',
+          )}
           data-testid="card-cover"
         />
       )}
@@ -88,8 +97,10 @@ export function SpaceCard({
         <div className="min-w-0 flex-1 leading-tight">
           <p className="truncate text-sm font-semibold text-neutral-900">
             {space.ownerName}
+            <DecorSticker decor={space.ownerDecor} />
           </p>
           <p className="text-xs text-neutral-500">{updated}</p>
+          <StatusLine status={space.ownerStatus} />
         </div>
         {space.teacherEditsUnseen && (isMine || canPresent) && (
           <Badge

@@ -113,7 +113,7 @@ export async function setBoardLogo(
 }
 
 /**
- * Keeps my name and photo on the boards I teach up to date (the header shows them with the
+ * Keeps my name, photo and message (M21) on the boards I teach up to date (the header shows them with the
  * #DOCENTE ring). Writes only when something changed. The email has dots: a FieldPath, not a string.
  */
 export function syncTeacherProfile(
@@ -124,7 +124,10 @@ export function syncTeacherProfile(
   const current = board.teacherProfiles?.[email]
   if (
     !board.teacherEmails.includes(email) ||
-    (current?.name === profile.name && current?.photoURL === profile.photoURL)
+    (current?.name === profile.name &&
+      current?.photoURL === profile.photoURL &&
+      JSON.stringify(current?.status ?? null) ===
+        JSON.stringify(profile.status ?? null))
   )
     return Promise.resolve()
   return updateDoc(

@@ -38,13 +38,17 @@ export function useTeacherBoardSync(
   const email = normalizeEmail(user?.email ?? '')
   const name = user ? displayNameOf(user, profile.data) : ''
   const photoURL = user ? cardPhoto(user, profile.data) : null
+  const status = profile.data?.status ?? null
+  const statusKey = JSON.stringify(status)
 
   useEffect(() => {
     if (!board || !user || profile.loading) return
-    syncTeacherProfile(board, email, { name, photoURL }).catch((error) =>
-      console.error('[board] teacher profile not synced', error),
+    syncTeacherProfile(board, email, { name, photoURL, status }).catch(
+      (error) => console.error('[board] teacher profile not synced', error),
     )
-  }, [board, user, email, name, photoURL, profile.loading])
+    // `statusKey` stands for `status` (a new object on every snapshot)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [board, user, email, name, photoURL, statusKey, profile.loading])
 
   useEffect(() => {
     if (!board || !spaces || !students || students.length === 0) return

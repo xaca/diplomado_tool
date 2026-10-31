@@ -15,12 +15,16 @@ import { imageUrl } from '@/lib/cloudinary'
 import { COLLECTIONS, normalizeEmail } from '@/lib/collections'
 import { db } from '@/lib/firebase'
 import {
+  decorSchema,
   paths,
+  statusSchema,
   userProfileSchema,
   type AvatarRef,
   type BoardDoc,
+  type Decor,
   type MemberDoc,
   type PhotoSource,
+  type StatusMessage,
   type StudentDoc,
   type UserDoc,
   type UserProfile,
@@ -31,7 +35,7 @@ import {
 
 type ProfileFields = Pick<
   UserDoc,
-  'profileName' | 'showPhoto' | 'photoSource' | 'avatar'
+  'profileName' | 'showPhoto' | 'photoSource' | 'avatar' | 'status' | 'decor'
 >
 
 export const userRef = (uid: string) => doc(db, COLLECTIONS.users, uid)
@@ -129,13 +133,29 @@ export async function clearAvatar(user: User) {
   return updateMyCards(user, { ...current, ...profile })
 }
 
+/** My profile message (M21): saved, then shown on my cards; null clears it. */
+export async function saveStatus(user: User, status: StatusMessage | null) {
+  const next = status && statusSchema.parse(status)
+  const current = await fetchProfile(user.uid)
+  await setDoc(userRef(user.uid), { status: next }, { merge: true })
+  return updateMyCards(user, { ...current, status: next })
+}
+
+/** My card banner and sticker (M21). */
+export async function saveDecor(user: User, decor: Decor) {
+  const next = decorSchema.parse(decor)
+  const current = await fetchProfile(user.uid)
+  await setDoc(userRef(user.uid), { decor: next }, { merge: true })
+  return updateMyCards(user, { ...current, decor: next })
+}
+
 /** Boards I belong to (one membership per board), e.g. to prove I may upload a photo. */
 export async function myMemberships(uid: string) {
   return getDocs(query(collectionGroup(db, 'members'), where('uid', '==', uid)))
 }
 
 /**
- * Updates my name and photo on every card on a board I can still edit (archived or locked boards
+ * Updates my name, photo, message and decorations on every card on a board I can still edit (archived or locked boards
  * keep the old ones). Returns how many cards were skipped.
  */
 async function updateMyCards(user: User, profile: ProfileFields) {
@@ -155,6 +175,9 @@ async function updateMyCards(user: User, profile: ProfileFields) {
         await updateDoc(doc(db, paths.space(boardId, studentId)), {
           ownerName: cardName(user, profile, student.data() as StudentDoc),
           ownerPhotoURL: cardPhoto(user, profile),
+          // M21: my message and decorations travel with my name and photo
+          ownerStatus: profile.status ?? null,
+          ownerDecor: profile.decor ?? null,
           updatedAt: serverTimestamp(),
         })
         return true

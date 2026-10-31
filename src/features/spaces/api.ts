@@ -98,3 +98,10 @@ export function setReadyToPresent(
     updatedAt: serverTimestamp(),
   })
 }
+
+/** M21: the board's teacher clears a student's profile message on this board (moderation). */
+export function clearCardStatus(boardId: string, studentId: string) {
+  return updateDoc(doc(db, paths.space(boardId, studentId)), {
+    ownerStatus: null,
+  })
+}
