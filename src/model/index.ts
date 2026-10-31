@@ -446,6 +446,7 @@ export const MILESTONES = [
   'photo',
   'firstVote',
   'firstEmbed',
+  'firstNote',
 ] as const
 export type Milestone = (typeof MILESTONES)[number]
 

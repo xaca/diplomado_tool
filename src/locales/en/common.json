@@ -953,6 +953,11 @@
       "b": "You inserted your first content. Looks pro!",
       "c": "Nice! Now you know how to embed content"
     },
+    "firstNote": {
+      "a": "Your first note on the wall! Thanks for taking part",
+      "b": "First note posted: your voice is in the class now",
+      "c": "Nice! Your first note is on the wall"
+    },
     "teacherNote": {
       "a": "Your teacher left you a note",
       "b": "You have a new note from your teacher",

@@ -11,6 +11,7 @@ export type CheerEvent =
   | 'photo'
   | 'firstVote'
   | 'firstEmbed'
+  | 'firstNote'
   | 'teacherNote'
   | 'teacherEdit'
 
@@ -22,6 +23,7 @@ export const CHEER_EMOJI: Record<CheerEvent, string> = {
   photo: '📸',
   firstVote: '🗳️',
   firstEmbed: '✨',
+  firstNote: '📝',
   teacherNote: '💬',
   teacherEdit: '✍️',
 }
@@ -32,6 +34,7 @@ const ONCE: Partial<Record<CheerEvent, Milestone>> = {
   photo: 'photo',
   firstVote: 'firstVote',
   firstEmbed: 'firstEmbed',
+  firstNote: 'firstNote',
 }
 
 /** Real milestones get a confetti burst; everything else is a toast */

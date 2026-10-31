@@ -114,7 +114,7 @@ service cloud.firestore {
         && (!('decor' in data) || validDecor(data.decor))
         && (!('cheer' in data) || data.cheer is bool)
         && (!('milestones' in data) || (data.milestones is map
-          && data.milestones.keys().hasOnly(['firstSlide', 'photo', 'firstVote', 'firstEmbed'])));
+          && data.milestones.keys().hasOnly(['firstSlide', 'photo', 'firstVote', 'firstEmbed', 'firstNote'])));
     }
 
     match /users/{uid} {

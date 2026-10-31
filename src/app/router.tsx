@@ -3,6 +3,9 @@ import { HomeRedirect, RequireAuth, RequireTeacher } from '@/app/guards'
 import { AppShell, type ShellHandle } from '@/components/layout/AppShell'
 import { RouteError } from '@/components/layout/RouteError'
 import { BoardPage } from '@/pages/BoardPage'
+import { ClassesPage } from '@/pages/ClassesPage'
+import { ClassPage } from '@/pages/ClassPage'
+import { ClassPresentPage } from '@/pages/ClassPresentPage'
 import { EditorRoute } from '@/pages/EditorRoute'
 import { EmbedGuidePage } from '@/pages/EmbedGuidePage'
 import { FocusPage } from '@/pages/FocusPage'
@@ -38,6 +41,11 @@ export const router = createBrowserRouter([
       { path: 'b/:boardId/present/:studentId?', element: <PresenterPage /> },
       // Class clock for the projector (M16)
       { path: 'b/:boardId/focus', element: <FocusPage /> },
+      // M10: a class's sticky-note wall on the projector
+      {
+        path: 'b/:boardId/class/:classId/present',
+        element: <ClassPresentPage />,
+      },
       {
         element: <AppShell />,
         children: [
@@ -54,6 +62,9 @@ export const router = createBrowserRouter([
             handle: { ownHeader: true } satisfies ShellHandle,
           },
           { path: 'b/:boardId/s/:studentId', element: <SpacePage /> },
+          // M10: class participation (sticky-note walls)
+          { path: 'b/:boardId/class', element: <ClassesPage /> },
+          { path: 'b/:boardId/class/:classId', element: <ClassPage /> },
           {
             path: 'b/:boardId/s/:studentId/edit',
             element: <EditorRoute />,

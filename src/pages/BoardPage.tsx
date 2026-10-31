@@ -17,6 +17,7 @@ import {
   Pencil,
   Presentation,
   Settings,
+  StickyNote,
   Timer,
 } from 'lucide-react'
 import { HomeLink } from '@/components/layout/HomeLink'
@@ -309,6 +310,18 @@ export function BoardPage() {
           compact={compact}
           actions={
             <>
+              {/* M10: the class walls (this page, Tarjetas, stays as it was) */}
+              {(teacher || mySpace) && (
+                <Button
+                  variant="secondary"
+                  nativeButton={false}
+                  title={t('classes.tab')}
+                  render={<Link to={`/b/${boardId}/class`} />}
+                >
+                  <StickyNote />
+                  <HeaderActionLabel>{t('classes.tab')}</HeaderActionLabel>
+                </Button>
+              )}
               {mySpace && writable && (
                 <Button
                   title={t('dashboard.editMine')}

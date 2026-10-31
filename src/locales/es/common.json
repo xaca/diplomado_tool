@@ -953,6 +953,11 @@
       "b": "Insertaste tu primer contenido. ¡Se ve pro!",
       "c": "¡Bien! Ya sabes insertar contenido"
     },
+    "firstNote": {
+      "a": "¡Tu primera nota en el muro! Gracias por participar",
+      "b": "Primera nota publicada: tu voz ya está en la clase",
+      "c": "¡Bien! Tu primera nota ya está en el muro"
+    },
     "teacherNote": {
       "a": "Tu docente te dejó una nota",
       "b": "Tienes una nota nueva de tu docente",
