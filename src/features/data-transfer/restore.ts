@@ -1,4 +1,5 @@
 import {
+  collection,
   doc,
   serverTimestamp,
   setDoc,
@@ -117,6 +118,19 @@ export async function restoreBoardFile(
     writes.push([
       doc(db, paths.attendanceSummary(boardId, studentId)),
       { dates, updatedAt: serverTimestamp() },
+    ])
+  // M19: announcements come back as new ones (read state starts empty)
+  for (const announcement of file.announcements ?? [])
+    writes.push([
+      doc(collection(db, paths.announcements(boardId))),
+      {
+        ...announcement,
+        authorEmail: normalizeEmail(teacherEmail),
+        authorName: normalizeEmail(teacherEmail).split('@')[0],
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        remindedAt: serverTimestamp(),
+      },
     ])
   for (let start = 0; start < writes.length; start += 450) {
     const batch = writeBatch(db)

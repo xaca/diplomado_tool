@@ -237,3 +237,23 @@
     animation: none;
   }
 }
+
+/* M19: the bell wiggles twice when there's something new */
+@keyframes wiggle {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  25% {
+    transform: rotate(-14deg);
+  }
+  75% {
+    transform: rotate(14deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-testid='notification-bell'] svg {
+    animation: none !important;
+  }
+}

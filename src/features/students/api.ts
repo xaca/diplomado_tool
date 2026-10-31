@@ -175,8 +175,11 @@ export async function removeStudent(boardId: string, student: Student) {
   batch.delete(doc(db, paths.student(boardId, student.id)))
   for (const email of student.emails)
     batch.delete(doc(db, paths.studentEmail(boardId, email)))
-  for (const uid of student.linkedUids)
+  for (const uid of student.linkedUids) {
     batch.delete(doc(db, paths.member(boardId, uid)))
+    // M19: their announcement read state
+    batch.delete(doc(db, paths.announcementState(boardId, uid)))
+  }
   batch.delete(doc(db, paths.space(boardId, student.id)))
   await batch.commit()
   void recordBoardActivity(boardId)

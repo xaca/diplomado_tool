@@ -7,6 +7,7 @@ import {
   Download,
   ExternalLink,
   Mail,
+  Megaphone,
   UserPlus,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -17,6 +18,7 @@ import { useBoard } from '@/features/boards/hooks'
 import { useTeacherBoardSync } from '@/features/boards/sync'
 import { StagesPanel } from '@/features/stages/components/StagesPanel'
 import { EmailsDialog } from '@/features/students/components/EmailsDialog'
+import { AnnouncementsPanel } from '@/features/announcements/components/AnnouncementsPanel'
 import { ImportDialog } from '@/features/students/components/ImportDialog'
 import { StudentFormDialog } from '@/features/students/components/StudentFormDialog'
 import { StudentsTable } from '@/features/students/components/StudentsTable'
@@ -39,6 +41,7 @@ export function TeacherBoardPage() {
   )
   const [adding, setAdding] = useState(false)
   const [emailing, setEmailing] = useState(false)
+  const [announcing, setAnnouncing] = useState(false)
   // M12: my name / photo on the board header, and each card's group from the roster
   useTeacherBoardSync(
     board.data,
@@ -87,6 +90,10 @@ export function TeacherBoardPage() {
             )}
           </div>
           <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => setAnnouncing(true)}>
+              <Megaphone />
+              {t('announcements.panel')}
+            </Button>
             <Button
               variant="outline"
               nativeButton={false}
@@ -164,6 +171,16 @@ export function TeacherBoardPage() {
           />
         )}
       </div>
+
+      {announcing && (
+        <AnnouncementsPanel
+          boardId={boardId}
+
+          members={joined}
+
+          onClose={() => setAnnouncing(false)}
+        />
+      )}
 
       {emailing && (
         <EmailsDialog

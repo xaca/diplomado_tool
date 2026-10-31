@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next'
 import {
   CircleCheck,
   ClipboardCheck,
+  Megaphone,
   Paintbrush,
   Pencil,
   Presentation,
@@ -19,6 +20,8 @@ import {
   Timer,
 } from 'lucide-react'
 import { HomeLink } from '@/components/layout/HomeLink'
+import { AnnouncementsPanel } from '@/features/announcements/components/AnnouncementsPanel'
+import { NotificationBell } from '@/features/announcements/components/NotificationBell'
 import { UserMenu } from '@/components/layout/UserMenu'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -79,6 +82,7 @@ export function BoardPage() {
   // M16: "Listos / Con diapositivas / Sin diapositivas"
   const [readyFilter, setReadyFilter] = useState<ReadyFilter | null>(null)
   const [clockOpen, setClockOpen] = useState(false)
+  const [announcing, setAnnouncing] = useState(false)
   // "Personalizar tablero" (M12): the draft is shown live until saved or cancelled
   const [draft, setDraft] = useState<BoardDraft | null>(null)
   const [compact, setCompact] = useState(false)
@@ -298,6 +302,7 @@ export function BoardPage() {
           studentCount={spaces.data.length}
           tone={tone}
           backdrop={theme.backdrop}
+          notifications={<NotificationBell boardId={boardId} />}
           garland={theme.style?.garland}
           tagline={tagline}
           sticky={look.stickyHeader}
@@ -349,6 +354,18 @@ export function BoardPage() {
                 >
                   <Timer />
                   <HeaderActionLabel>{t('clock.button')}</HeaderActionLabel>
+                </Button>
+              )}
+              {isBoardTeacher && (
+                <Button
+                  variant="secondary"
+                  title={t('announcements.panel')}
+                  onClick={() => setAnnouncing(true)}
+                >
+                  <Megaphone />
+                  <HeaderActionLabel>
+                    {t('announcements.panel')}
+                  </HeaderActionLabel>
                 </Button>
               )}
               {isBoardTeacher && (
@@ -425,6 +442,13 @@ export function BoardPage() {
           )}
         </BoardHeader>
         <section className="relative z-[1] mx-auto flex max-w-7xl flex-col gap-6 p-4 sm:p-6">
+          {isBoardTeacher && announcing && (
+            <AnnouncementsPanel
+              boardId={boardId}
+              members={spaces.data.length}
+              onClose={() => setAnnouncing(false)}
+            />
+          )}
           {isBoardTeacher && (
             <ClockControls
               boardId={boardId}

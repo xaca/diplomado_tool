@@ -14,6 +14,7 @@ import type {
   BoardDoc,
   SlideDoc,
   AttendanceDoc,
+  AnnouncementDoc,
   SpaceDoc,
   StudentDoc,
 } from '@/model'
@@ -46,17 +47,29 @@ export async function listBoards() {
 export async function loadBoard(boardId: string) {
   const board = await getBoard(boardId)
   const ref = boardRef(boardId)
-  const [students, spaces, assets, emails, members, attendance, summaries] =
-    await Promise.all([
-      ref.collection('students').get(),
-      ref.collection('spaces').get(),
-      ref.collection('assets').get(),
-      ref.collection('studentEmails').get(),
-      ref.collection('members').get(),
-      // M18: attendance goes into the backup and with the board on purge
-      ref.collection('attendance').get(),
-      ref.collection('attendanceByStudent').get(),
-    ])
+  const [
+    students,
+    spaces,
+    assets,
+    emails,
+    members,
+    attendance,
+    summaries,
+    announcements,
+    announcementStates,
+  ] = await Promise.all([
+    ref.collection('students').get(),
+    ref.collection('spaces').get(),
+    ref.collection('assets').get(),
+    ref.collection('studentEmails').get(),
+    ref.collection('members').get(),
+    // M18: attendance goes into the backup and with the board on purge
+    ref.collection('attendance').get(),
+    ref.collection('attendanceByStudent').get(),
+    // M19: announcements and each member's read state
+    ref.collection('announcements').get(),
+    ref.collection('announcementState').get(),
+  ])
   // M16: polls and their votes go with the board too
   const polls = await Promise.all(
     spaces.docs.map((space) => space.ref.collection('polls').get()),
@@ -117,6 +130,17 @@ export async function loadBoard(boardId: string) {
       const data = doc.data() as AttendanceDoc
       return { date: data.date, topic: data.topic, marks: data.marks }
     }),
+    announcements: announcements.docs
+      .map((doc) => doc.data() as AnnouncementDoc)
+      .sort(
+        (a, b) => toDate(a.createdAt).getTime() - toDate(b.createdAt).getTime(),
+      )
+      .map(({ title, body, link, important }) => ({
+        title,
+        body,
+        link,
+        important,
+      })),
   }
   const assetRows: AssetRow[] = assets.docs.map((doc) => {
     const data = doc.data() as AssetDoc
@@ -148,6 +172,8 @@ export async function loadBoard(boardId: string) {
       emails,
       students,
       assets,
+      announcements,
+      announcementStates,
       attendance,
       summaries,
     ].flatMap((s) => s.docs.map((doc) => doc.ref)),

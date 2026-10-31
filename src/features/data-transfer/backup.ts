@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import {
+  announcementInputSchema,
   attendanceMarkSchema,
   ATTENDANCE_DATE,
   emailSchema,
@@ -15,6 +16,7 @@ import {
   type ImageRef,
   type StageDef,
   type AttendanceMark,
+  type AnnouncementInput,
 } from '@/model'
 
 // Board backup and template files (PLAN.md → Import / export). Pure: shared with the admin CLI.
@@ -91,6 +93,8 @@ export const boardBackupSchema = z.object({
     )
     .max(1000)
     .optional(),
+  /** M19: the teacher's announcements (students' read state is not kept) */
+  announcements: z.array(announcementInputSchema).max(200).optional(),
 })
 export type BoardBackup = z.infer<typeof boardBackupSchema>
 
@@ -136,6 +140,8 @@ export type BoardSnapshot = {
     topic: string
     marks: Record<string, AttendanceMark>
   }[]
+  /** M19: oldest first */
+  announcements?: AnnouncementInput[]
 }
 
 export function buildBackup(
@@ -188,6 +194,7 @@ export function buildBackup(
         ),
       }))
       .sort((a, b) => a.date.localeCompare(b.date)),
+    announcements: snapshot.announcements ?? [],
   })
 }
 

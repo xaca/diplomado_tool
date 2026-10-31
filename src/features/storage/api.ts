@@ -19,6 +19,7 @@ import {
   type BoardDoc,
   type SlideDoc,
   type AttendanceDoc,
+  type AnnouncementDoc,
   type SpaceDoc,
   type StudentDoc,
   VERSION_KINDS,
@@ -29,6 +30,13 @@ import { resolveLook } from '@/features/boards/look'
 // (not live): the storage page loads the board once, on demand.
 
 const BATCH_LIMIT = 450
+
+const oldestFirst = <T extends { data: () => unknown }>(docs: T[]) =>
+  [...docs].sort(
+    (a, b) =>
+      toDate((a.data() as AnnouncementDoc).createdAt).getTime() -
+      toDate((b.data() as AnnouncementDoc).createdAt).getTime(),
+  )
 
 export type BoardData = {
   snapshot: BoardSnapshot
@@ -50,6 +58,8 @@ export async function loadBoardData(boardId: string): Promise<BoardData> {
     members,
     attendance,
     summaries,
+    announcements,
+    announcementStates,
   ] = await Promise.all([
     getDoc(doc(db, paths.board(boardId))),
     getDocs(collection(db, paths.students(boardId))),
@@ -60,6 +70,9 @@ export async function loadBoardData(boardId: string): Promise<BoardData> {
     // M18: attendance goes into the backup and with the board on purge
     getDocs(collection(db, paths.attendances(boardId))),
     getDocs(collection(db, paths.attendanceSummaries(boardId))),
+    // M19: announcements go into the backup; everything goes with the board on purge
+    getDocs(collection(db, paths.announcements(boardId))),
+    getDocs(collection(db, paths.announcementStates(boardId))),
   ])
   if (!board.exists()) throw new Error('board not found')
   // M16: polls and their votes go with the board too
@@ -130,6 +143,15 @@ export async function loadBoardData(boardId: string): Promise<BoardData> {
         const data = day.data() as AttendanceDoc
         return { date: data.date, topic: data.topic, marks: data.marks }
       }),
+      announcements: oldestFirst(announcements.docs).map((item) => {
+        const data = item.data() as AnnouncementDoc
+        return {
+          title: data.title,
+          body: data.body,
+          link: data.link,
+          important: data.important,
+        }
+      }),
     },
     assets: assets.docs.map((asset) => {
       const data = asset.data() as AssetDoc
@@ -178,6 +200,8 @@ export async function loadBoardData(boardId: string): Promise<BoardData> {
       ...assets.docs.map((d) => d.ref),
       ...attendance.docs.map((d) => d.ref),
       ...summaries.docs.map((d) => d.ref),
+      ...announcements.docs.map((d) => d.ref),
+      ...announcementStates.docs.map((d) => d.ref),
     ],
   }
 }

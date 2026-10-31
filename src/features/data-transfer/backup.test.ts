@@ -195,3 +195,25 @@ describe('attendance in backups (M18)', () => {
     ).toThrow()
   })
 })
+
+describe('announcements in backups (M19)', () => {
+  it('keeps the announcements (not who read them); bad links are refused', () => {
+    const note = {
+      title: 'Entrega final',
+      body: 'El viernes',
+      link: '/b/x',
+      important: true,
+    }
+    const backup = buildBackup({ ...snapshot, announcements: [note] })
+    expect(backup.announcements).toEqual([note])
+    expect(parseBoardFile(JSON.parse(JSON.stringify(backup))).kind).toBe(
+      'backup',
+    )
+    expect(() =>
+      parseBoardFile({
+        ...backup,
+        announcements: [{ ...note, link: 'javascript:alert(1)' }],
+      }),
+    ).toThrow()
+  })
+})

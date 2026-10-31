@@ -27,6 +27,8 @@ type Props = {
   /** M21: the style's decoration along the top, and the line next to the title */
   garland?: GarlandKind
   tagline?: string
+  /** M19: the students' 🔔, next to the user menu */
+  notifications?: ReactNode
 }
 
 /** An action's text: hidden (still the accessible name) on phones and in the compact header. */
@@ -58,6 +60,7 @@ export const BoardHeader = forwardRef<HTMLElement, Props>(function BoardHeader(
     children,
     garland,
     tagline,
+    notifications,
   },
   ref,
 ) {
@@ -141,6 +144,7 @@ export const BoardHeader = forwardRef<HTMLElement, Props>(function BoardHeader(
           {actions}
         </div>
         <span className="h-6 w-px shrink-0 bg-current opacity-20" aria-hidden />
+        {notifications}
         <UserMenu />
       </div>
 
