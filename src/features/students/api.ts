@@ -22,6 +22,7 @@ import {
 } from '@/model'
 import type { PreviewItem } from '@/features/students/import'
 import { deleteSlideExtras } from '@/features/slides/api'
+import { moveAttendance } from '@/features/attendance/api'
 
 export const studentsCollection = (boardId: string) =>
   collection(db, paths.students(boardId))
@@ -166,10 +167,11 @@ export async function createMissingSpace(boardId: string, student: Student) {
   })
 }
 
-/** Deletes the student, their email index, linked accounts and their space. */
+/** Deletes the student, their email index, linked accounts, their space and attendance. */
 export async function removeStudent(boardId: string, student: Student) {
   const batch = writeBatch(db)
   await deleteSlides(batch, boardId, student.id)
+  await moveAttendance(batch, boardId, student.id)
   batch.delete(doc(db, paths.student(boardId, student.id)))
   for (const email of student.emails)
     batch.delete(doc(db, paths.studentEmail(boardId, email)))
@@ -229,6 +231,8 @@ export async function mergeStudents(
     })
   }
   await deleteSlides(batch, boardId, remove.id)
+  // M18: their attendance moves to the kept student (days without a mark there)
+  await moveAttendance(batch, boardId, remove.id, keep.id)
   batch.delete(doc(db, paths.space(boardId, remove.id)))
   batch.delete(doc(db, paths.student(boardId, remove.id)))
   await batch.commit()

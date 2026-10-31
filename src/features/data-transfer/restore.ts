@@ -1,4 +1,10 @@
-import { doc, serverTimestamp, setDoc, writeBatch } from 'firebase/firestore'
+import {
+  doc,
+  serverTimestamp,
+  setDoc,
+  writeBatch,
+  type DocumentReference,
+} from 'firebase/firestore'
 import {
   createBoard,
   saveBoardLook,
@@ -8,7 +14,7 @@ import { slideAssetIds, type BoardFile } from '@/features/data-transfer/backup'
 import { saveBoardStages } from '@/features/stages/api'
 import { db } from '@/lib/firebase'
 import { normalizeEmail } from '@/lib/collections'
-import { paths } from '@/model'
+import { paths, type AttendanceStatus } from '@/model'
 
 // Restore always creates a NEW board (PLAN.md → Import / export). Students come back as
 // "invited": they join again by signing in with any of their emails. Card covers are not restored
@@ -85,6 +91,38 @@ export async function restoreBoardFile(
     }
     done += 1
     onProgress?.(done, total)
+  }
+
+  // M18: class dates, and each student's own summary rebuilt from them
+  const summaries = new Map<string, Record<string, AttendanceStatus>>()
+  const writes: [DocumentReference, Record<string, unknown>][] = []
+  for (const day of file.attendance ?? []) {
+    for (const [studentId, mark] of Object.entries(day.marks))
+      summaries.set(studentId, {
+        ...summaries.get(studentId),
+        [day.date]: mark.status,
+      })
+    writes.push([
+      doc(db, paths.attendance(boardId, day.date)),
+      {
+        date: day.date,
+        topic: day.topic,
+        marks: day.marks,
+        takenBy: normalizeEmail(teacherEmail),
+        updatedAt: serverTimestamp(),
+      },
+    ])
+  }
+  for (const [studentId, dates] of summaries)
+    writes.push([
+      doc(db, paths.attendanceSummary(boardId, studentId)),
+      { dates, updatedAt: serverTimestamp() },
+    ])
+  for (let start = 0; start < writes.length; start += 450) {
+    const batch = writeBatch(db)
+    for (const [ref, data] of writes.slice(start, start + 450))
+      batch.set(ref, data)
+    await batch.commit()
   }
   return boardId
 }

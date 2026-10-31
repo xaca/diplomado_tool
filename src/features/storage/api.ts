@@ -18,6 +18,7 @@ import {
   type AssetDoc,
   type BoardDoc,
   type SlideDoc,
+  type AttendanceDoc,
   type SpaceDoc,
   type StudentDoc,
   VERSION_KINDS,
@@ -40,13 +41,25 @@ export type BoardData = {
 
 /** Reads the whole board: students, cards, slides and the image registry. */
 export async function loadBoardData(boardId: string): Promise<BoardData> {
-  const [board, students, spaces, assets, emails, members] = await Promise.all([
+  const [
+    board,
+    students,
+    spaces,
+    assets,
+    emails,
+    members,
+    attendance,
+    summaries,
+  ] = await Promise.all([
     getDoc(doc(db, paths.board(boardId))),
     getDocs(collection(db, paths.students(boardId))),
     getDocs(collection(db, paths.spaces(boardId))),
     getDocs(collection(db, paths.assets(boardId))),
     getDocs(collection(db, paths.studentEmails(boardId))),
     getDocs(collection(db, paths.members(boardId))),
+    // M18: attendance goes into the backup and with the board on purge
+    getDocs(collection(db, paths.attendances(boardId))),
+    getDocs(collection(db, paths.attendanceSummaries(boardId))),
   ])
   if (!board.exists()) throw new Error('board not found')
   // M16: polls and their votes go with the board too
@@ -113,6 +126,10 @@ export async function loadBoardData(boardId: string): Promise<BoardData> {
           }),
         ]),
       ),
+      attendance: attendance.docs.map((day) => {
+        const data = day.data() as AttendanceDoc
+        return { date: data.date, topic: data.topic, marks: data.marks }
+      }),
     },
     assets: assets.docs.map((asset) => {
       const data = asset.data() as AssetDoc
@@ -159,6 +176,8 @@ export async function loadBoardData(boardId: string): Promise<BoardData> {
       ...emails.docs.map((d) => d.ref),
       ...students.docs.map((d) => d.ref),
       ...assets.docs.map((d) => d.ref),
+      ...attendance.docs.map((d) => d.ref),
+      ...summaries.docs.map((d) => d.ref),
     ],
   }
 }

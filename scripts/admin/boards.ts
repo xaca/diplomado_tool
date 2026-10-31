@@ -13,6 +13,7 @@ import type {
   AssetDoc,
   BoardDoc,
   SlideDoc,
+  AttendanceDoc,
   SpaceDoc,
   StudentDoc,
 } from '@/model'
@@ -45,13 +46,17 @@ export async function listBoards() {
 export async function loadBoard(boardId: string) {
   const board = await getBoard(boardId)
   const ref = boardRef(boardId)
-  const [students, spaces, assets, emails, members] = await Promise.all([
-    ref.collection('students').get(),
-    ref.collection('spaces').get(),
-    ref.collection('assets').get(),
-    ref.collection('studentEmails').get(),
-    ref.collection('members').get(),
-  ])
+  const [students, spaces, assets, emails, members, attendance, summaries] =
+    await Promise.all([
+      ref.collection('students').get(),
+      ref.collection('spaces').get(),
+      ref.collection('assets').get(),
+      ref.collection('studentEmails').get(),
+      ref.collection('members').get(),
+      // M18: attendance goes into the backup and with the board on purge
+      ref.collection('attendance').get(),
+      ref.collection('attendanceByStudent').get(),
+    ])
   // M16: polls and their votes go with the board too
   const polls = await Promise.all(
     spaces.docs.map((space) => space.ref.collection('polls').get()),
@@ -108,6 +113,10 @@ export async function loadBoard(boardId: string) {
         }),
       ]),
     ),
+    attendance: attendance.docs.map((doc) => {
+      const data = doc.data() as AttendanceDoc
+      return { date: data.date, topic: data.topic, marks: data.marks }
+    }),
   }
   const assetRows: AssetRow[] = assets.docs.map((doc) => {
     const data = doc.data() as AssetDoc
@@ -133,9 +142,15 @@ export async function loadBoard(boardId: string) {
         spaces.docs[index].ref.collection('locks').doc(slide.id),
       ]),
     ),
-    ...[spaces, members, emails, students, assets].flatMap((s) =>
-      s.docs.map((doc) => doc.ref),
-    ),
+    ...[
+      spaces,
+      members,
+      emails,
+      students,
+      assets,
+      attendance,
+      summaries,
+    ].flatMap((s) => s.docs.map((doc) => doc.ref)),
   ]
   return {
     board,

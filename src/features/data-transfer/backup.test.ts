@@ -143,3 +143,55 @@ describe('board backup', () => {
     ).toEqual(['a1', 'a2'])
   })
 })
+
+describe('attendance in backups (M18)', () => {
+  it('keeps the class dates in order, without marks of removed students', () => {
+    const backup = buildBackup({
+      ...snapshot,
+      attendance: [
+        {
+          date: '2026-11-10',
+          topic: '',
+          marks: { st_laura: { status: 'absent' } },
+        },
+        {
+          date: '2026-11-03',
+          topic: 'Sesión 4',
+          marks: {
+            st_laura: { status: 'late', note: 'Bus' },
+            st_removed: { status: 'present' },
+          },
+        },
+      ],
+    })
+    expect(backup.attendance).toEqual([
+      {
+        date: '2026-11-03',
+        topic: 'Sesión 4',
+        marks: { st_laura: { status: 'late', note: 'Bus' } },
+      },
+      {
+        date: '2026-11-10',
+        topic: '',
+        marks: { st_laura: { status: 'absent' } },
+      },
+    ])
+    expect(parseBoardFile(JSON.parse(JSON.stringify(backup))).kind).toBe(
+      'backup',
+    )
+  })
+
+  it('backups from before attendance still restore; bad marks are refused', () => {
+    const old = buildBackup(snapshot) as Record<string, unknown>
+    delete old.attendance
+    expect(parseBoardFile(old).kind).toBe('backup')
+    expect(() =>
+      parseBoardFile({
+        ...old,
+        attendance: [
+          { date: '2026-11-03', topic: '', marks: { a: { status: 'tarde' } } },
+        ],
+      }),
+    ).toThrow()
+  })
+})

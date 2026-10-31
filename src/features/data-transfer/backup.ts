@@ -1,5 +1,7 @@
 import { z } from 'zod'
 import {
+  attendanceMarkSchema,
+  ATTENDANCE_DATE,
   emailSchema,
   MAX_EMAILS_PER_STUDENT,
   MAX_IMAGES_PER_SLIDE,
@@ -12,6 +14,7 @@ import {
   stageListSchema,
   type ImageRef,
   type StageDef,
+  type AttendanceMark,
 } from '@/model'
 
 // Board backup and template files (PLAN.md → Import / export). Pure: shared with the admin CLI.
@@ -74,6 +77,20 @@ export const boardBackupSchema = z.object({
       }),
     )
     .max(500),
+  /** M18: one record per class date (optional: files from before keep restoring) */
+  attendance: z
+    .array(
+      z.object({
+        date: z.string().regex(ATTENDANCE_DATE),
+        topic: z.string().max(120),
+        marks: z.record(
+          z.string().regex(/^[A-Za-z0-9_-]{1,128}$/),
+          attendanceMarkSchema,
+        ),
+      }),
+    )
+    .max(1000)
+    .optional(),
 })
 export type BoardBackup = z.infer<typeof boardBackupSchema>
 
@@ -113,6 +130,12 @@ export type BoardSnapshot = {
     string,
     { id: string; content: string; files: Record<string, ImageRef> }[]
   >
+  /** M18: class dates with their marks */
+  attendance?: {
+    date: string
+    topic: string
+    marks: Record<string, AttendanceMark>
+  }[]
 }
 
 export function buildBackup(
@@ -120,6 +143,7 @@ export function buildBackup(
   exportedAt = new Date(),
 ): BoardBackup {
   const settings = boardSettingsSchema.parse(snapshot.board)
+  const students = new Set(snapshot.students.map((student) => student.id))
   return boardBackupSchema.parse({
     type: 'pbl.boardBackup',
     version: 1,
@@ -154,6 +178,16 @@ export function buildBackup(
         }),
       }
     }),
+    // Marks of students no longer on the roster are left out
+    attendance: (snapshot.attendance ?? [])
+      .map((day) => ({
+        date: day.date,
+        topic: day.topic,
+        marks: Object.fromEntries(
+          Object.entries(day.marks).filter(([id]) => students.has(id)),
+        ),
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date)),
   })
 }
 
