@@ -10,7 +10,7 @@ Status legend: `[ ]` to do · `[x]` done
 
 - **Phase 1 — Template setup:** ✅ done (2026-10-26), commit `8f20758`
 - **Plan review (rev. 6, 2026-10-26):** ✅ consistency + free-tier review done, see [Review findings](#review-findings-rev-6)
-- **Phase 2 — "Padlet for PBL" app:** 🚧 in progress — Google sign-in enabled · M4 Steps 1–6 done (`/health` → `config: ok`) · service account key ready · **M1 ✅** · **Loop 1 (M2) ✅** ([report](reports/loop-01-m2.md)) · **Loop 2 (M3) ✅** ([report](reports/loop-02-m3.md)) · **Loop 3 (M4) ✅ code done** ([report](reports/loop-03-m4.md)) · **Loop 4 (M5) ✅ code done** ([report](reports/loop-04-m5.md)) · **Loop 5 (M6) ✅ code done** ([report](reports/loop-05-m6.md)) · **Loop 6 (M7) ✅ code done** ([report](reports/loop-06-m7.md)) · **Loop 7 (M8) ✅ code done** ([report](reports/loop-07-m8.md)) · **Extras ✅ code done** (2026-10-29): profile page `/me`, teacher's notes on slides · **Loop 8 (M10) Class participation: 📝 planned**, decisions [D12–D17](#decisions-all-answered-) waiting for you · **Loop 9 (M11) Profile photo & Design Thinking stage ✅ code done** (2026-10-31, [report](reports/loop-09-m11.md)) — M1–M8 + extras deployed 2026-10-30/31; **waiting for you:** deploy Loop 9 (`npm run worker:deploy` → `npm run deploy:rules` → `npm run deploy`), App Check steps, **before 2026-11-25** (Worker live at `https://media-api.paradisserossa.workers.dev`)
+- **Phase 2 — "Padlet for PBL" app:** 🚧 in progress — Google sign-in enabled · M4 Steps 1–6 done (`/health` → `config: ok`) · service account key ready · **M1 ✅** · **Loop 1 (M2) ✅** ([report](reports/loop-01-m2.md)) · **Loop 2 (M3) ✅** ([report](reports/loop-02-m3.md)) · **Loop 3 (M4) ✅ code done** ([report](reports/loop-03-m4.md)) · **Loop 4 (M5) ✅ code done** ([report](reports/loop-04-m5.md)) · **Loop 5 (M6) ✅ code done** ([report](reports/loop-05-m6.md)) · **Loop 6 (M7) ✅ code done** ([report](reports/loop-06-m7.md)) · **Loop 7 (M8) ✅ code done** ([report](reports/loop-07-m8.md)) · **Extras ✅ code done** (2026-10-29): profile page `/me`, teacher's notes on slides · **Loop 8 (M10) Class participation: 📝 planned**, decisions [D12–D17](#decisions-all-answered-) waiting for you · **Loop 9 (M11) Profile photo & Design Thinking stage ✅ code done** (2026-10-31, [report](reports/loop-09-m11.md)) · **Loop 10 (M12) Board customization: 📝 planned**, decisions [D25–D32](#decisions-all-answered-) waiting for you — M1–M8 + extras deployed 2026-10-30/31; **waiting for you:** deploy Loop 9 (`npm run worker:deploy` → `npm run deploy:rules` → `npm run deploy`), App Check steps, **before 2026-11-25** (Worker live at `https://media-api.paradisserossa.workers.dev`)
 
 ## ▶ Resume here (last session: 2026-10-31)
 
@@ -49,6 +49,13 @@ Checks at the end of the session: rules tests 68/68 · unit 71/71 · admin CLI �
 - Stored in its own `classes` collection: **all existing features stay as they are** (see "What does NOT change" in M10).
 - **To start:** confirm or change decisions **[D12–D17](#decisions-all-answered-)** (format, limits, visibility, teacher powers, backup, location), then say **"run loop 8"**.
 
+**Planned: Loop 10 = [M12 Board customization](#m12--board-customization-f15-f16--loop-10)** (not started)
+
+- A **"Personalizar tablero"** panel for the teacher, with live preview: **name and description** (today there's no screen to rename a board), **logo**, **background** (colors, gradients, patterns), **layout** (Muro · Cuadrícula · Lista · Por etapa · Por grupo), **sticky header**.
+- **Teacher distinction:** a "#DOCENTE" ring with a cap badge on the teacher's photo, and the board's teacher(s) shown in the board header.
+- **GSAP animations:** cards rearrange smoothly when the layout / filter changes (Flip), new cards pop in, the stage ring draws itself, the header shrinks on scroll; all off with "reduce motion".
+- **To start:** confirm or change **[D25–D32](#decisions-all-answered-)**, then say **"run loop 10"**.
+
 **Loop 9 = [M11 Profile photo & Design Thinking stage](#m11--profile-photo--design-thinking-stage-f13-f14--loop-9)** ✅ code done 2026-10-31 (ran before Loop 8, D24)
 
 - **Photo:** on `/me`, choose Google photo, **an uploaded photo** (square crop, stored once per person in Cloudinary) or initials.
@@ -77,6 +84,8 @@ A Padlet-style board where **each student owns one space** and documents their p
 | F12 | **Class participation**: per class, the teacher opens **1–5 participation slides**; students add, edit and delete their own contributions (text + picture) | teacher creates and moderates · students participate |
 | F13 | **Profile photo**: Google photo, **an uploaded photo** or initials                                                                                         | everyone                                             |
 | F14 | **Design Thinking stage**: a ring around the student's photo with their current stage, or "Vitrineando"; stage summary + filter on the dashboard           | the student sets it · the teacher sees and can set   |
+| F15 | **Board customization**: name, description, logo, background, layout, sticky header, with live preview; GSAP animations                                    | teacher sets it · everyone sees it                   |
+| F16 | **Teacher distinction**: "#DOCENTE" ring + badge on the teacher's photo; the board's teachers shown in its header                                          | everyone                                             |
 
 Students can see their classmates' spaces **read-only**. **Class participation** (F12) is the one place where everybody writes together, on **separate slides** that never touch the students' own spaces.
 
@@ -190,7 +199,14 @@ boards/{boardId}
   lastActivityAt,                         // any edit in the board (throttled) → auto-archive
   archiveAfterDays: 90,                   // configurable per board
   stages?: StageDef[] | null,             // M11: missing = Design Thinking defaults (D21)
-  background, createdAt, updatedAt, archivedAt? }
+  background,                             // M12: preset id ('yellow' = today's look), see BOARD_BACKGROUNDS
+  pattern?: 'dots' | 'grid' | 'none',     // M12, default 'dots'
+  layout?: 'masonry' | 'grid' | 'list' | 'stages' | 'groups',   // M12, default 'masonry'
+  sortBy?: 'joined' | 'name' | 'updated', // M12, default 'joined'
+  stickyHeader?: boolean,                 // M12, default true
+  logo?: ImageRef | null,                 // M12: uploaded by the teacher (kind 'logo')
+  teacherProfiles?: { [email]: { name, photoURL } },   // M12: shown in the header with the #DOCENTE ring
+  createdAt, updatedAt, archivedAt? }
 
 StageDef = { id, label?, color, kind: 'stage' | 'browsing' }   // default ids: empathize · define · ideate · prototype · test · browsing
                                                                // default labels come from i18n; custom stages carry `label`
@@ -212,6 +228,7 @@ boards/{boardId}/spaces/{studentId}       // ← what the dashboard card shows
   cover?: ImageRef,
   slideOrder: string[], slideCount,
   stage?: string | null,                  // M11: a StageDef id of this board; null = no ring
+  group?: string,                         // M12: copied from the student (teacher), for the "Por grupo" layout
   stageUpdatedAt?, stageSetBy?: 'student' | 'teacher',
   updatedAt, createdAt }
 
@@ -323,6 +340,8 @@ joinCodes/{code}
 
 **Profile photos (M11):** `POST /uploads/sign` with `{ scope: 'avatar' }` (no board). The Worker allows a signed-in user who is **staff or a member of at least one board** (checked with the caller's token), so a random Google account can't upload. It signs **one fixed** `public_id = pbl/{env}/users/{uid}/avatar` with `overwrite: true`: a new photo replaces the old one, so there are no orphans and no registry entry; the `version` in the URL busts the CDN cache. The browser crops a square and resizes to 512 px WebP (≤ 2 MB). `POST /avatar/delete` removes it ("Quitar foto").
 
+**Board logo (M12):** `POST /uploads/sign` with `{ boardId, scope: 'board' }`, **board teacher only**, writable board → `pbl/{env}/{boardId}/board/{assetId}`. Registry entry `kind: 'logo'`, `studentId: '_board'`; replacing or removing the logo marks the old one `orphaned` (same cleanup as covers). Browser resize to max 512 px; purge already deletes the whole board folder.
+
 ### Folder structure in Cloudinary
 
 ```
@@ -332,6 +351,7 @@ pbl/
     {boardId}/
       {studentId}/{assetId}               ← public_id ↔ registry id (1:1)
       class/{assetId}                     ← class participation images (M10)
+      board/{assetId}                     ← board logo (M12)
     users/{uid}/avatar                    ← uploaded profile photo, one per person (M11)
 ```
 
@@ -689,19 +709,20 @@ Saved as `reports/loop-NN-<milestone>.md` (committed) and summarized in the chat
 
 ### Loop roadmap
 
-| Loop | Milestone                                 | I build                                                                                                                                                                                              | You do at the end                                                                                      |
-| ---- | ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| 0 ✅ | **M1 finish**                             | —                                                                                                                                                                                                    | `npm run admin -- setup --email paradisserossa@gmail.com` · log in as teacher and as student           |
-| 1 ✅ | **Infra + M2** Boards, students & joining | emulator seed, Playwright setup, `npm test`; teacher dashboard, create board, students table, JSON import + quick add, auto-join, invite link, merge, rules + tests                                  | `npm run deploy:rules` (rules + indexes) · acceptance test                                             |
-| 2 ✅ | **M3** Dashboard                          | Padlet-like board view, live cards, space profile (no cover yet)                                                                                                                                     | `npm run deploy:rules` · acceptance test                                                               |
-| 3 ✅ | **M4** Uploads (Worker Steps 7–12)        | token check, permission check, signed uploads, cover image, asset registry, rules                                                                                                                    | `npx wrangler deploy` · upload a real image · `npm run deploy:rules`                                   |
-| 4 ✅ | **M5** Excalidraw slides                  | editor, autosave (throttled), images via Cloudinary, viewer, self-hosted fonts                                                                                                                       | `npm run deploy:rules` · acceptance test                                                               |
-| 5 ✅ | **M6** Presentation                       | full screen, keyboard, next student, GSAP transitions                                                                                                                                                | acceptance test                                                                                        |
-| 6 ✅ | **M7** Lifecycle & backups                | archived projects, cleanup, purge, JSON backup/restore, CLI commands, Worker delete/usage                                                                                                            | `npx wrangler deploy` · `npm run deploy:rules` · try cleanup on a test board                           |
-| 7 ✅ | **M8** Hardening & launch                 | App Check code, final rules review, privacy notice, metadata                                                                                                                                         | create a reCAPTCHA v3 key + register App Check (console) · `npm run deploy` (hosting)                  |
-| 8 📝 | **M10** Class participation               | classes with 1–5 participation slides, contribution cards (text + picture), own edit / delete, teacher moderation, open / close, present, Worker `scope: 'class'`, orphans, backup v2, rules + tests | answer D12–D17 · `npm run worker:deploy` · `npm run deploy:rules` · acceptance test                    |
-| 9 ✅ | **M11** Profile photo & DT stage          | uploaded profile photo (crop, Worker `scope: 'avatar'`), stage ring on every avatar, stage picker, board stage list (teacher), dashboard summary + filter, rules + tests                             | answer D18–D24 · `npm run worker:deploy` · `npm run deploy:rules` · `npm run deploy` · acceptance test |
-| —    | **M9** More teachers                      | when you need it                                                                                                                                                                                     | —                                                                                                      |
+| Loop  | Milestone                                 | I build                                                                                                                                                                                              | You do at the end                                                                                      |
+| ----- | ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| 0 ✅  | **M1 finish**                             | —                                                                                                                                                                                                    | `npm run admin -- setup --email paradisserossa@gmail.com` · log in as teacher and as student           |
+| 1 ✅  | **Infra + M2** Boards, students & joining | emulator seed, Playwright setup, `npm test`; teacher dashboard, create board, students table, JSON import + quick add, auto-join, invite link, merge, rules + tests                                  | `npm run deploy:rules` (rules + indexes) · acceptance test                                             |
+| 2 ✅  | **M3** Dashboard                          | Padlet-like board view, live cards, space profile (no cover yet)                                                                                                                                     | `npm run deploy:rules` · acceptance test                                                               |
+| 3 ✅  | **M4** Uploads (Worker Steps 7–12)        | token check, permission check, signed uploads, cover image, asset registry, rules                                                                                                                    | `npx wrangler deploy` · upload a real image · `npm run deploy:rules`                                   |
+| 4 ✅  | **M5** Excalidraw slides                  | editor, autosave (throttled), images via Cloudinary, viewer, self-hosted fonts                                                                                                                       | `npm run deploy:rules` · acceptance test                                                               |
+| 5 ✅  | **M6** Presentation                       | full screen, keyboard, next student, GSAP transitions                                                                                                                                                | acceptance test                                                                                        |
+| 6 ✅  | **M7** Lifecycle & backups                | archived projects, cleanup, purge, JSON backup/restore, CLI commands, Worker delete/usage                                                                                                            | `npx wrangler deploy` · `npm run deploy:rules` · try cleanup on a test board                           |
+| 7 ✅  | **M8** Hardening & launch                 | App Check code, final rules review, privacy notice, metadata                                                                                                                                         | create a reCAPTCHA v3 key + register App Check (console) · `npm run deploy` (hosting)                  |
+| 8 📝  | **M10** Class participation               | classes with 1–5 participation slides, contribution cards (text + picture), own edit / delete, teacher moderation, open / close, present, Worker `scope: 'class'`, orphans, backup v2, rules + tests | answer D12–D17 · `npm run worker:deploy` · `npm run deploy:rules` · acceptance test                    |
+| 9 ✅  | **M11** Profile photo & DT stage          | uploaded profile photo (crop, Worker `scope: 'avatar'`), stage ring on every avatar, stage picker, board stage list (teacher), dashboard summary + filter, rules + tests                             | answer D18–D24 · `npm run worker:deploy` · `npm run deploy:rules` · `npm run deploy` · acceptance test |
+| 10 📝 | **M12** Board customization               | "Personalizar tablero" panel (name, logo, background, layout, sticky header), #DOCENTE ring, GSAP Flip / ScrollTrigger animations, Worker `scope: 'board'`, rules + tests                            | answer D25–D32 · `npm run worker:deploy` · `npm run deploy:rules` · `npm run deploy` · acceptance test |
+| —     | **M9** More teachers                      | when you need it                                                                                                                                                                                     | —                                                                                                      |
 
 **Starting a loop:** say **"run loop N"** (e.g. "run loop 1"). I'll work through it and come back with the report.
 
@@ -903,6 +924,51 @@ The diplomado is a **Design Thinking** course. Each student shows **where they a
 | Reads: none extra (stage and photo URL travel on the card already loaded)   | 0                                | 50K / day  |
 
 **Risks:** students may forget to update their stage (the teacher can set it, and `stageUpdatedAt` shows "hace 3 semanas"); a stage list edited mid-course leaves students on a hidden stage (shown as "Sin etapa" until they pick again, the value is kept).
+
+### M12 — Board customization (F15, F16) — Loop 10
+
+The teacher makes each board look like their course, and everyone can tell who the teacher is.
+
+**What people see**
+
+- **Teacher → "Personalizar tablero"** (button on the board header): a **side panel** over the board with **live preview** (the board behind it changes as you choose; "Guardar" / "Cancelar").
+  - **Nombre y descripción** of the board (the invite link keeps showing the new name).
+  - **Logo:** upload (square or wide, max 512 px), remove. Shown in the board header, on the students' "Mis tableros" card and in the presenter's top bar.
+  - **Fondo:** 12 presets (today's yellow, mint, sky, lavender, peach, sand, white, charcoal + 4 soft gradients) × pattern (dots · grid · none). Each preset declares light or dark text so titles stay readable (contrast checked in tests).
+  - **Distribución:** **Muro** (today's masonry) · **Cuadrícula** (equal cards in rows) · **Lista** (compact rows: photo + ring, name, title, slides, updated) · **Por etapa** (one column per Design Thinking stage, like a Kanban; uses M11) · **Por grupo** (one column per student group, e.g. "Equipo 1"). Plus **order**: joining order · name · last updated.
+  - **Encabezado fijo:** on by default; the header (logo, title, stage chips, buttons) stays at the top while scrolling and **shrinks** (smaller logo, description hidden).
+- **Teacher distinction:** the teacher's photo gets a **"#DOCENTE" ring** (dark ring with a gold label + graduation-cap badge) everywhere it appears: user menu, `/me`, the board header ("Docente: [photo] Name", all co-teachers), notes on slides, and class contributions (M10). Students never get this ring; teachers have no stage.
+- **Animations (GSAP, free incl. Flip):**
+  - Layout, order or stage-filter changes: cards **glide to their new place** (Flip) instead of jumping.
+  - A classmate's card that appears live **pops in**; a card updated live gets a short glow.
+  - Choosing a stage: the ring **draws itself** around the photo and the curved label fades in.
+  - Sticky header **shrinks smoothly** with ScrollTrigger; the background **crossfades** when changed.
+  - Board intro: logo, title and chips enter in a short stagger (today only the cards fade in).
+  - Everything is skipped with the system's **"reduce motion"**, and nothing animates during the presenter.
+
+**What does NOT change**
+
+- Boards without settings look exactly as today (`background: 'yellow'`, dots, masonry, sticky header on). Cards, spaces, slides, stages, presenter navigation and backups keep working; the new fields are optional.
+
+**How it's built**
+
+- [ ] Model + Zod: `BOARD_BACKGROUNDS` (id, css, text: light/dark), `BOARD_LAYOUTS`, `boardLookSchema`; `space.group`; `teacherProfiles`
+- [ ] Board look helpers (pure, unit-tested): resolve background / layout defaults, sort, group spaces by stage and by group (unknown → "Sin etapa" / "Sin grupo")
+- [ ] Panel: `BoardCustomizePanel` (side sheet, live preview via local draft, save / cancel), name + description (existing `updateBoardInfo`, also syncs `joinCodes.boardTitle`), logo picker
+- [ ] Layouts: `BoardGrid` renders masonry / grid / list / columns (stages, groups) with horizontal scroll on phones; sticky header component
+- [ ] Teacher ring: `StageAvatar` gets a `teacher` variant (#DOCENTE); `teacherProfiles` refreshed when a teacher saves `/me` or opens their board; header "Docente" row
+- [ ] `space.group`: written when the teacher edits / imports a student and on join (rules: teacher may change `ownerName` and `group`)
+- [ ] Worker: `scope: 'board'` (board teacher, writable) → `pbl/{env}/{boardId}/board/{assetId}`; tests + integration test
+- [ ] Rules: new board fields (teacher only, enums and sizes), logo `validImageRef` in the board folder, asset `kind: 'logo'` created by the board teacher
+- [ ] GSAP: register `Flip`; `useBoardAnimations` (Flip on layout / filter / sort, live arrivals, header shrink), ring draw-in; all behind `prefers-reduced-motion`
+- [ ] Backup / template: look settings + `group` (optional fields; logo reference like covers, not restored)
+- [ ] es / en texts; mobile layout (panel full screen on phones)
+- [ ] Tests: unit (defaults, sorting, grouping, contrast of every preset), rules (≈ 10: teacher-only look fields, enums, logo path / registry, student can't change), Worker (board scope allowed / refused), e2e (rename board; change background + layout and a student sees it live; "Por etapa" columns; sticky header stays visible after scrolling; logo upload; #DOCENTE ring in the header; reduced motion = no animation) + the full existing suite
+- [ ] **Your turn:** `npm run worker:deploy` · `npm run deploy:rules` · `npm run deploy` · acceptance test
+
+**Free-tier budget:** no extra reads (look settings and teacher profiles travel on the board document every page already listens to); a logo ≈ 50 KB per board; GSAP Flip ≈ 10 KB gzip in the board chunk.
+
+**Risks:** "Por etapa" / "Por grupo" with many columns on a phone (mitigated: horizontal scroll with snap, column counts in the header); a dark background with light cards needs the contrast check; `teacherProfiles` can be stale if a teacher changes their photo and never opens the board (refreshed on next visit).
 
 ### M9 — More teachers (when needed)
 
@@ -1117,7 +1183,7 @@ Full review of the plan for consistency, free-tier limits and security, done bef
 
 ## Decisions (all answered ✅)
 
-D12–D17 (class participation, M10) are **proposed** (⏳): confirm or change them before Loop 8. D18–D24 (M11) confirmed 2026-10-31.
+D12–D17 (class participation, M10) and D25–D32 (board customization, M12) are **proposed** (⏳): confirm or change them before Loop 8 / Loop 10. D18–D24 (M11) confirmed 2026-10-31.
 
 | #   | Decision                | Answer                                                                                                                                                             |
 | --- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -1150,5 +1216,13 @@ D12–D17 (class participation, M10) are **proposed** (⏳): confirm or change t
 | D22 | Look                    | colored ring; on large avatars the label curved along the ring like #OPENTOWORK (#EMPATIZANDO … #VITRINEANDO); Vitrineando = dashed ring + eye icon                |
 | D23 | Who sets the stage      | the student, and the teacher too (marked "puesta por el docente"); teacher gets a summary + filter on the dashboard                                                |
 | D24 | Order                   | run **Loop 9 (M11) before Loop 8 (M10)**: smaller, and class contributions then show the photo + ring from the start                                               |
+| D25 | ⏳ Where                | **Proposed:** a "Personalizar tablero" side panel on the board itself with live preview (not a separate settings page)                                             |
+| D26 | ⏳ Backgrounds          | **Proposed:** 12 presets (colors + soft gradients) × dots / grid / none, readable text guaranteed; custom background images: Later (credits, contrast)             |
+| D27 | ⏳ Layouts              | **Proposed:** Muro · Cuadrícula · Lista · Por etapa · Por grupo, plus order; chosen by the teacher, everyone sees the same (no per-student choice in v1)           |
+| D28 | ⏳ Logo                 | **Proposed:** one uploaded image per board (teacher only), shown in the header, the students' board card and the presenter                                         |
+| D29 | ⏳ Sticky header        | **Proposed:** on by default (teacher can turn it off), shrinks while scrolling                                                                                     |
+| D30 | ⏳ Teacher distinction  | **Proposed:** "#DOCENTE" ring (dark + gold) with a cap badge wherever a teacher's photo appears, and the board's teachers in its header                            |
+| D31 | ⏳ Animations           | **Proposed:** GSAP Flip / ScrollTrigger as listed in M12; always off with "reduce motion"; no per-board switch                                                     |
+| D32 | ⏳ Order                | **Proposed:** run **Loop 10 (M12) next**, then Loop 8 (M10); M12 doesn't depend on M10, and M10 then reuses the #DOCENTE ring                                      |
 
 **Next step:** see the Phase 2 status line at the top and the latest loop report.
