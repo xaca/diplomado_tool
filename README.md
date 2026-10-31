@@ -61,6 +61,8 @@ npm run worker:dev           # http://localhost:8787 — set VITE_MEDIA_API_URL=
 | `npm run deploy`                  | Build and deploy Hosting + Firestore rules                                                     |
 | `npm run deploy:all`              | Worker → Firestore rules + indexes → build → Hosting (in this order, stops at the first error) |
 | `npm run release`                 | `npm run check` (all tests) and then `deploy:all`                                              |
+| `npm run update`                  | Quick checks (lint, format, unit and Worker tests, no emulators or e2e) and then `deploy:all`  |
+| `npm run update:web`              | Lint and unit tests, then build and deploy Hosting only (frontend-only changes)                |
 | `npm run admin`                   | Admin CLI — see below                                                                          |
 | `npm run emulators:free`          | Stop leftover emulator/test processes holding the ports                                        |
 

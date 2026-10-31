@@ -17,6 +17,8 @@
     "deploy:rules": "firebase deploy --only firestore:rules,firestore:indexes",
     "deploy:all": "npm run worker:deploy && npm run deploy:rules && npm run build && firebase deploy --only hosting",
     "release": "npm run check && npm run deploy:all",
+    "update": "npm run lint && prettier --check . && npm test && npm run test:worker && npm run deploy:all",
+    "update:web": "npm run lint && npm test && npm run build && firebase deploy --only hosting",
     "dev:emulators": "vite --mode emulators",
     "seed": "tsx scripts/seed.ts",
     "test": "vitest run --project unit",
