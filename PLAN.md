@@ -10,7 +10,7 @@ Status legend: `[ ]` to do · `[x]` done
 
 - **Phase 1 — Template setup:** ✅ done (2026-10-26), commit `8f20758`
 - **Plan review (rev. 6, 2026-10-26):** ✅ consistency + free-tier review done, see [Review findings](#review-findings-rev-6)
-- **Phase 2 — "Padlet for PBL" app:** 🚧 in progress — Google sign-in enabled · M4 Steps 1–6 done (`/health` → `config: ok`) · service account key ready · **M1 ✅** · **Loop 1 (M2) ✅** ([report](reports/loop-01-m2.md)) · **Loop 2 (M3) ✅** ([report](reports/loop-02-m3.md)) · **Loop 3 (M4) ✅ code done** ([report](reports/loop-03-m4.md)) · **Loop 4 (M5) ✅ code done** ([report](reports/loop-04-m5.md)) · **Loop 5 (M6) ✅ code done** ([report](reports/loop-05-m6.md)) · **Loop 6 (M7) ✅ code done** ([report](reports/loop-06-m7.md)) · **Loop 7 (M8) ✅ code done** ([report](reports/loop-07-m8.md)) · **Extras ✅ code done** (2026-10-29): profile page `/me`, teacher's notes on slides · **Loop 8 (M10) Class participation: 📝 planned**, decisions [D12–D17](#decisions-all-answered-) waiting for you · **Loop 9 (M11) Profile photo & Design Thinking stage ✅ code done** (2026-10-31, [report](reports/loop-09-m11.md)) · **Loop 10 (M12) Board customization: 📝 planned**, decisions [D25–D32](#decisions-all-answered-) waiting for you — M1–M8 + extras deployed 2026-10-30/31; **waiting for you:** deploy Loop 9 (`npm run worker:deploy` → `npm run deploy:rules` → `npm run deploy`), App Check steps, **before 2026-11-25** (Worker live at `https://media-api.paradisserossa.workers.dev`)
+- **Phase 2 — "Padlet for PBL" app:** 🚧 in progress — Google sign-in enabled · M4 Steps 1–6 done (`/health` → `config: ok`) · service account key ready · **M1 ✅** · **Loop 1 (M2) ✅** ([report](reports/loop-01-m2.md)) · **Loop 2 (M3) ✅** ([report](reports/loop-02-m3.md)) · **Loop 3 (M4) ✅ code done** ([report](reports/loop-03-m4.md)) · **Loop 4 (M5) ✅ code done** ([report](reports/loop-04-m5.md)) · **Loop 5 (M6) ✅ code done** ([report](reports/loop-05-m6.md)) · **Loop 6 (M7) ✅ code done** ([report](reports/loop-06-m7.md)) · **Loop 7 (M8) ✅ code done** ([report](reports/loop-07-m8.md)) · **Extras ✅ code done** (2026-10-29): profile page `/me`, teacher's notes on slides · **Loop 8 (M10) Class participation: 📝 planned**, decisions [D12–D17](#decisions-all-answered-) waiting for you · **Loop 9 (M11) Profile photo & Design Thinking stage ✅ code done** (2026-10-31, [report](reports/loop-09-m11.md)) · **Loop 10 (M12) Board customization: 📝 planned**, decisions [D25–D32](#decisions-all-answered-) waiting for you · **M13 Notes while presenting: 📝 planned**, decisions [D33–D35](#decisions-all-answered-) — M1–M8 + extras deployed 2026-10-30/31; **waiting for you:** deploy Loop 9 (`npm run worker:deploy` → `npm run deploy:rules` → `npm run deploy`), App Check steps, **before 2026-11-25** (Worker live at `https://media-api.paradisserossa.workers.dev`)
 
 ## ▶ Resume here (last session: 2026-10-31)
 
@@ -56,6 +56,12 @@ Checks at the end of the session: rules tests 68/68 · unit 71/71 · admin CLI �
 - **GSAP animations:** cards rearrange smoothly when the layout / filter changes (Flip), new cards pop in, the stage ring draws itself, the header shrinks on scroll; all off with "reduce motion".
 - **To start:** confirm or change **[D25–D32](#decisions-all-answered-)**, then say **"run loop 10"**.
 
+**Planned: [M13 Teacher's notes while presenting](#m13--teachers-notes-while-presenting-f11-in-the-presenter)** (not started, small: reuses F11)
+
+- In the presenter, the teacher opens a **notes panel** (key **N**) and adds / edits / deletes notes on the slide on screen, without leaving the presentation; the student sees them as today.
+- Because the presenter is usually **projected**, notes are hidden by default and a **"Vista del docente"** second window (laptop screen) can show the notes + next slide, synced with the projected window.
+- **To start:** confirm **[D33–D35](#decisions-all-answered-)**; D35 proposes building it **inside Loop 10**.
+
 **Loop 9 = [M11 Profile photo & Design Thinking stage](#m11--profile-photo--design-thinking-stage-f13-f14--loop-9)** ✅ code done 2026-10-31 (ran before Loop 8, D24)
 
 - **Photo:** on `/me`, choose Google photo, **an uploaded photo** (square crop, stored once per person in Cloudinary) or initials.
@@ -80,7 +86,7 @@ A Padlet-style board where **each student owns one space** and documents their p
 | F8  | **Storage & cleanup**: image usage, remove unused images, **"Archived projects"** for inactive boards, purge                                               | teacher (dashboard) + you (admin CLI)                |
 | F9  | **Spanish (default) / English** interface                                                                                                                  | everyone                                             |
 | F10 | **Profile** (`/me`): display name, photo on cards, language ✅                                                                                             | everyone                                             |
-| F11 | **Teacher's notes** on each slide, private to the teacher and the student ✅                                                                               | teacher writes · the student reads                   |
+| F11 | **Teacher's notes** on each slide, private to the teacher and the student ✅ (M13: also while presenting)                                                  | teacher writes · the student reads                   |
 | F12 | **Class participation**: per class, the teacher opens **1–5 participation slides**; students add, edit and delete their own contributions (text + picture) | teacher creates and moderates · students participate |
 | F13 | **Profile photo**: Google photo, **an uploaded photo** or initials                                                                                         | everyone                                             |
 | F14 | **Design Thinking stage**: a ring around the student's photo with their current stage, or "Vitrineando"; stage summary + filter on the dashboard           | the student sets it · the teacher sees and can set   |
@@ -722,6 +728,7 @@ Saved as `reports/loop-NN-<milestone>.md` (committed) and summarized in the chat
 | 8 📝  | **M10** Class participation               | classes with 1–5 participation slides, contribution cards (text + picture), own edit / delete, teacher moderation, open / close, present, Worker `scope: 'class'`, orphans, backup v2, rules + tests | answer D12–D17 · `npm run worker:deploy` · `npm run deploy:rules` · acceptance test                    |
 | 9 ✅  | **M11** Profile photo & DT stage          | uploaded profile photo (crop, Worker `scope: 'avatar'`), stage ring on every avatar, stage picker, board stage list (teacher), dashboard summary + filter, rules + tests                             | answer D18–D24 · `npm run worker:deploy` · `npm run deploy:rules` · `npm run deploy` · acceptance test |
 | 10 📝 | **M12** Board customization               | "Personalizar tablero" panel (name, logo, background, layout, sticky header), #DOCENTE ring, GSAP Flip / ScrollTrigger animations, Worker `scope: 'board'`, rules + tests                            | answer D25–D32 · `npm run worker:deploy` · `npm run deploy:rules` · `npm run deploy` · acceptance test |
+| 11 📝 | **M13** Notes while presenting            | notes panel in the presenter (N), quick add / edit / delete on the slide on screen, "Vista del docente" window synced by BroadcastChannel, e2e                                                       | answer D33–D35 · `npm run deploy` · acceptance test (no rules / Worker change)                         |
 | —     | **M9** More teachers                      | when you need it                                                                                                                                                                                     | —                                                                                                      |
 
 **Starting a loop:** say **"run loop N"** (e.g. "run loop 1"). I'll work through it and come back with the report.
@@ -970,6 +977,35 @@ The teacher makes each board look like their course, and everyone can tell who t
 
 **Risks:** "Por etapa" / "Por grupo" with many columns on a phone (mitigated: horizontal scroll with snap, column counts in the header); a dark background with light cards needs the contrast check; `teacherProfiles` can be stale if a teacher changes their photo and never opens the board (refreshed on next visit).
 
+### M13 — Teacher's notes while presenting (F11 in the presenter)
+
+While presenting a student's slides in class, the teacher writes feedback **on the slide on screen**, without leaving full screen. Same notes as F11: private to the teacher(s) and that student, deleted with the slide.
+
+**What people see**
+
+- **Presenter (teacher only):** a **"Notas"** button and the key **N** open a side panel next to the slide (the slide shrinks, nothing is covered). It lists the notes of the current slide and has a text box: **Enter** saves, **Shift+Enter** new line, **Esc** closes the panel (a second Esc leaves the presenter, as today). Edit / delete like on the space page. Moving to the next slide or student (←/→, overview) follows with the panel open.
+- **Badge** on the presenter's slide counter when the slide has notes ("2 notas"), visible only to the teacher.
+- **Projector safety:** the panel starts **closed** on every presentation and shows "Visible en pantalla" while open. Option **"Vista del docente"** opens a **second window** (the laptop screen) with the current slide, the next slide, the notes panel and a timer; the projected window shows only the slide. Both windows stay in sync (same slide, same student) through `BroadcastChannel` (same browser, no server, free).
+- **Students** presenting their own space don't see the panel or the badge (they read notes on their space page, as today).
+- Typing in the panel never moves slides (arrow keys and space only navigate outside the text box).
+
+**What does NOT change**
+
+- Notes data, rules and the space page are the same as F11 (no rules or Worker change, no new collection).
+
+**How it's built**
+
+- [ ] `PresenterNotesPanel` reusing `useNotes` / `addNote` / `updateNote` / `deleteNote` and the `SlideNotes` list; keyboard shortcuts guarded while typing
+- [ ] Presenter: "Notas" button + N, badge with the count, layout with the panel (slide scales down), starts closed
+- [ ] "Vista del docente": `/b/:boardId/present/:studentId?view=console` window + `BroadcastChannel('pbl-presenter-<boardId>')` messages (`goto`, `student`), next-slide preview, timer
+- [ ] es / en texts
+- [ ] Tests: unit (sync message reducer, shortcut guard), e2e (teacher adds a note while presenting → the student sees it on their space page; arrows don't move slides while typing; the student presenting sees no panel; console and projected windows stay in sync)
+- [ ] **Your turn:** `npm run deploy` · acceptance test with a projector or a second screen
+
+**Free-tier budget:** the notes of the student on screen are one small query (as on the space page); a few writes per class.
+
+**Risks:** a teacher may open the panel on the projector by mistake (mitigated: closed by default, "Visible en pantalla" label, the console window).
+
 ### M9 — More teachers (when needed)
 
 - [ ] `/admin/staff` screen, co-teachers, admin sees all boards
@@ -1183,46 +1219,49 @@ Full review of the plan for consistency, free-tier limits and security, done bef
 
 ## Decisions (all answered ✅)
 
-D12–D17 (class participation, M10) and D25–D32 (board customization, M12) are **proposed** (⏳): confirm or change them before Loop 8 / Loop 10. D18–D24 (M11) confirmed 2026-10-31.
+D12–D17 (class participation, M10), D25–D32 (board customization, M12) and D33–D35 (notes while presenting, M13) are **proposed** (⏳): confirm or change them before Loop 8 / Loop 10. D18–D24 (M11) confirmed 2026-10-31.
 
-| #   | Decision                | Answer                                                                                                                                                             |
-| --- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| D1  | Image storage           | **Cloudinary**, signed uploads via the media-api                                                                                                                   |
-| D2  | Slide editor            | **Excalidraw** canvas per slide (MIT, free, no key, no watermark)                                                                                                  |
-| D3  | Text                    | **Excalidraw's text tool** (font, size, color, align; no inline bold/italic)                                                                                       |
-| D4  | Teacher / admin roles   | **Recognized by email**: `staffEmails/{email}` (you = admin via CLI); everyone else signs in as a student                                                          |
-| D5  | Classmates' spaces      | **Visible read-only**                                                                                                                                              |
-| D6  | Joining a board         | **A: teacher adds students (auto-join) + B: invite link**                                                                                                          |
-| D7  | Language                | **Spanish (default) + English**                                                                                                                                    |
-| D8  | Import / export         | **JSON** + quick-add paste box                                                                                                                                     |
-| D9  | Students with 2 emails  | **Person + email index**                                                                                                                                           |
-| D10 | First admin             | **Your personal Gmail**, via `npm run admin -- setup` from this console                                                                                            |
-| D11 | Removing old data       | **Teacher dashboard (Storage page) + local CLI**, via the media-api                                                                                                |
-| Q1  | Free canvas             | **Excalidraw** (the whole project must be free, academic use)                                                                                                      |
-| Q2  | Cloudflare Worker       | **Yes**, built step by step (M4 walkthrough)                                                                                                                       |
-| Q3  | Old boards              | **Auto-move to "Proyectos archivados" after 90 days without use** (configurable); purge is manual, after a backup                                                  |
-| Q4  | Default language        | **Spanish**                                                                                                                                                        |
-| Q5  | Admin email             | **Your personal Gmail**                                                                                                                                            |
-| D12 | ⏳ Participation format | **Proposed:** each participation slide = the teacher's prompt + a grid of contribution cards (not a shared Excalidraw canvas, which would overwrite people's work) |
-| D13 | ⏳ Limits               | **Proposed:** 1–5 slides per class; up to 3 contributions per student per slide; text ≤ 1000 + 1 picture                                                           |
-| D14 | ⏳ Visibility           | **Proposed:** the whole class sees every contribution with the author's name (anonymous mode: Later)                                                               |
-| D15 | ⏳ Teacher powers       | **Proposed:** edit / delete any contribution (marked "editado por el docente"), open / close each class; a removed student's contributions stay                    |
-| D16 | ⏳ Backup               | **Proposed:** classes and contributions are part of the board backup (v2) and restored with it                                                                     |
-| D17 | ⏳ Where it lives       | **Proposed:** a "Clases" section in each board (not a separate board), so members and rules are reused                                                             |
-| D18 | Photo options           | Google photo · uploaded photo · initials (on `/me`); the uploaded photo is cropped square in the browser                                                           |
-| D19 | Photo storage           | one fixed Cloudinary file per person (`users/{uid}/avatar`, overwritten on change), signed by the Worker only for staff or board members                           |
-| D20 | Stage scope             | the stage is **per board** (on the student's space), not per person, because each course is a different project                                                    |
-| D21 | Stage list              | default = Design Thinking: Empatizar · Definir · Idear · Prototipar · Evaluar + **Vitrineando** (here to learn / no project); teacher can edit per board           |
-| D22 | Look                    | colored ring; on large avatars the label curved along the ring like #OPENTOWORK (#EMPATIZANDO … #VITRINEANDO); Vitrineando = dashed ring + eye icon                |
-| D23 | Who sets the stage      | the student, and the teacher too (marked "puesta por el docente"); teacher gets a summary + filter on the dashboard                                                |
-| D24 | Order                   | run **Loop 9 (M11) before Loop 8 (M10)**: smaller, and class contributions then show the photo + ring from the start                                               |
-| D25 | ⏳ Where                | **Proposed:** a "Personalizar tablero" side panel on the board itself with live preview (not a separate settings page)                                             |
-| D26 | ⏳ Backgrounds          | **Proposed:** 12 presets (colors + soft gradients) × dots / grid / none, readable text guaranteed; custom background images: Later (credits, contrast)             |
-| D27 | ⏳ Layouts              | **Proposed:** Muro · Cuadrícula · Lista · Por etapa · Por grupo, plus order; chosen by the teacher, everyone sees the same (no per-student choice in v1)           |
-| D28 | ⏳ Logo                 | **Proposed:** one uploaded image per board (teacher only), shown in the header, the students' board card and the presenter                                         |
-| D29 | ⏳ Sticky header        | **Proposed:** on by default (teacher can turn it off), shrinks while scrolling                                                                                     |
-| D30 | ⏳ Teacher distinction  | **Proposed:** "#DOCENTE" ring (dark + gold) with a cap badge wherever a teacher's photo appears, and the board's teachers in its header                            |
-| D31 | ⏳ Animations           | **Proposed:** GSAP Flip / ScrollTrigger as listed in M12; always off with "reduce motion"; no per-board switch                                                     |
-| D32 | ⏳ Order                | **Proposed:** run **Loop 10 (M12) next**, then Loop 8 (M10); M12 doesn't depend on M10, and M10 then reuses the #DOCENTE ring                                      |
+| #   | Decision                  | Answer                                                                                                                                                             |
+| --- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| D1  | Image storage             | **Cloudinary**, signed uploads via the media-api                                                                                                                   |
+| D2  | Slide editor              | **Excalidraw** canvas per slide (MIT, free, no key, no watermark)                                                                                                  |
+| D3  | Text                      | **Excalidraw's text tool** (font, size, color, align; no inline bold/italic)                                                                                       |
+| D4  | Teacher / admin roles     | **Recognized by email**: `staffEmails/{email}` (you = admin via CLI); everyone else signs in as a student                                                          |
+| D5  | Classmates' spaces        | **Visible read-only**                                                                                                                                              |
+| D6  | Joining a board           | **A: teacher adds students (auto-join) + B: invite link**                                                                                                          |
+| D7  | Language                  | **Spanish (default) + English**                                                                                                                                    |
+| D8  | Import / export           | **JSON** + quick-add paste box                                                                                                                                     |
+| D9  | Students with 2 emails    | **Person + email index**                                                                                                                                           |
+| D10 | First admin               | **Your personal Gmail**, via `npm run admin -- setup` from this console                                                                                            |
+| D11 | Removing old data         | **Teacher dashboard (Storage page) + local CLI**, via the media-api                                                                                                |
+| Q1  | Free canvas               | **Excalidraw** (the whole project must be free, academic use)                                                                                                      |
+| Q2  | Cloudflare Worker         | **Yes**, built step by step (M4 walkthrough)                                                                                                                       |
+| Q3  | Old boards                | **Auto-move to "Proyectos archivados" after 90 days without use** (configurable); purge is manual, after a backup                                                  |
+| Q4  | Default language          | **Spanish**                                                                                                                                                        |
+| Q5  | Admin email               | **Your personal Gmail**                                                                                                                                            |
+| D12 | ⏳ Participation format   | **Proposed:** each participation slide = the teacher's prompt + a grid of contribution cards (not a shared Excalidraw canvas, which would overwrite people's work) |
+| D13 | ⏳ Limits                 | **Proposed:** 1–5 slides per class; up to 3 contributions per student per slide; text ≤ 1000 + 1 picture                                                           |
+| D14 | ⏳ Visibility             | **Proposed:** the whole class sees every contribution with the author's name (anonymous mode: Later)                                                               |
+| D15 | ⏳ Teacher powers         | **Proposed:** edit / delete any contribution (marked "editado por el docente"), open / close each class; a removed student's contributions stay                    |
+| D16 | ⏳ Backup                 | **Proposed:** classes and contributions are part of the board backup (v2) and restored with it                                                                     |
+| D17 | ⏳ Where it lives         | **Proposed:** a "Clases" section in each board (not a separate board), so members and rules are reused                                                             |
+| D18 | Photo options             | Google photo · uploaded photo · initials (on `/me`); the uploaded photo is cropped square in the browser                                                           |
+| D19 | Photo storage             | one fixed Cloudinary file per person (`users/{uid}/avatar`, overwritten on change), signed by the Worker only for staff or board members                           |
+| D20 | Stage scope               | the stage is **per board** (on the student's space), not per person, because each course is a different project                                                    |
+| D21 | Stage list                | default = Design Thinking: Empatizar · Definir · Idear · Prototipar · Evaluar + **Vitrineando** (here to learn / no project); teacher can edit per board           |
+| D22 | Look                      | colored ring; on large avatars the label curved along the ring like #OPENTOWORK (#EMPATIZANDO … #VITRINEANDO); Vitrineando = dashed ring + eye icon                |
+| D23 | Who sets the stage        | the student, and the teacher too (marked "puesta por el docente"); teacher gets a summary + filter on the dashboard                                                |
+| D24 | Order                     | run **Loop 9 (M11) before Loop 8 (M10)**: smaller, and class contributions then show the photo + ring from the start                                               |
+| D25 | ⏳ Where                  | **Proposed:** a "Personalizar tablero" side panel on the board itself with live preview (not a separate settings page)                                             |
+| D26 | ⏳ Backgrounds            | **Proposed:** 12 presets (colors + soft gradients) × dots / grid / none, readable text guaranteed; custom background images: Later (credits, contrast)             |
+| D27 | ⏳ Layouts                | **Proposed:** Muro · Cuadrícula · Lista · Por etapa · Por grupo, plus order; chosen by the teacher, everyone sees the same (no per-student choice in v1)           |
+| D28 | ⏳ Logo                   | **Proposed:** one uploaded image per board (teacher only), shown in the header, the students' board card and the presenter                                         |
+| D29 | ⏳ Sticky header          | **Proposed:** on by default (teacher can turn it off), shrinks while scrolling                                                                                     |
+| D30 | ⏳ Teacher distinction    | **Proposed:** "#DOCENTE" ring (dark + gold) with a cap badge wherever a teacher's photo appears, and the board's teachers in its header                            |
+| D31 | ⏳ Animations             | **Proposed:** GSAP Flip / ScrollTrigger as listed in M12; always off with "reduce motion"; no per-board switch                                                     |
+| D32 | ⏳ Order                  | **Proposed:** run **Loop 10 (M12) next**, then Loop 8 (M10); M12 doesn't depend on M10, and M10 then reuses the #DOCENTE ring                                      |
+| D33 | ⏳ Notes in the presenter | **Proposed:** teacher only; side panel (key N) on the slide on screen, same notes as F11 (private to the teacher and that student)                                 |
+| D34 | ⏳ Projector safety       | **Proposed:** panel closed by default + "Visible en pantalla" label + optional "Vista del docente" second window synced by BroadcastChannel                        |
+| D35 | ⏳ When                   | **Proposed:** build M13 **inside Loop 10** (both touch the presenter and the teacher's tools)                                                                      |
 
 **Next step:** see the Phase 2 status line at the top and the latest loop report.
