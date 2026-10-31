@@ -10,7 +10,7 @@ Status legend: `[ ]` to do · `[x]` done
 
 - **Phase 1 — Template setup:** ✅ done (2026-10-26), commit `8f20758`
 - **Plan review (rev. 6, 2026-10-26):** ✅ consistency + free-tier review done, see [Review findings](#review-findings-rev-6)
-- **Phase 2 — "Padlet for PBL" app:** 🚧 in progress — Google sign-in enabled · M4 Steps 1–6 done (`/health` → `config: ok`) · service account key ready · **M1 ✅** · **Loop 1 (M2) ✅** ([report](reports/loop-01-m2.md)) · **Loop 2 (M3) ✅** ([report](reports/loop-02-m3.md)) · **Loop 3 (M4) ✅ code done** ([report](reports/loop-03-m4.md)) · **Loop 4 (M5) ✅ code done** ([report](reports/loop-04-m5.md)) · **Loop 5 (M6) ✅ code done** ([report](reports/loop-05-m6.md)) · **Loop 6 (M7) ✅ code done** ([report](reports/loop-06-m7.md)) · **Loop 7 (M8) ✅ code done** ([report](reports/loop-07-m8.md)) · **Extras ✅ code done** (2026-10-29): profile page `/me`, teacher's notes on slides · **Loop 8 (M10) Class participation: 📝 planned**, decisions [D12–D17](#decisions-all-answered-) waiting for you · **Loop 9 (M11) Profile photo & Design Thinking stage ✅ code done** (2026-10-31, [report](reports/loop-09-m11.md)) · **Loop 10 (M12 Board customization + M13 Notes while presenting) ✅ code done** (2026-10-31, [report](reports/loop-10-m12-m13.md)) · **Loop 12 (M14) Embeds that work: 📝 planned**, decisions [D36–D41](#decisions-all-answered-) waiting for you — M1–M8 + extras deployed 2026-10-30/31; **waiting for you:** deploy Loop 10 (`npm run worker:deploy` → `npm run deploy:rules` → `npm run deploy`), App Check steps, **before 2026-11-25** (Worker live at `https://media-api.paradisserossa.workers.dev`)
+- **Phase 2 — "Padlet for PBL" app:** 🚧 in progress — Google sign-in enabled · M4 Steps 1–6 done (`/health` → `config: ok`) · service account key ready · **M1 ✅** · **Loop 1 (M2) ✅** ([report](reports/loop-01-m2.md)) · **Loop 2 (M3) ✅** ([report](reports/loop-02-m3.md)) · **Loop 3 (M4) ✅ code done** ([report](reports/loop-03-m4.md)) · **Loop 4 (M5) ✅ code done** ([report](reports/loop-04-m5.md)) · **Loop 5 (M6) ✅ code done** ([report](reports/loop-05-m6.md)) · **Loop 6 (M7) ✅ code done** ([report](reports/loop-06-m7.md)) · **Loop 7 (M8) ✅ code done** ([report](reports/loop-07-m8.md)) · **Extras ✅ code done** (2026-10-29): profile page `/me`, teacher's notes on slides · **Loop 8 (M10) Class participation: 📝 planned**, decisions [D12–D17](#decisions-all-answered-) waiting for you · **Loop 9 (M11) Profile photo & Design Thinking stage ✅ code done** (2026-10-31, [report](reports/loop-09-m11.md)) · **Loop 10 (M12 Board customization + M13 Notes while presenting) ✅ code done** (2026-10-31, [report](reports/loop-10-m12-m13.md)) · **Loop 12 (M14) Embeds that work: 📝 planned**, decisions [D36–D41](#decisions-all-answered-) waiting for you · **Loop 13 (M15) Teacher edits students' slides: 📝 planned**, decisions [D42–D47](#decisions-all-answered-) — M1–M8 + extras deployed 2026-10-30/31; **waiting for you:** deploy Loop 10 (`npm run worker:deploy` → `npm run deploy:rules` → `npm run deploy`), App Check steps, **before 2026-11-25** (Worker live at `https://media-api.paradisserossa.workers.dev`)
 
 ## ▶ Resume here (last session: 2026-10-31)
 
@@ -48,6 +48,13 @@ Checks at the end of the session: rules tests 68/68 · unit 71/71 · admin CLI �
 - Students add **contribution cards** (text + picture) on each slide, up to 3 per slide, and **edit / delete only their own**; the teacher edits / deletes any and can present the class live.
 - Stored in its own `classes` collection: **all existing features stay as they are** (see "What does NOT change" in M10).
 - **To start:** confirm or change decisions **[D12–D17](#decisions-all-answered-)** (format, limits, visibility, teacher powers, backup, location), then say **"run loop 8"**.
+
+**Planned: Loop 13 = [M15 Teacher edits students' slides](#m15--teacher-edits-students-slides-f18--loop-13)** (not started)
+
+- Today only the student edits their slides (editor, rules and the image Worker all check it). The teacher gets **"Editar"** on any student's slide: same editor, can fix text, move things, add images and drawings.
+- **The student stays in control:** before the teacher's first change, the student's version is saved; the slide shows **"Editada por el docente"**, and the student can **compare and restore their version**. The teacher is invited to leave a note explaining the change.
+- **No overwriting:** while one person edits a slide, the other sees it read-only ("Laura está editando esta diapositiva").
+- **To start:** confirm or change **[D42–D47](#decisions-all-answered-)**, then say **"run loop 13"**.
 
 **Planned: Loop 12 = [M14 Embeds that work](#m14--embeds-that-work-f17--loop-12)** (not started)
 
@@ -100,6 +107,7 @@ A Padlet-style board where **each student owns one space** and documents their p
 | F15 | **Board customization**: name, description, logo, background, layout, sticky header, with live preview; GSAP animations                                          | teacher sets it · everyone sees it                   |
 | F16 | **Teacher distinction**: "#DOCENTE" ring + badge on the teacher's photo; the board's teachers shown in its header                                                | everyone                                             |
 | F17 | **Embeds that work**: guided "Insertar contenido" (Google, YouTube, Figma, Canva, Notion, Miro…), automatic link fixes, loading state and fallback, how-to guide | the student inserts · everyone views                 |
+| F18 | **Teacher edits students' slides**: edit text, layout, images; the student's version is kept and can be restored; "Editada por el docente"; one editor at a time | teacher edits · the student reviews / restores       |
 
 Students can see their classmates' spaces **read-only**. **Class participation** (F12) is the one place where everybody writes together, on **separate slides** that never touch the students' own spaces.
 
@@ -738,6 +746,7 @@ Saved as `reports/loop-NN-<milestone>.md` (committed) and summarized in the chat
 | 10 ✅ | **M12** Board customization               | "Personalizar tablero" panel (name, logo, background, layout, sticky header), #DOCENTE ring, GSAP Flip / ScrollTrigger animations, Worker `scope: 'board'`, rules + tests                             | answer D25–D32 · `npm run worker:deploy` · `npm run deploy:rules` · `npm run deploy` · acceptance test |
 | 10 ✅ | **M13** Notes while presenting            | notes panel in the presenter (N), quick add / edit / delete on the slide on screen, "Vista del docente" window synced by BroadcastChannel, e2e                                                        | answer D33–D35 · `npm run deploy` · acceptance test (no rules / Worker change)                         |
 | 12 📝 | **M14** Embeds that work                  | "Insertar contenido" dialog (detect, convert, preview, instructions), display-time link fixes, text-link → embed, embed loading / fallback, "¿Cómo insertar…?" guide, Worker short-link resolver, e2e | answer D36–D41 · `npm run worker:deploy` · `npm run deploy` · acceptance test with real links          |
+| 13 📝 | **M15** Teacher edits students' slides    | teacher opens the editor on any slide, version kept before the first change, "Editada por el docente" + compare / restore, edit lock, Worker + rules for teacher uploads, e2e                         | answer D42–D47 · `npm run worker:deploy` · `npm run deploy:rules` · `npm run deploy` · acceptance test |
 | —     | **M9** More teachers                      | when you need it                                                                                                                                                                                      | —                                                                                                      |
 
 **Starting a loop:** say **"run loop N"** (e.g. "run loop 1"). I'll work through it and come back with the report.
@@ -1085,6 +1094,41 @@ Anything else stays a normal link (button "Abrir enlace"), as today.
 
 **Risks:** providers change their embed URLs (registry in one file, unit tests per provider); Safari / Brave block third-party cookies, so private Figma or Google files never load there (the "¿No carga?" message explains it: share publicly); some services may refuse frames entirely (they stay links with "Abrir").
 
+### M15 — Teacher edits students' slides (F18) — Loop 13
+
+The teacher improves or corrects a student's slides directly (a typo, a misplaced image, a clearer diagram), instead of only writing notes. Today that's impossible: the editor redirects anyone but the owner, the rules allow slide writes only to the owner, and the Worker signs image uploads only for the owner.
+
+**What people see**
+
+- **Teacher, on a student's space page or while presenting:** an **"Editar diapositiva"** button on each slide (and "Editar" in the presenter, which opens the editor on that slide). The same editor as the student's, with a banner: **"Editando la diapositiva de Laura Nataly"** and a "Volver" link.
+- **What the teacher can change (D43):** everything inside the slide (text, shapes, drawings, images, embeds) and **add a slide** to the student's space (marked as added by the teacher). Reordering and deleting the student's slides stay with the student.
+- **The student's version is kept (D44):** the first time a teacher saves changes to a slide (per editing session), a copy of the slide **as the student left it** is stored. The student sees on that slide **"Editada por el docente · hace 2 h"**, a **"Comparar"** view (their version and the teacher's, side by side) and **"Restaurar mi versión"** (one click; the teacher's version is kept as the "previous" one, so restoring can be undone).
+- **Explaining the change (D45):** when the teacher leaves the editor after changing a slide, a small prompt offers **"Dejar una nota"** (M13 notes) pre-filled with "Hice estos cambios: …". Optional.
+- **One editor at a time (D46):** whoever opens a slide in the editor holds it (heartbeat every 20 s, expires after 60 s without one). The other person sees **"Prof. Andrés está editando esta diapositiva"** and the editor opens read-only, switching to editable automatically when it's free. No silent overwrites.
+- **Boards:** only on writable boards, like the student (archived / locked boards stay read-only for everyone) (D47).
+- **Badges:** the student's card on the board shows a small "✎ Docente" badge while they haven't opened their slides since the teacher's changes; it disappears when they open the editor or the space page.
+
+**What does NOT change**
+
+- Students still edit only their own space; classmates still read only. Notes (F11 / M13), the presenter, backups and purge work as today. Autosave limits (idle 3 s, max 1 save / 15 s per slide) apply to the teacher too.
+
+**How it's built**
+
+- [ ] Model: `SlideDoc.lastEditedBy: 'student' | 'teacher'`, `teacherEditedAt?`, `editing?: { uid, name, role, at }`; `slides/{slideId}/versions/{versionId}` (`content`, `files`, `assetIds`, `bytes`, `kind: 'student' | 'teacher'`, `createdAt`), at most 2 per slide (the student's last version and the teacher's previous one); `space.teacherEditsUnseen?`
+- [ ] Rules: the board teacher may update a student's slide (same validation, `lastEditedBy == 'teacher'`, board writable) and create a slide appended to `slideOrder` (space update by the teacher limited to `slideOrder` / `slideCount` appends + `teacherEditsUnseen`); versions: teacher creates `kind: 'student'` copies, the owner restores; the `editing` lock writable by the owner or the board teacher, only when free or stale
+- [ ] Worker: `POST /uploads/sign` also for the **board teacher** into a student's folder (writable board); registry `assets` create by the teacher for that student; Worker + integration tests
+- [ ] Editor: open for the board teacher (`EditorPage` guard), banner, lock (acquire / heartbeat / release / read-only when held), version snapshot before the first teacher save, "Dejar una nota" prompt
+- [ ] Student side: "Editada por el docente" + "Comparar" (two `SlidePreview`s) + "Restaurar mi versión" on the space page and in the editor sidebar; card badge + "seen" reset
+- [ ] Storage analysis (app + CLI): images referenced by versions count as used (a restore must find them); purge / student removal delete versions
+- [ ] Backup: versions are not included (current slides only); restore unchanged
+- [ ] es / en texts
+- [ ] Tests: unit (version rules: when to snapshot, which one to restore; lock staleness), rules (≈ 14: teacher edits / adds, can't reorder / delete, other teacher of another board can't, classmate can't, versions, lock), Worker (teacher signs into a student's folder, other teacher refused), e2e (teacher edits a slide → student sees "Editada por el docente", compares, restores; teacher adds a slide; lock: student open → teacher read-only, then editable when the student leaves; teacher image upload; note prompt) + the full existing suite
+- [ ] **Your turn:** `npm run worker:deploy` · `npm run deploy:rules` · `npm run deploy` · acceptance test with a real student account
+
+**Free-tier budget:** a version copy ≤ 900 KB per slide the teacher edits (Firestore 1 GiB: thousands of edits); lock heartbeats: 3 writes / minute while editing (≈ 90 per 30-min session); no extra Cloudinary use.
+
+**Risks:** a student may feel their work was taken over (mitigated: "Editada por el docente", compare, one-click restore, optional note); two editors at once (the lock); large slides near the 900 KB limit can't keep a version → the teacher sees "Esta diapositiva es muy grande para guardar una copia; deja una nota en su lugar" and edits stay disabled.
+
 ### M9 — More teachers (when needed)
 
 - [ ] `/admin/staff` screen, co-teachers, admin sees all boards
@@ -1298,7 +1342,7 @@ Full review of the plan for consistency, free-tier limits and security, done bef
 
 ## Decisions (all answered ✅)
 
-D12–D17 (class participation, M10) and D36–D41 (embeds, M14) are **proposed** (⏳): confirm or change them before Loop 8 / Loop 12. D18–D24 (M11) and D25–D35 (M12, M13) confirmed 2026-10-31. D18–D24 (M11) confirmed 2026-10-31.
+D12–D17 (class participation, M10), D36–D41 (embeds, M14) and D42–D47 (teacher edits, M15) are **proposed** (⏳): confirm or change them before Loop 8 / Loop 12 / Loop 13. D18–D24 (M11) and D25–D35 (M12, M13) confirmed 2026-10-31. D18–D24 (M11) confirmed 2026-10-31.
 
 | #   | Decision                | Answer                                                                                                                                                                                                  |
 | --- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -1348,5 +1392,11 @@ D12–D17 (class participation, M10) and D36–D41 (embeds, M14) are **proposed*
 | D39 | ⏳ Short links          | **Proposed:** the Worker resolves redirects for an allow-list of shorteners only (canva.link, forms.gle, youtu.be, figma short links)                                                                   |
 | D40 | ⏳ Loading / fallback   | **Proposed:** shimmer + spinner overlay, "¿No carga?" after 12 s with the service's fix, "↗ Abrir" always; presenter pre-loads the next slide's embeds                                                  |
 | D41 | ⏳ Help                 | **Proposed:** a "¿Cómo insertar…?" guide page (es / en) per service, linked from the editor and the fallback                                                                                            |
+| D42 | ⏳ Who                  | **Proposed:** the board's teacher(s) only; other teachers and classmates never edit a student's slides                                                                                                  |
+| D43 | ⏳ What                 | **Proposed:** edit everything inside existing slides + add a slide; reorder / delete stay with the student                                                                                              |
+| D44 | ⏳ Student's control    | **Proposed:** keep the student's version before the teacher's first change; "Editada por el docente", compare and one-click restore (undoable)                                                          |
+| D45 | ⏳ Explain              | **Proposed:** after editing, an optional "Dejar una nota" prompt (M13 notes)                                                                                                                            |
+| D46 | ⏳ Simultaneous editing | **Proposed:** one editor per slide (lock with heartbeat, 60 s expiry); the other sees it read-only with who is editing                                                                                  |
+| D47 | ⏳ Order                | **Proposed:** run **Loop 13 (M15) next**, before Loop 12 (embeds) and Loop 8 (class participation): it's what you need now                                                                              |
 
 **Next step:** see the Phase 2 status line at the top and the latest loop report.
