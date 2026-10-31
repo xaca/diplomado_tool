@@ -25,6 +25,7 @@ import {
 } from '@/features/profile/api'
 import { removeAvatar, uploadAvatar } from '@/features/profile/avatar'
 import { AvatarCropDialog } from '@/features/profile/components/AvatarCropDialog'
+import { CheerSwitch } from '@/features/fun/components/CheerSwitch'
 import { DecorPicker } from '@/features/profile/components/DecorPicker'
 import { StatusEditor } from '@/features/profile/components/StatusEditor'
 import { useProfile } from '@/features/profile/hooks'
@@ -36,6 +37,7 @@ import { isTeacherRole, useAuth } from '@/providers/auth-context'
 
 export function ProfilePage() {
   const { t } = useTranslation()
+  const { role } = useAuth()
   const profile = useProfile()
   const navigate = useNavigate()
   // Opened from the menu → back where I was; opened directly (new tab, reload) → home
@@ -80,6 +82,9 @@ export function ProfilePage() {
             <DecorPicker current={profile.data?.decor} />
           </CardContent>
         </Card>
+      )}
+      {!profile.loading && !isTeacherRole(role) && (
+        <CheerSwitch profile={profile.data} />
       )}
       <LanguageCard />
     </section>

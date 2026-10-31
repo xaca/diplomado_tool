@@ -257,3 +257,27 @@
     animation: none !important;
   }
 }
+
+/* M20: encouraging toasts pop their emoji in */
+@keyframes cheer-pop {
+  0% {
+    transform: scale(0.3) rotate(-20deg);
+  }
+  60% {
+    transform: scale(1.35) rotate(8deg);
+  }
+  100% {
+    transform: scale(1) rotate(0);
+  }
+}
+
+.cheer-toast [data-icon] {
+  font-size: 1.15rem;
+  animation: cheer-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cheer-toast [data-icon] {
+    animation: none;
+  }
+}

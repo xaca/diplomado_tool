@@ -23,6 +23,7 @@ import {
   type BoardDoc,
   type Decor,
   type MemberDoc,
+  type Milestone,
   type PhotoSource,
   type StatusMessage,
   type StudentDoc,
@@ -147,6 +148,16 @@ export async function saveDecor(user: User, decor: Decor) {
   const current = await fetchProfile(user.uid)
   await setDoc(userRef(user.uid), { decor: next }, { merge: true })
   return updateMyCards(user, { ...current, decor: next })
+}
+
+/** A once-only moment was celebrated (M20): never again. */
+export function saveMilestone(uid: string, milestone: Milestone) {
+  return updateDoc(userRef(uid), { [`milestones.${milestone}`]: true })
+}
+
+/** "Mensajes de ánimo" on or off (M20). */
+export function saveCheer(uid: string, cheer: boolean) {
+  return setDoc(userRef(uid), { cheer }, { merge: true })
 }
 
 /** Boards I belong to (one membership per board), e.g. to prove I may upload a photo. */
