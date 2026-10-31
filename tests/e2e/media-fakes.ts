@@ -56,6 +56,8 @@ export async function fakeMediaServices(
     }
     counter += 1
     const assetId = `asset${counter}`
+    // M12: the board logo goes to the board's own folder
+    const folder = body.scope === 'board' ? 'board' : body.studentId
     await route.fulfill({
       headers: cors(),
       json: {
@@ -64,7 +66,7 @@ export async function fakeMediaServices(
         apiKey: 'test-key',
         signature: 'test-signature',
         params: {
-          public_id: `pbl/dev/${body.boardId}/${body.studentId}/${assetId}`,
+          public_id: `pbl/dev/${body.boardId}/${folder}/${assetId}`,
           timestamp: 1,
         },
       },
