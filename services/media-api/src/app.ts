@@ -13,7 +13,19 @@ export type Deps = {
 	cloudinary: CloudinaryAdmin;
 	now: () => number;
 	newId: () => string;
+	/** One redirect hop of a short link (M14): status + Location only, the body is never read */
+	followRedirect?: (url: string) => Promise<{ status: number; location: string | null }>;
 };
+
+/** Short links the app may ask to expand (keep in sync with SHORT_LINK_HOSTS in src/features/slides/embeds.ts) */
+const SHORT_LINK_HOSTS = ['canva.link', 'forms.gle', 'youtu.be', 'figma.fyi', 'goo.gl'];
+const MAX_REDIRECTS = 5;
+
+export async function defaultFollowRedirect(url: string) {
+	const response = await fetch(url, { method: 'GET', redirect: 'manual' });
+	await response.body?.cancel();
+	return { status: response.status, location: response.headers.get('Location') };
+}
 
 type Handler = (request: Request, env: Env, deps: Deps) => Promise<Response> | Response;
 
@@ -299,6 +311,37 @@ const routes: Record<string, Handler> = {
 		const ids = [avatarPublicId('prod', caller.uid), avatarPublicId('dev', caller.uid)];
 		const deleted = await cloudinaryCall(() => deps.cloudinary.deleteByIds(ids));
 		return json({ deleted: ids.some((id) => deleted[id] === 'deleted') });
+	},
+
+	/**
+	 * M14: expands a short link (canva.link, forms.gle…) so the app can embed it. Signed-in users,
+	 * allow-listed shorteners only, at most 5 hops, https only; returns the final address, nothing else.
+	 */
+	'POST /links/resolve': async (request, env, deps) => {
+		await authenticate(request, env, deps);
+		const body = await readBody(request);
+		let url: URL;
+		try {
+			url = new URL(typeof body.url === 'string' ? body.url : '');
+		} catch {
+			throw new HttpError(400, 'invalid url');
+		}
+		if (url.protocol !== 'https:' || !SHORT_LINK_HOSTS.includes(url.hostname)) throw new HttpError(400, 'not a known short link');
+		const follow = deps.followRedirect ?? defaultFollowRedirect;
+		let current = url.toString();
+		for (let hop = 0; hop < MAX_REDIRECTS; hop++) {
+			let step: { status: number; location: string | null };
+			try {
+				step = await follow(current);
+			} catch {
+				throw new HttpError(502, 'link unreachable');
+			}
+			if (step.status < 300 || step.status >= 400 || !step.location) return json({ url: current });
+			const next = new URL(step.location, current);
+			if (next.protocol !== 'https:') throw new HttpError(400, 'insecure redirect');
+			current = next.toString();
+		}
+		throw new HttpError(400, 'too many redirects');
 	},
 
 	/** Cloudinary credits used this month (teacher dashboard meter). Any teacher. */

@@ -394,6 +394,31 @@ describe('board logo (M12)', () => {
 	});
 });
 
+describe('short links (M14)', () => {
+	const resolve = (url: unknown, token = LAURA.token) => post('/links/resolve', { url }, { token });
+	const hops =
+		(chain: Record<string, string | null>) =>
+		async (url: string) => ({ status: chain[url] ? 302 : 200, location: chain[url] ?? null });
+
+	it('follows the redirects of an allow-listed shortener and returns the final address', async () => {
+		const d = { ...deps(), followRedirect: hops({ 'https://canva.link/abc': 'https://www.canva.com/design/DAG123/xyz/view' }) };
+		const response = await handle(resolve('https://canva.link/abc'), env, d);
+		expect(response.status).toBe(200);
+		expect(await response.json()).toEqual({ url: 'https://www.canva.com/design/DAG123/xyz/view' });
+	});
+
+	it('refuses other hosts, non-https, loops and anonymous callers', async () => {
+		const loop = { ...deps(), followRedirect: hops({ 'https://canva.link/a': 'https://canva.link/b', 'https://canva.link/b': 'https://canva.link/a' }) };
+		expect((await handle(resolve('https://bit.ly/abc'), env, deps())).status).toBe(400);
+		expect((await handle(resolve('http://canva.link/abc'), env, deps())).status).toBe(400);
+		expect((await handle(resolve('not a url'), env, deps())).status).toBe(400);
+		expect((await handle(resolve('https://canva.link/a'), env, loop)).status).toBe(400);
+		const insecure = { ...deps(), followRedirect: hops({ 'https://forms.gle/x': 'http://docs.google.com/forms' }) };
+		expect((await handle(resolve('https://forms.gle/x'), env, insecure)).status).toBe(400);
+		expect((await handle(resolve('https://canva.link/abc', 'fake'), env, deps())).status).toBe(401);
+	});
+});
+
 describe('profile photos (M11)', () => {
 	it('signs one fixed, overwritable file per person for a board member', async () => {
 		const response = await handle(sign({ scope: 'avatar', boardId: BOARD }), env, deps(joinedLaura));
