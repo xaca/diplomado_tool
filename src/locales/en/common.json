@@ -581,7 +581,7 @@
     "insert": "Insert content",
     "insertTitle": "Insert content",
     "insertHint": "Paste a link to a presentation, document, video or design. We convert it so it shows inside the slide.",
-    "link": "Link",
+    "link": "Link or embed code",
     "placeholder": "https://docs.google.com/presentation/d/…",
     "detected": "Recognized: {{name}}",
     "resolving": "Checking the link…",
@@ -608,13 +608,22 @@
       "vimeo": "Copy the video link; its settings must allow embedding on other sites.",
       "loom": "Share → Copy link.",
       "figma": "Share → “Anyone with the link” → “can view” → Copy link. Works for designs, prototypes, FigJam and Figma Slides.",
-      "canva": "Share → Access: “Anyone with the link” (can view) → Copy link. canva.link short links work too.",
+      "canva": "Option 1 · Link: Share → Access: “Anyone with the link” (can view) → Copy link.\nOption 2 · Code: Share → Embed (or “More” → Embed) → Embed → Copy the HTML code.\nEdit links and short links (canva.link) work too; the design keeps its real shape (portrait, square or 16:9).",
       "miro": "Share → “Anyone with the board link” → “can view” → Copy board link.",
       "notion": "Share → Publish → Publish to web → copy the link ending in notion.site.",
       "genially": "Share → copy the “view.genial.ly” link.",
       "prezi": "Share → Share public link (view) → Copy link.",
       "padlet": "Share → “Embed in your blog or website” → copy the address that contains /embed/."
-    }
+    },
+    "pick": "What do you want to insert?",
+    "canvaTile": "Canva presentations, infographics, posters and videos",
+    "pasteAnyway": "Already have the link? Paste it below: we recognize the service on our own.",
+    "otherServices": "Other services",
+    "stepsFor": "How to share it from {{name}}:",
+    "detectedTitled": "Recognized: {{name}} · “{{title}}”",
+    "canvaSite": "Canva websites (my.canva.site) can't be shown inside a slide. Insert the design instead: in Canva, Share → Embed.",
+    "canvaChecking": "Checking that the design is shared…",
+    "canvaPrivate": "This Canva design isn't shared yet: it will look blank in the slide. In Canva: Share → Access → “Anyone with the link”, then paste it again."
   },
   "clock": {
     "button": "Clock",

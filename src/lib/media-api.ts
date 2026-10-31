@@ -131,6 +131,21 @@ export const mediaApi = {
       true,
     ),
 
+  /** Is a Canva design shared publicly, and its size and title (M17, Canva oEmbed). */
+  canvaInfo: (url: string) =>
+    request<
+      | { shared: false }
+      | { shared: true; width: number; height: number; title: string }
+    >(
+      '/links/canva',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      },
+      true,
+    ),
+
   /** Deletes my uploaded profile photo from Cloudinary. */
   deleteAvatar: () =>
     request<{ deleted: boolean }>('/avatar/delete', { method: 'POST' }, true),

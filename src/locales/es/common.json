@@ -581,7 +581,7 @@
     "insert": "Insertar contenido",
     "insertTitle": "Insertar contenido",
     "insertHint": "Pega el enlace de una presentación, documento, video o diseño. Lo convertimos para que se vea dentro de la diapositiva.",
-    "link": "Enlace",
+    "link": "Enlace o código para insertar",
     "placeholder": "https://docs.google.com/presentation/d/…",
     "detected": "Reconocimos: {{name}}",
     "resolving": "Revisando el enlace…",
@@ -608,13 +608,22 @@
       "vimeo": "Copia el enlace del video; en su configuración debe permitir insertarlo en otros sitios.",
       "loom": "Share → Copy link.",
       "figma": "Share → «Anyone with the link» → «can view» → Copy link. Sirve para diseños, prototipos, FigJam y Figma Slides.",
-      "canva": "Compartir → Acceso: «Cualquier persona con el enlace» (puede ver) → Copiar enlace. Los enlaces cortos canva.link también sirven.",
+      "canva": "Opción 1 · Enlace: Compartir → Acceso: «Cualquier persona con el enlace» (puede ver) → Copiar enlace.\nOpción 2 · Código: Compartir → Insertar (o «Más» → Insertar) → Insertar → Copiar el código HTML.\nLos enlaces de edición y los cortos (canva.link) también sirven; el diseño se verá con su forma real (vertical, cuadrado o 16:9).",
       "miro": "Share → «Anyone with the board link» → «can view» → Copy board link.",
       "notion": "Share → Publish → Publish to web → copia el enlace que termina en notion.site.",
       "genially": "Compartir → copia el enlace de «view.genial.ly».",
       "prezi": "Compartir → Compartir enlace público (vista) → Copiar enlace.",
       "padlet": "Compartir → «Insertar en tu blog o sitio web» → copia la dirección que contiene /embed/."
-    }
+    },
+    "pick": "¿Qué quieres insertar?",
+    "canvaTile": "Presentaciones, infografías, pósters y videos de Canva",
+    "pasteAnyway": "¿Ya tienes el enlace? Pégalo abajo: reconocemos el servicio solos.",
+    "otherServices": "Otros servicios",
+    "stepsFor": "Cómo compartirlo desde {{name}}:",
+    "detectedTitled": "Reconocimos: {{name}} · «{{title}}»",
+    "canvaSite": "Los sitios web de Canva (my.canva.site) no se pueden mostrar dentro de la diapositiva. Inserta el diseño: en Canva, Compartir → Insertar.",
+    "canvaChecking": "Revisando que el diseño esté compartido…",
+    "canvaPrivate": "Este diseño de Canva todavía no está compartido: en la diapositiva se verá en blanco. En Canva: Compartir → Acceso → «Cualquier persona con el enlace» y vuelve a pegarlo."
   },
   "clock": {
     "button": "Reloj",
