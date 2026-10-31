@@ -12,18 +12,21 @@ import type { BinaryFileData } from '@excalidraw/excalidraw/types'
 import { IMAGE_SIZES, imageUrl } from '@/lib/cloudinary'
 import {
   FRAME_ID,
-  isAllowedEmbed,
   SLIDE_HEIGHT,
   SLIDE_WIDTH,
   mimeType,
   parseScene,
 } from '@/features/slides/engine/scene'
 import type { ImageRef, SlideDoc } from '@/model'
+import {
+  detectEmbed,
+  isAllowedEmbed,
+  linksInText,
+  sandboxFor,
+  toEmbedUrl,
+} from '@/features/slides/embeds'
 
 // The only module (with SlideCanvas) that loads the Excalidraw runtime: always imported lazily.
-
-const EMBED_SANDBOX =
-  'allow-scripts allow-same-origin allow-presentation allow-popups'
 
 export const FRAME_RENDERING = {
   enabled: true,
@@ -106,7 +109,14 @@ export async function renderSlideSvg(
     ).map((file) => [file.id, file]),
   )
   const svg = await exportToSvg({
-    elements: elements.filter((element) => !element.isDeleted),
+    // Links typed as text become clickable (M14): Excalidraw wraps elements with a link in <a>
+    elements: elements
+      .filter((element) => !element.isDeleted)
+      .map((element) => {
+        if (element.type !== 'text' || element.link) return element
+        const [link] = linksInText(element.originalText || element.text)
+        return link ? { ...element, link } : element
+      }),
     appState: {
       exportBackground: true,
       viewBackgroundColor: background,
@@ -125,10 +135,22 @@ export async function renderSlideSvg(
     link.setAttribute('target', '_blank')
     link.setAttribute('rel', 'noopener noreferrer')
   }
-  // Slides come from other students: only allow-listed players, always sandboxed
+  // Slides come from other students: only allow-listed services, always sandboxed. Known links
+  // are converted to their embeddable form here, so old slides work without editing (M14, D37)
   for (const frame of svg.querySelectorAll('iframe')) {
-    if (isAllowedEmbed(frame.src)) frame.setAttribute('sandbox', EMBED_SANDBOX)
-    else frame.closest('foreignObject')?.remove()
+    const embed = toEmbedUrl(frame.src)
+    if (!embed || !isAllowedEmbed(embed)) {
+      frame.closest('foreignObject')?.remove()
+      continue
+    }
+    frame.src = embed
+    frame.setAttribute('sandbox', sandboxFor(embed))
+    frame.setAttribute(
+      'allow',
+      'fullscreen; autoplay; encrypted-media; picture-in-picture',
+    )
+    frame.setAttribute('loading', 'lazy')
+    frame.dataset.embed = detectEmbed(embed)?.id ?? ''
   }
   return svg.outerHTML
 }

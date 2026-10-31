@@ -4,6 +4,7 @@ import { AppShell } from '@/components/layout/AppShell'
 import { RouteError } from '@/components/layout/RouteError'
 import { BoardPage } from '@/pages/BoardPage'
 import { EditorRoute } from '@/pages/EditorRoute'
+import { EmbedGuidePage } from '@/pages/EmbedGuidePage'
 import { JoinPage } from '@/pages/JoinPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
@@ -25,6 +26,8 @@ export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage />, errorElement },
   // Public: linked from the login page (Ley 1581 de 2012)
   { path: '/privacidad', element: <PrivacyPage />, errorElement },
+  // Public: "¿Cómo insertar…?" guide (M14), the teacher can share it with the class
+  { path: '/ayuda/insertar', element: <EmbedGuidePage />, errorElement },
   {
     element: <RequireAuth />,
     errorElement,

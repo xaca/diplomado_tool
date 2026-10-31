@@ -12,6 +12,8 @@ import { useTranslation } from 'react-i18next'
 import {
   ArrowLeft,
   Eye,
+  Clapperboard,
+  Link2,
   Lock,
   MessageSquareText,
   PencilLine,
@@ -49,7 +51,9 @@ import {
   type Slide,
 } from '@/features/slides/api'
 import { SaveIndicator } from '@/features/slides/components/SaveIndicator'
+import { InsertEmbedDialog } from '@/features/slides/components/InsertEmbedDialog'
 import { SlidePreview } from '@/features/slides/components/SlidePreview'
+import { linksInText, toEmbedUrl } from '@/features/slides/embeds'
 import { SlideSidebar } from '@/features/slides/components/SlideSidebar'
 import type { SaveStatus } from '@/features/slides/engine/autosave'
 import type { SlideCanvasHandle } from '@/features/slides/engine/SlideCanvas'
@@ -94,6 +98,8 @@ export function EditorPage() {
   // M15: slides the teacher changed in this session, and the note they're writing
   const [editedIds, setEditedIds] = useState<ReadonlySet<string>>(new Set())
   const [noteDraft, setNoteDraft] = useState<string | null>(null)
+  // M14: "Insertar contenido" dialog
+  const [inserting, setInserting] = useState(false)
 
   const canvas = useRef<SlideCanvasHandle>(null)
   // Opened from the space page or the presenter on a given slide (?slide=)
@@ -174,6 +180,8 @@ export function EditorPage() {
   const current =
     slides.data.find((slide) => slide.id === selectedId) ?? slides.data[0]
   const currentNotes = current ? (notes.bySlide.get(current.id) ?? []) : []
+  // M14: links typed as text that could be shown inside the slide (from the saved version)
+  const textLinks = current ? embeddableTextLinks(current.content) : 0
 
   async function run(action: () => Promise<void>) {
     setBusy(true)
@@ -276,6 +284,15 @@ export function EditorPage() {
         <h1 className="flex-1 truncate font-semibold">
           {space.data.title || t('slides.editorTitle')}
         </h1>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={!current || lock.state !== 'mine'}
+          onClick={() => setInserting(true)}
+        >
+          <Clapperboard />
+          {t('embeds.insert')}
+        </Button>
         <SaveIndicator
           status={status.value}
           error={status.error}
@@ -330,6 +347,28 @@ export function EditorPage() {
               </Button>
             </>
           )}
+        </div>
+      )}
+
+      {textLinks > 0 && lock.state === 'mine' && (
+        <div
+          className="flex flex-wrap items-center gap-2 border-b bg-sky-50 px-3 py-1.5 text-sm text-sky-950"
+          data-testid="text-links"
+        >
+          <Link2 className="size-4" />
+          <span className="flex-1">
+            {t('embeds.textLinks', { count: textLinks })}
+          </span>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              if (canvas.current?.convertTextLinks())
+                toast.success(t('embeds.converted'))
+            }}
+          >
+            {t('embeds.convert')}
+          </Button>
         </div>
       )}
 
@@ -422,6 +461,16 @@ export function EditorPage() {
         )}
       </div>
 
+      {inserting && (
+        <InsertEmbedDialog
+          onClose={() => setInserting(false)}
+          onInsert={(link, aspect) => {
+            canvas.current?.insertEmbed(link, aspect)
+            toast.success(t('embeds.inserted'))
+          }}
+        />
+      )}
+
       <AlertDialog
         open={deleting !== null}
         onOpenChange={(open) => !open && setDeleting(null)}
@@ -452,4 +501,28 @@ export function EditorPage() {
       </AlertDialog>
     </section>
   )
+}
+
+/** Texts of a saved slide that are a link to a service we can embed (M14, D38). */
+function embeddableTextLinks(content: string) {
+  try {
+    const { elements = [] } = JSON.parse(content) as {
+      elements?: {
+        type: string
+        text?: string
+        originalText?: string
+        isDeleted?: boolean
+      }[]
+    }
+    return elements.filter(
+      (element) =>
+        element.type === 'text' &&
+        !element.isDeleted &&
+        linksInText(element.originalText || element.text || '').some(
+          (link) => toEmbedUrl(link) !== null,
+        ),
+    ).length
+  } catch {
+    return 0
+  }
 }

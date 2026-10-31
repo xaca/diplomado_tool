@@ -104,32 +104,9 @@ export function dataUrlToFile(dataUrl: string, name: string) {
   return new File([bytes], name, { type })
 }
 
-// Sites that may play live inside a slide (PLAN.md review R9). Any other link stays a plain link,
-// in the editor (validateEmbeddable) and in the viewer (iframes are filtered after export).
-const EMBED_HOSTS = new Set([
-  'youtube.com',
-  'www.youtube.com',
-  'm.youtube.com',
-  'youtu.be',
-  'www.youtube-nocookie.com',
-  'vimeo.com',
-  'player.vimeo.com',
-  'figma.com',
-  'www.figma.com',
-  'embed.figma.com',
-  'docs.google.com',
-  'canva.com',
-  'www.canva.com',
-])
-
-export function isAllowedEmbed(link: string) {
-  try {
-    const url = new URL(link)
-    return url.protocol === 'https:' && EMBED_HOSTS.has(url.hostname)
-  } catch {
-    return false
-  }
-}
+// Sites that may play live inside a slide (M14: the provider registry in features/slides/embeds).
+// Any other link stays a plain link, in the editor (validateEmbeddable) and in the viewer.
+export { isAllowedEmbed } from '@/features/slides/embeds'
 
 /** Cheap change detector: Excalidraw bumps `version` on every edit of an element. */
 export function sceneSignature(

@@ -82,13 +82,21 @@ describe('slide scene', () => {
   })
 
   it('only lets known video and design sites play live on a slide', () => {
-    expect(isAllowedEmbed('https://www.youtube.com/watch?v=abc')).toBe(true)
-    expect(isAllowedEmbed('https://youtu.be/abc')).toBe(true)
+    // M14: real link shapes (the registry checks ids, see embeds.test.ts)
+    expect(isAllowedEmbed('https://www.youtube.com/watch?v=dQw4w9WgXcQ')).toBe(
+      true,
+    )
+    expect(isAllowedEmbed('https://youtu.be/dQw4w9WgXcQ')).toBe(true)
     expect(isAllowedEmbed('https://player.vimeo.com/video/1')).toBe(true)
     expect(
-      isAllowedEmbed('https://docs.google.com/presentation/d/e/x/embed'),
+      isAllowedEmbed(
+        'https://docs.google.com/presentation/d/e/2PACX-1vAbCdEf/embed',
+      ),
     ).toBe(true)
-    expect(isAllowedEmbed('http://www.youtube.com/watch?v=abc')).toBe(false)
+    expect(isAllowedEmbed('https://youtu.be/abc')).toBe(false)
+    expect(isAllowedEmbed('http://www.youtube.com/watch?v=dQw4w9WgXcQ')).toBe(
+      false,
+    )
     expect(isAllowedEmbed('https://youtube.com.evil.example/x')).toBe(false)
     expect(isAllowedEmbed('javascript:alert(1)')).toBe(false)
     expect(isAllowedEmbed('not a url')).toBe(false)

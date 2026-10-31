@@ -119,6 +119,18 @@ export const mediaApi = {
       true,
     ),
 
+  /** Expands a short link (canva.link, forms.gle…) to embed it (M14). */
+  resolveLink: (url: string) =>
+    request<{ url: string }>(
+      '/links/resolve',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      },
+      true,
+    ),
+
   /** Deletes my uploaded profile photo from Cloudinary. */
   deleteAvatar: () =>
     request<{ deleted: boolean }>('/avatar/delete', { method: 'POST' }, true),

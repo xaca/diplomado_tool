@@ -1,6 +1,10 @@
+import { useLayoutEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Skeleton } from '@/components/ui/skeleton'
+import { attachEmbedOverlays } from '@/features/slides/embed-overlay'
 import { useSlideSvg } from '@/features/slides/engine/use-slide-svg'
+import { useEmbedTexts } from '@/features/slides/use-embed-texts'
+import { gsap, motionAllowed } from '@/lib/gsap'
 import { cn } from '@/lib/utils'
 import type { SlideDoc } from '@/model'
 
@@ -21,11 +25,22 @@ export function SlidePreview({
   className?: string
 }) {
   const { t } = useTranslation()
+  const live = large || present
   const { svg, error } = useSlideSvg(slide, {
-    embeds: large || present,
-    inlineFonts: large || present,
+    embeds: live,
+    inlineFonts: live,
     present,
   })
+  const box = useRef<HTMLDivElement>(null)
+  const embedTexts = useEmbedTexts()
+
+  // Live slides (M14): fade in when ready; each embed shows its loading state until it loads
+  useLayoutEffect(() => {
+    if (!svg || !live || !box.current) return
+    if (motionAllowed())
+      gsap.fromTo(box.current, { opacity: 0 }, { opacity: 1, duration: 0.35 })
+    return attachEmbedOverlays(box.current, embedTexts)
+  }, [svg, live, embedTexts])
 
   if (error) {
     return (
@@ -39,9 +54,25 @@ export function SlidePreview({
       </div>
     )
   }
-  if (!svg) return <Skeleton className={cn('aspect-video', className)} />
+  if (!svg) {
+    if (!live) return <Skeleton className={cn('aspect-video', className)} />
+    return (
+      <div
+        className={cn(
+          'embed-overlay relative aspect-video w-full overflow-hidden',
+          className,
+        )}
+        role="status"
+        data-testid="slide-loading"
+      >
+        <span className="embed-spinner" aria-hidden />
+        <span>{t('embeds.slideLoading')}</span>
+      </div>
+    )
+  }
   return (
     <div
+      ref={box}
       className={cn('aspect-video overflow-hidden bg-white', className)}
       data-testid="slide-preview"
       // Exported by Excalidraw from the stored scene; links and embeds are sanitized in renderSlideSvg

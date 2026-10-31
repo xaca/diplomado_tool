@@ -416,7 +416,8 @@
       {
         "title": "Dónde se guardan",
         "body": [
-          "En servicios de terceros con sus propias medidas de seguridad: Google Firebase (inicio de sesión, base de datos y sitio web), Cloudinary (imágenes) y Cloudflare (servicio que autoriza la subida de imágenes). Sus servidores pueden estar fuera de Colombia (por ejemplo, en Estados Unidos); al usar la herramienta autorizas esa transferencia."
+          "En servicios de terceros con sus propias medidas de seguridad: Google Firebase (inicio de sesión, base de datos y sitio web), Cloudinary (imágenes) y Cloudflare (servicio que autoriza la subida de imágenes). Sus servidores pueden estar fuera de Colombia (por ejemplo, en Estados Unidos); al usar la herramienta autorizas esa transferencia.",
+          "El contenido insertado en las diapositivas (Google, YouTube en modo privado, Figma, Canva, Miro, Notion…) se carga desde los servidores de cada servicio cuando alguien ve la diapositiva."
         ]
       },
       {
@@ -565,5 +566,51 @@
     "badge": "Docente",
     "badgeHint": "Tu docente hizo cambios en tus diapositivas",
     "present": "Editar esta diapositiva"
+  },
+  "embeds": {
+    "loading": "Cargando contenido…",
+    "loadingNamed": "Cargando {{name}}…",
+    "slideLoading": "Cargando diapositiva…",
+    "stuck": "Este contenido no carga aquí.",
+    "stuckShare": "¿No carga? Puede que el archivo de {{name}} no esté compartido como «Cualquier persona con el enlace».",
+    "open": "Abrir",
+    "help": "Cómo insertarlo",
+    "insert": "Insertar contenido",
+    "insertTitle": "Insertar contenido",
+    "insertHint": "Pega el enlace de una presentación, documento, video o diseño. Lo convertimos para que se vea dentro de la diapositiva.",
+    "link": "Enlace",
+    "placeholder": "https://docs.google.com/presentation/d/…",
+    "detected": "Reconocimos: {{name}}",
+    "resolving": "Revisando el enlace…",
+    "unknown": "No reconocemos este enlace. Se puede agregar como texto o con la herramienta de enlace.",
+    "notFramable": "Este enlace de {{name}} no se puede mostrar dentro de la diapositiva.",
+    "steps": "Antes de insertar:",
+    "preview": "Vista previa",
+    "insertButton": "Insertar en la diapositiva",
+    "inserted": "Contenido insertado",
+    "guide": "Ver la guía completa",
+    "textLinks_one": "Esta diapositiva tiene {{count}} enlace escrito como texto que se puede ver dentro de la diapositiva.",
+    "textLinks_other": "Esta diapositiva tiene {{count}} enlaces escritos como texto que se pueden ver dentro de la diapositiva.",
+    "convert": "Convertir",
+    "converted": "Enlace convertido",
+    "guideTitle": "Cómo insertar contenido en tus diapositivas",
+    "guideIntro": "En el editor usa «Insertar contenido» y pega el enlace. Para que todos lo vean, el archivo debe estar compartido como se indica abajo.",
+    "providers": {
+      "googleSlides": "Compartir → Acceso general: «Cualquier persona con el enlace» (Lector) → Copiar enlace. También sirve Archivo → Compartir → Publicar en la web.",
+      "googleDocs": "Compartir → «Cualquier persona con el enlace» (Lector) → Copiar enlace.",
+      "googleSheets": "Compartir → «Cualquier persona con el enlace» (Lector) → Copiar enlace.",
+      "googleForms": "Enviar → icono de enlace → Copiar. El formulario se podrá responder desde la diapositiva.",
+      "googleDrive": "Clic derecho en el archivo (video o PDF) → Compartir → «Cualquier persona con el enlace» → Copiar enlace.",
+      "youtube": "Copia el enlace del video (público u oculto). Se muestra en modo privado (sin cookies de seguimiento).",
+      "vimeo": "Copia el enlace del video; en su configuración debe permitir insertarlo en otros sitios.",
+      "loom": "Share → Copy link.",
+      "figma": "Share → «Anyone with the link» → «can view» → Copy link. Sirve para diseños, prototipos, FigJam y Figma Slides.",
+      "canva": "Compartir → Acceso: «Cualquier persona con el enlace» (puede ver) → Copiar enlace. Los enlaces cortos canva.link también sirven.",
+      "miro": "Share → «Anyone with the board link» → «can view» → Copy board link.",
+      "notion": "Share → Publish → Publish to web → copia el enlace que termina en notion.site.",
+      "genially": "Compartir → copia el enlace de «view.genial.ly».",
+      "prezi": "Compartir → Compartir enlace público (vista) → Copiar enlace.",
+      "padlet": "Compartir → «Insertar en tu blog o sitio web» → copia la dirección que contiene /embed/."
+    }
   }
 }

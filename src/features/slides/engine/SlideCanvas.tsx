@@ -10,6 +10,7 @@ import {
 } from 'react'
 import {
   CaptureUpdateAction,
+  convertToExcalidrawElements,
   Excalidraw,
   MainMenu,
   newElementWith,
@@ -21,6 +22,13 @@ import type {
 } from '@excalidraw/excalidraw/types'
 import { logUploadFailure, uploadImage } from '@/features/assets/upload'
 import { saveSlide, type Slide } from '@/features/slides/api'
+import { EmbedFrame } from '@/features/slides/components/EmbedFrame'
+import {
+  detectEmbed,
+  embedBox,
+  linksInText,
+  toEmbedUrl,
+} from '@/features/slides/embeds'
 import { needsStudentSnapshot } from '@/features/slides/teacher-edits'
 import {
   createAutosave,
@@ -51,6 +59,10 @@ import { MAX_IMAGES_PER_SLIDE, MAX_SLIDE_BYTES, type ImageRef } from '@/model'
 export type SlideCanvasHandle = {
   /** Save pending changes now (slide switch, leaving the editor). */
   flush: () => Promise<void>
+  /** M14: adds an embed (already converted link) centered on the slide */
+  insertEmbed: (link: string, aspect: number) => void
+  /** M14: replaces texts that are only an embeddable link by the embed, in place; returns how many */
+  convertTextLinks: () => number
 }
 
 type Props = {
@@ -114,9 +126,83 @@ export default function SlideCanvas({
     background: initial.appState.viewBackgroundColor,
   })
 
+  /** New elements must belong to the slide frame (export clips to it). */
+  function addToSlide(
+    created: readonly ExcalidrawElement[],
+    remove: readonly string[] = [],
+  ) {
+    const scene = api.current
+    const frame = scene && findFrame(scene.getSceneElements())
+    if (!scene || !frame) return
+    scene.updateScene({
+      elements: [
+        ...scene
+          .getSceneElementsIncludingDeleted()
+          .map((element) =>
+            remove.includes(element.id)
+              ? newElementWith(element, { isDeleted: true })
+              : element,
+          ),
+        ...created.map((element) =>
+          newElementWith(element, { frameId: frame.id }),
+        ),
+      ],
+      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+    })
+  }
+
+  /**
+   * An embed element. Excalidraw doesn't export its embeddable constructor; an embeddable has the
+   * shape of a rectangle plus a link, so we build a rectangle and change its type.
+   */
+  function embeddable(
+    link: string,
+    box: ReturnType<typeof embedBox>,
+  ): ExcalidrawElement[] {
+    const [rectangle] = convertToExcalidrawElements([
+      { type: 'rectangle', ...box },
+    ])
+    return [
+      {
+        ...rectangle,
+        type: 'embeddable',
+        link,
+        strokeColor: 'transparent',
+      } as unknown as ExcalidrawElement,
+    ]
+  }
+
   useImperativeHandle(
     ref,
-    () => ({ flush: async () => autosave.current?.flush() }),
+    () => ({
+      flush: async () => autosave.current?.flush(),
+      insertEmbed: (link, aspect) =>
+        addToSlide(embeddable(link, embedBox(aspect))),
+      convertTextLinks: () => {
+        const scene = api.current
+        if (!scene) return 0
+        const created: ExcalidrawElement[] = []
+        const removed: string[] = []
+        for (const element of scene.getSceneElements()) {
+          if (element.type !== 'text') continue
+          const [link] = linksInText(element.originalText || element.text)
+          const embed = link && toEmbedUrl(link)
+          if (!embed) continue
+          const box = embedBox(detectEmbed(embed)!.aspect)
+          created.push(
+            ...embeddable(embed, {
+              ...box,
+              // in place, but inside the slide
+              x: Math.max(0, Math.min(element.x, 960 - box.width)),
+              y: Math.max(0, Math.min(element.y, 540 - box.height)),
+            }),
+          )
+          removed.push(element.id)
+        }
+        if (created.length) addToSlide(created, removed)
+        return created.length
+      },
+    }),
     [],
   )
 
@@ -302,6 +388,10 @@ export default function SlideCanvas({
         }
         langCode={language.startsWith('en') ? 'en' : 'es-ES'}
         validateEmbeddable={isAllowedEmbed}
+        // M14: converted link, sandboxed, with the loading / "¿No carga?" states
+        renderEmbeddable={(element) =>
+          element.link ? <EmbedFrame link={element.link} /> : null
+        }
         aiEnabled={false}
         UIOptions={{
           canvasActions: {

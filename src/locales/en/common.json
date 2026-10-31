@@ -416,7 +416,8 @@
       {
         "title": "Where it is stored",
         "body": [
-          "With third-party services that have their own security measures: Google Firebase (sign-in, database and website), Cloudinary (images) and Cloudflare (service that authorizes image uploads). Their servers may be outside Colombia (e.g. in the United States); by using the tool you authorize that transfer."
+          "With third-party services that have their own security measures: Google Firebase (sign-in, database and website), Cloudinary (images) and Cloudflare (service that authorizes image uploads). Their servers may be outside Colombia (e.g. in the United States); by using the tool you authorize that transfer.",
+          "Content embedded in slides (Google, YouTube in privacy mode, Figma, Canva, Miro, Notion…) loads from each service’s servers when someone views the slide."
         ]
       },
       {
@@ -565,5 +566,51 @@
     "badge": "Teacher",
     "badgeHint": "Your teacher changed your slides",
     "present": "Edit this slide"
+  },
+  "embeds": {
+    "loading": "Loading content…",
+    "loadingNamed": "Loading {{name}}…",
+    "slideLoading": "Loading slide…",
+    "stuck": "This content doesn’t load here.",
+    "stuckShare": "Not loading? The {{name}} file may not be shared as “Anyone with the link”.",
+    "open": "Open",
+    "help": "How to embed it",
+    "insert": "Insert content",
+    "insertTitle": "Insert content",
+    "insertHint": "Paste a link to a presentation, document, video or design. We convert it so it shows inside the slide.",
+    "link": "Link",
+    "placeholder": "https://docs.google.com/presentation/d/…",
+    "detected": "Recognized: {{name}}",
+    "resolving": "Checking the link…",
+    "unknown": "We don’t recognize this link. You can add it as text or with the link tool.",
+    "notFramable": "This {{name}} link can’t be shown inside the slide.",
+    "steps": "Before inserting:",
+    "preview": "Preview",
+    "insertButton": "Insert into the slide",
+    "inserted": "Content inserted",
+    "guide": "See the full guide",
+    "textLinks_one": "This slide has {{count}} link typed as text that can be shown inside the slide.",
+    "textLinks_other": "This slide has {{count}} links typed as text that can be shown inside the slide.",
+    "convert": "Convert",
+    "converted": "Link converted",
+    "guideTitle": "How to embed content in your slides",
+    "guideIntro": "In the editor use “Insert content” and paste the link. For everyone to see it, the file must be shared as shown below.",
+    "providers": {
+      "googleSlides": "Share → General access: “Anyone with the link” (Viewer) → Copy link. File → Share → Publish to the web also works.",
+      "googleDocs": "Share → “Anyone with the link” (Viewer) → Copy link.",
+      "googleSheets": "Share → “Anyone with the link” (Viewer) → Copy link.",
+      "googleForms": "Send → link icon → Copy. The form can be answered from the slide.",
+      "googleDrive": "Right-click the file (video or PDF) → Share → “Anyone with the link” → Copy link.",
+      "youtube": "Copy the video link (public or unlisted). It plays in privacy mode (no tracking cookies).",
+      "vimeo": "Copy the video link; its settings must allow embedding on other sites.",
+      "loom": "Share → Copy link.",
+      "figma": "Share → “Anyone with the link” → “can view” → Copy link. Works for designs, prototypes, FigJam and Figma Slides.",
+      "canva": "Share → Access: “Anyone with the link” (can view) → Copy link. canva.link short links work too.",
+      "miro": "Share → “Anyone with the board link” → “can view” → Copy board link.",
+      "notion": "Share → Publish → Publish to web → copy the link ending in notion.site.",
+      "genially": "Share → copy the “view.genial.ly” link.",
+      "prezi": "Share → Share public link (view) → Copy link.",
+      "padlet": "Share → “Embed in your blog or website” → copy the address that contains /embed/."
+    }
   }
 }
