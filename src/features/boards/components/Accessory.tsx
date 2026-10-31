@@ -8,7 +8,7 @@ const PLACE: Record<
   { w: number; top: number; left: number; rotate: number }
 > = {
   santa: { w: 0.78, top: -0.42, left: 0.3, rotate: 18 },
-  witch: { w: 0.8, top: -0.55, left: 0.22, rotate: 12 },
+  witch: { w: 0.74, top: -0.42, left: 0.24, rotate: 12 },
   grad: { w: 0.9, top: -0.36, left: 0.05, rotate: -8 },
   flowers: { w: 1, top: -0.2, left: 0, rotate: 0 },
   heart: { w: 0.42, top: -0.12, left: 0.66, rotate: 14 },

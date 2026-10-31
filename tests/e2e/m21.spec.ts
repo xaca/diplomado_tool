@@ -164,3 +164,40 @@ test.describe('M21 · board styles', () => {
     )
   })
 })
+
+test.describe('M21 · accessories keep the layout', () => {
+  test('a hat over a photo never stacks the Muro cards in one column', async ({
+    page,
+  }) => {
+    // Chrome's CSS columns stack everything when the first card's content pokes above it
+    await page.setViewportSize({ width: 1400, height: 900 })
+    await signIn(page, DEMO.teacher)
+    for (const style of [
+      'navidad',
+      'amigo-secreto',
+      'halloween',
+      'verano',
+      'flores',
+      'graduacion',
+    ]) {
+      await board().update({ style, ambient: false })
+      await page.goto(boardUrl)
+      await expect(page.locator('[data-accessory]').first()).toBeVisible()
+      await expect
+        .poll(
+          async () =>
+            new Set(
+              await page
+                .getByTestId('space-card')
+                .evaluateAll((cards) =>
+                  cards.map((card) =>
+                    Math.round(card.getBoundingClientRect().x),
+                  ),
+                ),
+            ).size,
+          { message: style },
+        )
+        .toBe(3)
+    }
+  })
+})
