@@ -1,0 +1,35 @@
+{
+  "animations": [
+    {
+      "file": "respira.json",
+      "name": "Respira",
+      "license": "Original (PBL Diplomado, MIT)",
+      "source": null
+    },
+    {
+      "file": "sol.json",
+      "name": "Sol",
+      "license": "Original (PBL Diplomado, MIT)",
+      "source": null
+    },
+    {
+      "file": "burbujas.json",
+      "name": "Burbujas",
+      "license": "Original (PBL Diplomado, MIT)",
+      "source": null
+    },
+    {
+      "file": "cafe.json",
+      "name": "Café",
+      "license": "Original (PBL Diplomado, MIT)",
+      "source": null
+    },
+    {
+      "file": "puntos.json",
+      "name": "Puntos",
+      "license": "Original (PBL Diplomado, MIT)",
+      "source": null
+    }
+  ],
+  "_how": "Add free LottieFiles animations here: download the Lottie JSON, check its license (Lottie Simple License), save it in public/lottie/ and add {file, name, license, source}."
+}

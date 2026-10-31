@@ -3,3 +3,6 @@ node_modules
 package-lock.json
 src/components/ui
 services
+# Lottie animations: minified on purpose (served as is)
+public/lottie/*.json
+!public/lottie/manifest.json
