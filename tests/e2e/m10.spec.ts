@@ -85,7 +85,7 @@ test.describe('M10 · class participation', () => {
     const dialog = page.getByTestId('class-dialog')
     await dialog.getByLabel('Título de la clase').fill('Clase 4: prototipos')
     await dialog
-      .getByLabel('Consigna de la primera diapositiva')
+      .getByLabel('Pregunta de la primera diapositiva (opcional)')
       .fill('¿Qué probaste?')
     await dialog.getByRole('button', { name: 'Crear clase' }).click()
 
