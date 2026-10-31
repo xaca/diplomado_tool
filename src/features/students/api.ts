@@ -21,6 +21,7 @@ import {
   type StudentInput,
 } from '@/model'
 import type { PreviewItem } from '@/features/students/import'
+import { deleteSlideExtras } from '@/features/slides/api'
 
 export const studentsCollection = (boardId: string) =>
   collection(db, paths.students(boardId))
@@ -140,6 +141,8 @@ async function deleteSlides(
     getDocs(collection(db, paths.notes(boardId, studentId))),
   ])
   for (const item of [...slides.docs, ...notes.docs]) batch.delete(item.ref)
+  for (const slide of slides.docs)
+    deleteSlideExtras(batch, boardId, studentId, slide.id)
 }
 
 /**

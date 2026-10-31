@@ -543,5 +543,27 @@
     "elapsed": "Tiempo",
     "projected": "En pantalla",
     "noSlide": "Sin diapositiva"
+  },
+  "teacherEdits": {
+    "edited": "Editada por el docente",
+    "editedAgo": "Editada por el docente {{when}}",
+    "editSlide": "Editar diapositiva",
+    "editing": "Editando la diapositiva de {{name}}",
+    "held": "{{name}} está editando esta diapositiva. Podrás editarla cuando termine.",
+    "heldTeacher": "{{name}} (docente)",
+    "leaveNote": "Dejar una nota",
+    "noteHint": "Cambiaste esta diapositiva. ¿Le dejas una nota a {{name}} explicando el cambio?",
+    "notePrefill": "Hice estos cambios: ",
+    "compare": "Comparar",
+    "compareTitle": "Tu versión y la del docente",
+    "yours": "Tu versión",
+    "teachers": "Versión del docente (actual)",
+    "restore": "Restaurar mi versión",
+    "restored": "Volviste a tu versión",
+    "undo": "Deshacer",
+    "undone": "Volviste a la versión del docente",
+    "badge": "Docente",
+    "badgeHint": "Tu docente hizo cambios en tus diapositivas",
+    "present": "Editar esta diapositiva"
   }
 }

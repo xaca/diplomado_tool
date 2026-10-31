@@ -11,6 +11,7 @@ import {
   MessageSquareText,
   Minimize,
   MonitorUp,
+  PencilLine,
   Users,
   X,
 } from 'lucide-react'
@@ -641,6 +642,23 @@ export function PresenterPage() {
             >
               <MessageSquareText />
             </Button>
+            {slide && space && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className={controlButton}
+                aria-label={t('teacherEdits.present')}
+                title={t('teacherEdits.present')}
+                onClick={() => {
+                  if (document.fullscreenElement) void document.exitFullscreen()
+                  void navigate(
+                    `/b/${boardId}/s/${space.id}/edit?slide=${slide.id}`,
+                  )
+                }}
+              >
+                <PencilLine />
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"

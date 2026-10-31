@@ -543,5 +543,27 @@
     "elapsed": "Time",
     "projected": "On screen",
     "noSlide": "No slide"
+  },
+  "teacherEdits": {
+    "edited": "Edited by the teacher",
+    "editedAgo": "Edited by the teacher {{when}}",
+    "editSlide": "Edit slide",
+    "editing": "Editing {{name}}’s slide",
+    "held": "{{name}} is editing this slide. You can edit it when they finish.",
+    "heldTeacher": "{{name}} (teacher)",
+    "leaveNote": "Leave a note",
+    "noteHint": "You changed this slide. Leave {{name}} a note explaining the change?",
+    "notePrefill": "I made these changes: ",
+    "compare": "Compare",
+    "compareTitle": "Your version and the teacher’s",
+    "yours": "Your version",
+    "teachers": "Teacher’s version (current)",
+    "restore": "Restore my version",
+    "restored": "Back to your version",
+    "undo": "Undo",
+    "undone": "Back to the teacher’s version",
+    "badge": "Teacher",
+    "badgeHint": "Your teacher changed your slides",
+    "present": "Edit this slide"
   }
 }

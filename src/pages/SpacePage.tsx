@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, Pencil, Play, Presentation } from 'lucide-react'
+import { ArrowLeft, Pencil, PencilLine, Play, Presentation } from 'lucide-react'
 import { toast } from 'sonner'
 import { doc } from 'firebase/firestore'
 import { Button } from '@/components/ui/button'
@@ -10,7 +10,9 @@ import { useBoard } from '@/features/boards/hooks'
 import { SlideNotes } from '@/features/notes/components/SlideNotes'
 import { useNotes } from '@/features/notes/hooks'
 import { isWritable, lifecycleOf } from '@/features/boards/lifecycle'
+import { markTeacherEditsSeen } from '@/features/slides/api'
 import { SlidePreview } from '@/features/slides/components/SlidePreview'
+import { TeacherEditBadge } from '@/features/slides/components/TeacherEditBadge'
 import { useSlides } from '@/features/slides/hooks'
 import { SpaceProfileDialog } from '@/features/spaces/components/SpaceProfileDialog'
 import { useMyStudentId } from '@/features/spaces/hooks'
@@ -18,6 +20,7 @@ import { setSpaceStage } from '@/features/stages/api'
 import { StageAvatar } from '@/features/stages/components/StageAvatar'
 import { StagePicker } from '@/features/stages/components/StagePicker'
 import { boardStages, findStage } from '@/features/stages/stages'
+import { normalizeEmail } from '@/lib/collections'
 import { db } from '@/lib/firebase'
 import { useLiveDoc } from '@/lib/firestore-hooks'
 import { IMAGE_SIZES, imageUrl } from '@/lib/cloudinary'
@@ -29,7 +32,7 @@ import { isTeacherRole, useAuth } from '@/providers/auth-context'
 export function SpacePage() {
   const { t, i18n } = useTranslation()
   const { boardId, studentId } = useParams()
-  const { role } = useAuth()
+  const { role, user } = useAuth()
   const board = useBoard(boardId)
   const me = useMyStudentId(boardId)
   const ref =
@@ -39,6 +42,16 @@ export function SpacePage() {
   const [editing, setEditing] = useState(false)
   const isMine = !!me.studentId && me.studentId === studentId
   const teacher = isTeacherRole(role)
+  // M15: the board's teacher may edit the student's slides
+  const isBoardTeacher =
+    teacher &&
+    !!board.data?.teacherEmails.includes(normalizeEmail(user?.email ?? ''))
+  // The student looked at their slides: the card's "✎ Docente" badge goes away
+  const unseen = isMine && !!space.data?.teacherEditsUnseen
+  useEffect(() => {
+    if (unseen && boardId && studentId)
+      void markTeacherEditsSeen(boardId, studentId).catch(() => undefined)
+  }, [unseen, boardId, studentId])
   // The teacher's annotations: private to the teacher and the owner
   const notes = useNotes(boardId, studentId, teacher || isMine)
 
@@ -195,6 +208,30 @@ export function SpacePage() {
                 large
                 className="rounded-xl border shadow-sm"
               />
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <TeacherEditBadge
+                  boardId={boardId}
+                  studentId={spaceId}
+                  slide={slide}
+                  canRestore={isMine && writable}
+                />
+                {isBoardTeacher && writable && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="ml-auto"
+                    nativeButton={false}
+                    render={
+                      <Link
+                        to={`/b/${boardId}/s/${spaceId}/edit?slide=${slide.id}`}
+                      />
+                    }
+                  >
+                    <PencilLine />
+                    {t('teacherEdits.editSlide')}
+                  </Button>
+                )}
+              </div>
               {(teacher || isMine) && (
                 <SlideNotes
                   boardId={boardId}

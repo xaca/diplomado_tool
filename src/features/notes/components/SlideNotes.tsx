@@ -31,6 +31,9 @@ type Props = {
   className?: string
   /** Presenter (M13): Enter saves, Shift+Enter new line */
   enterToSave?: boolean
+  /** M15: open the form pre-filled (after the teacher changed the slide) */
+  draft?: string
+  onAdded?: () => void
 }
 
 /** The teacher's annotations on one slide. Renders nothing for the student when there are none. */
@@ -43,9 +46,11 @@ export function SlideNotes({
   teacherProfiles,
   className,
   enterToSave = false,
+  draft,
+  onAdded,
 }: Props) {
   const { t } = useTranslation()
-  const [adding, setAdding] = useState(false)
+  const [adding, setAdding] = useState(draft !== undefined)
 
   if (!canWrite && notes.length === 0) return null
 
@@ -81,12 +86,17 @@ export function SlideNotes({
       {canWrite &&
         (adding ? (
           <NoteForm
+            initial={draft}
             submitLabel={t('notes.add')}
             enterToSave={enterToSave}
-            onCancel={() => setAdding(false)}
+            onCancel={() => {
+              setAdding(false)
+              onAdded?.()
+            }}
             onSubmit={async (text, author) => {
               await addNote(boardId, studentId, slideId, author, text)
               setAdding(false)
+              onAdded?.()
             }}
           />
         ) : (

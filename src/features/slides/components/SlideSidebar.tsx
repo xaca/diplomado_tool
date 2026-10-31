@@ -20,6 +20,7 @@ import { Copy, GripVertical, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SlidePreview } from '@/features/slides/components/SlidePreview'
 import type { Slide } from '@/features/slides/api'
+import { editedByTeacher } from '@/features/slides/teacher-edits'
 import { cn } from '@/lib/utils'
 import { MAX_SLIDES } from '@/model'
 
@@ -32,6 +33,8 @@ type Props = {
   onDuplicate: (slide: Slide) => void
   onDelete: (slide: Slide) => void
   onReorder: (order: string[]) => void
+  /** M15: the teacher edits and adds slides, but reordering and deleting stay with the student */
+  manage?: boolean
 }
 
 /** Slide list of the editor: select, add, duplicate, delete, drag (or keyboard) to reorder. */
@@ -44,6 +47,7 @@ export function SlideSidebar({
   onDuplicate,
   onDelete,
   onReorder,
+  manage = true,
 }: Props) {
   const { t } = useTranslation()
   const sensors = useSensors(
@@ -57,7 +61,7 @@ export function SlideSidebar({
   const full = slides.length >= MAX_SLIDES
 
   function onDragEnd({ active, over }: DragEndEvent) {
-    if (!over || active.id === over.id) return
+    if (!manage || !over || active.id === over.id) return
     onReorder(
       arrayMove(
         ids,
@@ -87,6 +91,7 @@ export function SlideSidebar({
                 selected={slide.id === currentId}
                 busy={busy}
                 full={full}
+                manage={manage}
                 onSelect={onSelect}
                 onDuplicate={onDuplicate}
                 onDelete={onDelete}
@@ -115,6 +120,7 @@ function SortableSlide({
   selected,
   busy,
   full,
+  manage,
   onSelect,
   onDuplicate,
   onDelete,
@@ -124,6 +130,7 @@ function SortableSlide({
   selected: boolean
   busy: boolean
   full: boolean
+  manage: boolean
 } & Pick<Props, 'onSelect' | 'onDuplicate' | 'onDelete'>) {
   const { t } = useTranslation()
   const {
@@ -160,33 +167,50 @@ function SortableSlide({
         <SlidePreview slide={slide} />
       </button>
       <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-        <span
-          className="cursor-grab touch-none rounded p-0.5 hover:bg-muted"
-          aria-label={t('slides.drag', { number: index + 1 })}
-          {...attributes}
-          {...listeners}
-        >
-          <GripVertical className="size-3.5" />
+        {manage && (
+          <span
+            className="cursor-grab touch-none rounded p-0.5 hover:bg-muted"
+            aria-label={t('slides.drag', { number: index + 1 })}
+            {...attributes}
+            {...listeners}
+          >
+            <GripVertical className="size-3.5" />
+          </span>
+        )}
+        <span className="flex-1">
+          {index + 1}
+          {editedByTeacher(slide) && (
+            <span
+              className="ml-1 text-amber-700"
+              title={t('teacherEdits.edited')}
+              data-testid="slide-teacher-edited"
+            >
+              ✎
+            </span>
+          )}
         </span>
-        <span className="flex-1">{index + 1}</span>
-        <Button
-          variant="ghost"
-          size="icon-xs"
-          disabled={busy || full}
-          aria-label={t('slides.duplicate', { number: index + 1 })}
-          onClick={() => onDuplicate(slide)}
-        >
-          <Copy />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon-xs"
-          disabled={busy}
-          aria-label={t('slides.delete', { number: index + 1 })}
-          onClick={() => onDelete(slide)}
-        >
-          <Trash2 />
-        </Button>
+        {manage && (
+          <>
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              disabled={busy || full}
+              aria-label={t('slides.duplicate', { number: index + 1 })}
+              onClick={() => onDuplicate(slide)}
+            >
+              <Copy />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              disabled={busy}
+              aria-label={t('slides.delete', { number: index + 1 })}
+              onClick={() => onDelete(slide)}
+            >
+              <Trash2 />
+            </Button>
+          </>
+        )}
       </div>
     </li>
   )

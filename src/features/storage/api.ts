@@ -20,6 +20,7 @@ import {
   type SlideDoc,
   type SpaceDoc,
   type StudentDoc,
+  VERSION_KINDS,
 } from '@/model'
 import { resolveLook } from '@/features/boards/look'
 
@@ -119,12 +120,28 @@ export async function loadBoardData(boardId: string): Promise<BoardData> {
       ...spaces.docs.map((space) => (space.data() as SpaceDoc).cover),
       boardData.logo,
     ],
+    // images of the kept versions (M15) count too: a restore must find them
     slideAssetIds: slides.flatMap((snapshot) =>
-      snapshot.docs.map((slide) => (slide.data() as SlideDoc).assetIds ?? []),
+      snapshot.docs.map((slide) => {
+        const data = slide.data() as SlideDoc
+        return [...(data.assetIds ?? []), ...(data.versionAssetIds ?? [])]
+      }),
     ),
     refs: [
       ...[...slides, ...notes].flatMap((snapshot) =>
         snapshot.docs.map((d) => d.ref),
+      ),
+      // kept versions and edit locks (M15), whether they exist or not
+      ...slides.flatMap((snapshot, index) =>
+        snapshot.docs.flatMap((slide) => [
+          ...VERSION_KINDS.map((kind) =>
+            doc(
+              db,
+              paths.version(boardId, spaces.docs[index].id, slide.id, kind),
+            ),
+          ),
+          doc(db, paths.lock(boardId, spaces.docs[index].id, slide.id)),
+        ]),
       ),
       ...spaces.docs.map((d) => d.ref),
       ...members.docs.map((d) => d.ref),

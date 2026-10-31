@@ -21,6 +21,7 @@ import type {
 } from '@excalidraw/excalidraw/types'
 import { logUploadFailure, uploadImage } from '@/features/assets/upload'
 import { saveSlide, type Slide } from '@/features/slides/api'
+import { needsStudentSnapshot } from '@/features/slides/teacher-edits'
 import {
   createAutosave,
   type SaveStatus,
@@ -61,6 +62,8 @@ type Props = {
   onSize?: (bytes: number) => void
   /** An image could not be uploaded (it is removed from the slide) */
   onImageError: (error: unknown) => void
+  /** M15: the board's teacher editing a student's slide (their first save keeps the student's version) */
+  editor?: 'student' | 'teacher'
   ref?: Ref<SlideCanvasHandle>
 }
 
@@ -75,9 +78,13 @@ export default function SlideCanvas({
   onStatus,
   onSize,
   onImageError,
+  editor = 'student',
   ref,
 }: Props) {
   const slideId = slide.id
+  // The slide as stored when the editor opened it, and whether the student's version was kept
+  const [opened] = useState(slide)
+  const studentKept = useRef(false)
   const api = useRef<ExcalidrawImperativeAPI | null>(null)
   const known = useRef(new Map(Object.entries(slide.files ?? {})))
   const uploads = useRef(new Map<string, Promise<ImageRef | null>>())
@@ -134,6 +141,11 @@ export default function SlideCanvas({
         const { content, bytes } = serializeScene(kept, background)
         callbacks.current.onSize?.(bytes)
         if (bytes > MAX_SLIDE_BYTES) throw new SlideTooLargeError()
+        const keep =
+          editor === 'teacher' &&
+          needsStudentSnapshot(opened, studentKept.current)
+            ? opened
+            : undefined
         await saveSlide(
           boardId,
           studentId,
@@ -142,7 +154,11 @@ export default function SlideCanvas({
           bytes,
           files,
           (error) => callbacks.current.onStatus('error', error),
+          editor === 'teacher'
+            ? { role: 'teacher', keep }
+            : { role: 'student' },
         )
+        if (editor === 'teacher') studentKept.current = true
       },
       onStatus: (status, error) => callbacks.current.onStatus(status, error),
     })
@@ -165,7 +181,7 @@ export default function SlideCanvas({
       void scheduler.flush().finally(() => scheduler.dispose())
       autosave.current = null
     }
-  }, [boardId, studentId, slideId])
+  }, [boardId, studentId, slideId, editor, opened])
 
   /** Zooms so the whole 16:9 slide fits the canvas (false while Excalidraw isn't ready yet). */
   function fitSlide() {

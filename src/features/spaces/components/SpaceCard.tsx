@@ -91,6 +91,15 @@ export function SpaceCard({
           </p>
           <p className="text-xs text-neutral-500">{updated}</p>
         </div>
+        {space.teacherEditsUnseen && (isMine || canPresent) && (
+          <Badge
+            className="bg-amber-100 text-amber-900"
+            title={t('teacherEdits.badgeHint')}
+            data-testid="teacher-edits-badge"
+          >
+            ✎ {t('teacherEdits.badge')}
+          </Badge>
+        )}
         {isMine && <Badge variant="secondary">{t('space.mine')}</Badge>}
       </header>
 
