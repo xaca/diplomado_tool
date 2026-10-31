@@ -60,6 +60,15 @@ export const paths = {
     `${COLLECTIONS.boards}/${boardId}/attendanceByStudent`,
   attendanceSummary: (boardId: string, studentId: string) =>
     `${COLLECTIONS.boards}/${boardId}/attendanceByStudent/${studentId}`,
+  /** M19: the teacher's announcements, and each member's read / removed state (doc id = uid) */
+  announcements: (boardId: string) =>
+    `${COLLECTIONS.boards}/${boardId}/announcements`,
+  announcement: (boardId: string, id: string) =>
+    `${COLLECTIONS.boards}/${boardId}/announcements/${id}`,
+  announcementStates: (boardId: string) =>
+    `${COLLECTIONS.boards}/${boardId}/announcementState`,
+  announcementState: (boardId: string, uid: string) =>
+    `${COLLECTIONS.boards}/${boardId}/announcementState/${uid}`,
   joinCode: (code: string) => `${COLLECTIONS.joinCodes}/${code}`,
 }
 
@@ -157,6 +166,47 @@ export const clockInputSchema = z.object({
   instructions: z.string().trim().max(300),
   minutes: z.number().min(1).max(180),
 })
+
+// ---------- announcements (M19) ----------
+
+/** announcements/{id}: written by the board's teacher; members read them */
+export type AnnouncementDoc = {
+  title: string
+  body: string
+  /** '' = none; an https address or an app path ("/b/…") */
+  link: string
+  /** Opens as a window for students (otherwise only the 🔔) */
+  important: boolean
+  authorEmail: string
+  authorName: string
+  createdAt: unknown
+  updatedAt: unknown
+  /** = createdAt, or the last "Recordar": newer than a student's read / removed → new again */
+  remindedAt: unknown
+}
+
+/** announcementState/{uid}: when I read / removed each announcement (mine only) */
+export type AnnouncementStateDoc = {
+  read: Record<string, unknown>
+  removed: Record<string, unknown>
+  updatedAt: unknown
+}
+
+export const announcementInputSchema = z.object({
+  title: z.string().trim().min(1).max(80),
+  body: z.string().trim().max(500),
+  link: z
+    .string()
+    .trim()
+    .max(500)
+    .refine(
+      (link) =>
+        link === '' || /^https:\/\/\S+$/.test(link) || /^\/\S*$/.test(link),
+      'https or an app path',
+    ),
+  important: z.boolean(),
+})
+export type AnnouncementInput = z.infer<typeof announcementInputSchema>
 
 // ---------- attendance (M18) ----------
 

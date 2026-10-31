@@ -2098,3 +2098,134 @@ describe('status message, decorations and board styles (M21)', () => {
     )
   })
 })
+
+describe('announcements (M19)', () => {
+  const SEB = { uid: 'seb', email: 'seb@gmail.com' }
+  const news = (db: Firestore, id = 'a1') =>
+    doc(db, 'boards', BOARD, 'announcements', id)
+  const state = (db: Firestore, uid: string) =>
+    doc(db, 'boards', BOARD, 'announcementState', uid)
+  const announcement = (overrides: Record<string, unknown> = {}) => ({
+    title: 'Mañana traigan su prototipo',
+    body: 'En papel o digital.',
+    link: '',
+    important: true,
+    authorEmail: TEACHER.email,
+    authorName: 'Docente',
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    remindedAt: serverTimestamp(),
+    ...overrides,
+  })
+  const mine = (read: Record<string, unknown> = {}) => ({
+    read,
+    removed: {},
+    updatedAt: serverTimestamp(),
+  })
+
+  /** Laura and Seb joined; the teacher announced a1 */
+  async function withNews() {
+    await seed()
+    await autoJoin(as(LAURA), LAURA, 'st_laura')
+    await env.withSecurityRulesDisabled(async (context) => {
+      const db = context.firestore() as unknown as Firestore
+      await setDoc(
+        doc(db, 'boards', BOARD, 'students', 'st_seb'),
+        student([SEB.email]),
+      )
+      await setDoc(doc(db, 'boards', BOARD, 'studentEmails', SEB.email), {
+        email: SEB.email,
+        studentId: 'st_seb',
+      })
+      const now = Timestamp.now()
+      await setDoc(
+        news(db),
+        announcement({ createdAt: now, updatedAt: now, remindedAt: now }),
+      )
+    })
+    await autoJoin(as(SEB), SEB, 'st_seb')
+  }
+
+  it('the board teacher announces, edits, reminds and deletes; the content is checked', async () => {
+    await seed()
+    const db = as(TEACHER)
+    await assertSucceeds(
+      setDoc(news(db, 'a2'), announcement({ link: '/b/board1' })),
+    )
+    await assertSucceeds(
+      updateDoc(news(db, 'a2'), {
+        body: 'Corregido',
+        updatedAt: serverTimestamp(),
+      }),
+    )
+    await assertSucceeds(
+      updateDoc(news(db, 'a2'), {
+        remindedAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      }),
+    )
+    await assertFails(
+      updateDoc(news(db, 'a2'), {
+        createdAt: Timestamp.now(),
+        updatedAt: serverTimestamp(),
+      }),
+    )
+    for (const bad of [
+      { title: '' },
+      { title: 'x'.repeat(81) },
+      { body: 'x'.repeat(501) },
+      { link: 'javascript:alert(1)' },
+      { link: 'http://insecure.example' },
+      { important: 'yes' },
+      { authorEmail: OTHER_TEACHER.email },
+      { remindedAt: Timestamp.fromMillis(0) },
+    ])
+      await assertFails(setDoc(news(db, 'bad'), announcement(bad)))
+    await assertSucceeds(deleteDoc(news(db, 'a2')))
+  })
+
+  it('members read announcements but never write them; outsiders and other teachers see nothing', async () => {
+    await withNews()
+    await assertSucceeds(getDoc(news(as(LAURA))))
+    await assertSucceeds(
+      getDocs(collection(as(SEB), 'boards', BOARD, 'announcements')),
+    )
+    await assertFails(
+      setDoc(news(as(LAURA), 'x'), announcement({ authorEmail: LAURA.email })),
+    )
+    await assertFails(
+      updateDoc(news(as(LAURA)), {
+        title: 'hack',
+        updatedAt: serverTimestamp(),
+      }),
+    )
+    await assertFails(deleteDoc(news(as(LAURA))))
+    await assertFails(getDoc(news(as(STRANGER))))
+    await assertFails(
+      setDoc(
+        news(as(OTHER_TEACHER), 'x'),
+        announcement({ authorEmail: OTHER_TEACHER.email }),
+      ),
+    )
+  })
+
+  it('each member keeps only their own read / removed state; the teacher reads them all', async () => {
+    await withNews()
+    await assertSucceeds(
+      setDoc(state(as(LAURA), LAURA.uid), mine({ a1: serverTimestamp() })),
+    )
+    await assertSucceeds(getDoc(state(as(LAURA), LAURA.uid)))
+    await assertFails(getDoc(state(as(SEB), LAURA.uid)))
+    await assertFails(setDoc(state(as(SEB), LAURA.uid), mine()))
+    await assertFails(
+      setDoc(state(as(LAURA), LAURA.uid), { ...mine(), extra: 1 }),
+    )
+    await assertFails(setDoc(state(as(STRANGER), STRANGER.uid), mine()))
+    await assertSucceeds(
+      getDocs(collection(as(TEACHER), 'boards', BOARD, 'announcementState')),
+    )
+    await assertFails(
+      getDocs(collection(as(LAURA), 'boards', BOARD, 'announcementState')),
+    )
+  })
+})

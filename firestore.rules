@@ -630,6 +630,49 @@ service cloud.firestore {
         }
       }
 
+      // ---------- announcements (M19): the teacher announces, members read ----------
+
+      // Keep in sync with announcementInputSchema in src/model/index.ts
+      function validAnnouncement() {
+        let data = request.resource.data;
+        return data.keys().hasOnly(['title', 'body', 'link', 'important', 'authorEmail', 'authorName',
+            'createdAt', 'updatedAt', 'remindedAt'])
+          && isString(data.title, 1, 80)
+          && isString(data.body, 0, 500)
+          && isString(data.link, 0, 500)
+          && (data.link == '' || data.link.matches('https://[^ ]+') || data.link.matches('/[^ ]*'))
+          && data.important is bool
+          && data.authorEmail == myEmail()
+          && isString(data.authorName, 1, 200)
+          && data.createdAt is timestamp
+          && data.updatedAt == request.time;
+      }
+
+      match /announcements/{announcementId} {
+        allow read: if isBoardTeacher(boardId) || isMember(boardId);
+        allow create: if isBoardTeacher(boardId) && validAnnouncement()
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.remindedAt == request.time;
+        // Edit keeps the dates; "Recordar" moves remindedAt to now
+        allow update: if isBoardTeacher(boardId) && validAnnouncement()
+          && request.resource.data.createdAt == resource.data.createdAt
+          && (request.resource.data.remindedAt == resource.data.remindedAt
+            || request.resource.data.remindedAt == request.time);
+        allow delete: if isBoardTeacher(boardId);
+      }
+
+      // Each member's own read / removed state; the teacher reads them all (read counts)
+      match /announcementState/{uid} {
+        allow get: if isBoardTeacher(boardId) || (isMember(boardId) && request.auth.uid == uid);
+        allow list: if isBoardTeacher(boardId);
+        allow create, update: if isMember(boardId) && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['read', 'removed', 'updatedAt'])
+          && request.resource.data.read is map && request.resource.data.read.size() <= 200
+          && request.resource.data.removed is map && request.resource.data.removed.size() <= 200
+          && request.resource.data.updatedAt == request.time;
+        allow delete: if isBoardTeacher(boardId) || (signedIn() && request.auth.uid == uid);
+      }
+
       // ---------- attendance (M18): one record per class date, teacher only ----------
 
       // Keep the date pattern in sync with ATTENDANCE_DATE in src/model/index.ts
