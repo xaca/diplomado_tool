@@ -12,10 +12,11 @@ import {
   updateNote,
   type Note,
 } from '@/features/notes/api'
+import { StageAvatar } from '@/features/stages/components/StageAvatar'
 import { normalizeEmail } from '@/lib/collections'
 import { formatRelative, toDate } from '@/lib/time'
 import { cn } from '@/lib/utils'
-import { MAX_NOTE_LENGTH, noteTextSchema } from '@/model'
+import { MAX_NOTE_LENGTH, noteTextSchema, type TeacherProfile } from '@/model'
 import { useAuth } from '@/providers/auth-context'
 
 type Props = {
@@ -25,7 +26,11 @@ type Props = {
   notes: Note[]
   /** The board's teacher writes; the student only reads */
   canWrite: boolean
+  /** Teachers' names and photos (board.teacherProfiles, M12) for the #DOCENTE avatar */
+  teacherProfiles?: Record<string, TeacherProfile>
   className?: string
+  /** Presenter (M13): Enter saves, Shift+Enter new line */
+  enterToSave?: boolean
 }
 
 /** The teacher's annotations on one slide. Renders nothing for the student when there are none. */
@@ -35,7 +40,9 @@ export function SlideNotes({
   slideId,
   notes,
   canWrite,
+  teacherProfiles,
   className,
+  enterToSave = false,
 }: Props) {
   const { t } = useTranslation()
   const [adding, setAdding] = useState(false)
@@ -66,6 +73,8 @@ export function SlideNotes({
           studentId={studentId}
           note={note}
           canWrite={canWrite}
+          photoURL={teacherProfiles?.[note.authorEmail]?.photoURL ?? null}
+          enterToSave={enterToSave}
         />
       ))}
 
@@ -73,6 +82,7 @@ export function SlideNotes({
         (adding ? (
           <NoteForm
             submitLabel={t('notes.add')}
+            enterToSave={enterToSave}
             onCancel={() => setAdding(false)}
             onSubmit={async (text, author) => {
               await addNote(boardId, studentId, slideId, author, text)
@@ -98,11 +108,15 @@ function NoteItem({
   studentId,
   note,
   canWrite,
+  photoURL,
+  enterToSave,
 }: {
   boardId: string
   studentId: string
   note: Note
   canWrite: boolean
+  photoURL: string | null
+  enterToSave: boolean
 }) {
   const { t, i18n } = useTranslation()
   const [editing, setEditing] = useState(false)
@@ -112,6 +126,7 @@ function NoteItem({
       <NoteForm
         initial={note.text}
         submitLabel={t('common.save')}
+        enterToSave={enterToSave}
         onCancel={() => setEditing(false)}
         onSubmit={async (text) => {
           await updateNote(boardId, studentId, note.id, text)
@@ -130,6 +145,12 @@ function NoteItem({
       data-testid="note"
     >
       <header className="mb-1 flex items-center gap-2 text-xs text-neutral-500">
+        <StageAvatar
+          name={note.authorName}
+          photoURL={photoURL}
+          teacher
+          size={22}
+        />
         <span className="font-medium text-neutral-700">{note.authorName}</span>
         <span>
           {formatRelative(
@@ -173,9 +194,11 @@ function NoteForm({
   submitLabel,
   onSubmit,
   onCancel,
+  enterToSave = false,
 }: {
   initial?: string
   submitLabel: string
+  enterToSave?: boolean
   onSubmit: (
     text: string,
     author: { email: string; name: string },
@@ -189,9 +212,9 @@ function NoteForm({
   const [saving, setSaving] = useState(false)
   const valid = noteTextSchema.safeParse(text).success
 
-  async function submit(event: React.FormEvent) {
-    event.preventDefault()
-    if (!user || !valid) return
+  async function submit(event?: React.FormEvent) {
+    event?.preventDefault()
+    if (!user || !valid || saving) return
     setSaving(true)
     try {
       await onSubmit(text, {
@@ -215,6 +238,13 @@ function NoteForm({
         placeholder={t('notes.placeholder')}
         className="bg-white"
         onChange={(event) => setText(event.target.value)}
+        onKeyDown={(event) => {
+          if (enterToSave && event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault()
+            void submit()
+          }
+          if (event.key === 'Escape') onCancel()
+        }}
         autoFocus
       />
       <div className="flex justify-end gap-2">
