@@ -1,5 +1,5 @@
 import { AppCheckError, AuthError, bearerToken, type Caller } from './auth';
-import { cloudinarySecret, signParams, uploadParams } from './cloudinary';
+import { avatarParams, avatarPublicId, cloudinarySecret, signParams, uploadParams } from './cloudinary';
 import { CloudinaryError, type CloudinaryAdmin } from './cloudinary-admin';
 import { PermissionError, type FirestoreDoc, type FirestoreReader } from './firestore';
 
@@ -97,6 +97,20 @@ async function assertCanUpload(caller: Caller, boardId: string, studentId: strin
 	});
 }
 
+/**
+ * May this user have an uploaded profile photo (M11)? Teachers, or a member of the board they name
+ * (any board, even archived: the photo belongs to the person). Stops random Google accounts.
+ */
+async function assertCanUploadAvatar(caller: Caller, boardId: unknown, deps: Deps) {
+	await asCaller(async () => {
+		const staff = await deps.readDoc(`staffEmails/${caller.email}`, caller.token, caller.appCheck);
+		if (staff) return;
+		if (typeof boardId !== 'string' || !ID_PATTERN.test(boardId)) throw new HttpError(403, 'not in any board');
+		const member = await deps.readDoc(`boards/${boardId}/members/${caller.uid}`, caller.token, caller.appCheck);
+		if (!member) throw new HttpError(403, 'not in any board');
+	});
+}
+
 /** The caller must be one of the board's teachers. Returns the board. */
 async function assertBoardTeacher(caller: Caller, boardId: string, deps: Deps) {
 	const board = await asCaller(() => deps.readDoc(`boards/${boardId}`, caller.token, caller.appCheck));
@@ -151,7 +165,21 @@ const routes: Record<string, Handler> = {
 
 	'POST /uploads/sign': async (request, env, deps) => {
 		const caller = await authenticate(request, env, deps);
-		const body = (await request.json().catch(() => null)) as { boardId?: unknown; studentId?: unknown } | null;
+		const body = (await request.json().catch(() => null)) as { boardId?: unknown; studentId?: unknown; scope?: unknown } | null;
+
+		if (body?.scope === 'avatar') {
+			if (!ID_PATTERN.test(caller.uid)) throw new HttpError(400, 'invalid uid');
+			await assertCanUploadAvatar(caller, body.boardId, deps);
+			const params = avatarParams({ env: environmentOf(request), uid: caller.uid, timestamp: Math.floor(deps.now() / 1000) });
+			return json({
+				assetId: 'avatar',
+				cloudName: env.CLOUDINARY_CLOUD_NAME,
+				apiKey: env.CLOUDINARY_API_KEY,
+				params,
+				signature: await signParams(params, cloudinarySecret(env)),
+			});
+		}
+
 		const boardId = typeof body?.boardId === 'string' ? body.boardId : '';
 		const studentId = typeof body?.studentId === 'string' ? body.studentId : '';
 		if (!ID_PATTERN.test(boardId) || !ID_PATTERN.test(studentId)) throw new HttpError(400, 'invalid boardId or studentId');
@@ -230,6 +258,15 @@ const routes: Record<string, Handler> = {
 			}
 		}
 		return json({ deleted, complete: true });
+	},
+
+	/** "Quitar foto" (M11): deletes my own profile photo, in both environment folders. */
+	'POST /avatar/delete': async (request, env, deps) => {
+		const caller = await authenticate(request, env, deps);
+		if (!ID_PATTERN.test(caller.uid)) throw new HttpError(400, 'invalid uid');
+		const ids = [avatarPublicId('prod', caller.uid), avatarPublicId('dev', caller.uid)];
+		const deleted = await cloudinaryCall(() => deps.cloudinary.deleteByIds(ids));
+		return json({ deleted: ids.some((id) => deleted[id] === 'deleted') });
 	},
 
 	/** Cloudinary credits used this month (teacher dashboard meter). Any teacher. */

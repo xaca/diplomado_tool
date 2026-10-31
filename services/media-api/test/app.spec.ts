@@ -352,6 +352,40 @@ describe('GET /usage', () => {
 	});
 });
 
+describe('profile photos (M11)', () => {
+	it('signs one fixed, overwritable file per person for a board member', async () => {
+		const response = await handle(sign({ scope: 'avatar', boardId: BOARD }), env, deps(joinedLaura));
+		expect(response.status).toBe(200);
+		const body = (await response.json()) as { assetId: string; params: Record<string, string>; signature: string };
+		expect(body.assetId).toBe('avatar');
+		expect(body.params.public_id).toBe(`pbl/dev/users/${LAURA.uid}/avatar`);
+		expect(body.params.overwrite).toBe('true');
+		expect(body.signature).toBe(await signParams(body.params, env.CLOUDINARY_API_SECRET));
+		// the deployed app uploads to the prod folder
+		const prod = await handle(sign({ scope: 'avatar', boardId: BOARD }, { origin: 'https://diplomado-fc679.web.app' }), env, deps(joinedLaura));
+		expect(((await prod.json()) as { params: Record<string, string> }).params.public_id).toBe(`pbl/prod/users/${LAURA.uid}/avatar`);
+	});
+
+	it('teachers sign without naming a board; strangers are refused', async () => {
+		const staff: Docs = { [`staffEmails/${TEACHER.email}`]: { role: 'teacher' } };
+		expect((await handle(sign({ scope: 'avatar' }, { token: TEACHER.token }), env, deps(staff))).status).toBe(200);
+		// a Google account in no board
+		expect((await handle(sign({ scope: 'avatar' }), env, deps({}))).status).toBe(403);
+		expect((await handle(sign({ scope: 'avatar', boardId: BOARD }), env, deps({}))).status).toBe(403);
+		expect((await handle(sign({ scope: 'avatar', boardId: '../x' }), env, deps(joinedLaura))).status).toBe(403);
+		expect((await handle(sign({ scope: 'avatar', boardId: BOARD }, { token: 'fake' }), env, deps(joinedLaura))).status).toBe(401);
+	});
+
+	it('deletes only my own photo, in both folders', async () => {
+		const calls: CloudinaryCalls = { deleteByIds: [], deleteByPrefix: [], usage: 0 };
+		const response = await handle(post('/avatar/delete', {}, { token: LAURA.token }), env, deps({}, fakeCloudinary(calls)));
+		expect(response.status).toBe(200);
+		expect(await response.json()).toEqual({ deleted: true });
+		expect(calls.deleteByIds).toEqual([[`pbl/prod/users/${LAURA.uid}/avatar`, `pbl/dev/users/${LAURA.uid}/avatar`]]);
+		expect((await handle(post('/avatar/delete', {}, { token: 'fake' }), env, deps({}))).status).toBe(401);
+	});
+});
+
 describe('cloudinary admin client', () => {
 	it('sends Basic auth, repeated public_ids[] and maps the usage report', async () => {
 		const requests: { url: string; method: string; auth: string | null }[] = [];

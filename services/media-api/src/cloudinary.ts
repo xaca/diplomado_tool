@@ -34,3 +34,24 @@ export function uploadParams(input: { env: 'dev' | 'prod'; boardId: string; stud
 		timestamp: input.timestamp,
 	} satisfies UploadParams;
 }
+
+/** Profile photos (M11): already cropped to 512 px in the browser; never stored larger than this. */
+export const AVATAR_TRANSFORMATION = 'c_limit,w_1024,h_1024';
+
+/** One fixed file per person: a new photo overwrites the old one (the version changes, so URLs do too). */
+export function avatarPublicId(env: 'dev' | 'prod', uid: string) {
+	return `pbl/${env}/users/${uid}/avatar`;
+}
+
+export function avatarParams(input: { env: 'dev' | 'prod'; uid: string; timestamp: number }) {
+	return {
+		public_id: avatarPublicId(input.env, input.uid),
+		asset_folder: `pbl/${input.env}/users/${input.uid}`,
+		tags: `user_${input.uid},avatar,env_${input.env}`,
+		allowed_formats: ALLOWED_FORMATS,
+		transformation: AVATAR_TRANSFORMATION,
+		overwrite: 'true',
+		invalidate: 'true',
+		timestamp: input.timestamp,
+	} satisfies UploadParams;
+}
