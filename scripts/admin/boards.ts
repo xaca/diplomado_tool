@@ -52,6 +52,15 @@ export async function loadBoard(boardId: string) {
     ref.collection('studentEmails').get(),
     ref.collection('members').get(),
   ])
+  // M16: polls and their votes go with the board too
+  const polls = await Promise.all(
+    spaces.docs.map((space) => space.ref.collection('polls').get()),
+  )
+  const votes = await Promise.all(
+    polls.flatMap((s) =>
+      s.docs.map((poll) => poll.ref.collection('votes').get()),
+    ),
+  )
   const [slides, notes] = await Promise.all([
     Promise.all(
       spaces.docs.map((space) => space.ref.collection('slides').get()),
@@ -113,7 +122,9 @@ export async function loadBoard(boardId: string) {
     }
   })
   const refs: DocumentReference[] = [
-    ...[...slides, ...notes].flatMap((s) => s.docs.map((doc) => doc.ref)),
+    ...[...slides, ...notes, ...votes, ...polls].flatMap((s) =>
+      s.docs.map((doc) => doc.ref),
+    ),
     // kept versions and edit locks (M15), whether they exist or not
     ...slides.flatMap((s, index) =>
       s.docs.flatMap((slide) => [

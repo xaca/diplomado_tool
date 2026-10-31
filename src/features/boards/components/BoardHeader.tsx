@@ -20,6 +20,8 @@ type Props = {
   actions: ReactNode
   /** Under the title: stage summary, read-only notice… */
   children?: ReactNode
+  /** Sticky offset in px (below the class clock banner, M16) */
+  stickyTop?: number
 }
 
 /**
@@ -38,6 +40,7 @@ export const BoardHeader = forwardRef<HTMLElement, Props>(function BoardHeader(
     compact,
     actions,
     children,
+    stickyTop = 0,
   },
   ref,
 ) {
@@ -61,6 +64,7 @@ export const BoardHeader = forwardRef<HTMLElement, Props>(function BoardHeader(
         sticky
           ? {
               backgroundColor: `color-mix(in srgb, ${backdrop} 88%, transparent)`,
+              top: stickyTop,
             }
           : undefined
       }

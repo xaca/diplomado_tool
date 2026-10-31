@@ -85,3 +85,16 @@ export async function setSpaceCover(
   }
   await batch.commit()
 }
+
+/** The student marks their slides ready to present, or not (M16, F21). */
+export function setReadyToPresent(
+  boardId: string,
+  studentId: string,
+  ready: boolean,
+) {
+  return updateDoc(doc(db, paths.space(boardId, studentId)), {
+    readyToPresent: ready,
+    readyAt: ready ? serverTimestamp() : null,
+    updatedAt: serverTimestamp(),
+  })
+}

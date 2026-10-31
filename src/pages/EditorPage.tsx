@@ -53,6 +53,8 @@ import {
 import { SaveIndicator } from '@/features/slides/components/SaveIndicator'
 import { InsertEmbedDialog } from '@/features/slides/components/InsertEmbedDialog'
 import { SlidePreview } from '@/features/slides/components/SlidePreview'
+import { ClockBanner } from '@/features/clock/components/ClockBanner'
+import { ReadyToggle } from '@/features/spaces/components/ReadyToggle'
 import { linksInText, toEmbedUrl } from '@/features/slides/embeds'
 import { SlideSidebar } from '@/features/slides/components/SlideSidebar'
 import type { SaveStatus } from '@/features/slides/engine/autosave'
@@ -273,6 +275,11 @@ export function EditorPage() {
 
   return (
     <section className="flex h-[calc(100svh-3.5rem)] flex-col">
+      <ClockBanner
+        boardId={boardId}
+        clock={board.data?.clock}
+        teacher={isBoardTeacher}
+      />
       <header className="flex flex-wrap items-center gap-2 border-b px-3 py-2">
         <Link
           to={`/b/${boardId}`}
@@ -293,6 +300,13 @@ export function EditorPage() {
           <Clapperboard />
           {t('embeds.insert')}
         </Button>
+        {isMine && (
+          <ReadyToggle
+            boardId={boardId}
+            studentId={studentId}
+            ready={!!space.data.readyToPresent}
+          />
+        )}
         <SaveIndicator
           status={status.value}
           error={status.error}

@@ -398,7 +398,8 @@
         "body": [
           "De tu cuenta de Google: nombre, correo y foto de perfil. Tu docente también registra tu nombre y tus correos para agregarte al tablero. Si lo eliges, una foto que tú subes.",
           "Lo que publicas: el título y resumen de tu tarjeta, la etapa del proyecto en la que vas, tus diapositivas y las imágenes que subes.",
-          "Datos técnicos de seguridad: Google reCAPTCHA comprueba que las solicitudes vienen de esta aplicación."
+          "Datos técnicos de seguridad: Google reCAPTCHA comprueba que las solicitudes vienen de esta aplicación.",
+          "Tus votos en las encuestas de los espacios: el docente ve quién votó; el autor de la encuesta también, salvo que sea anónima."
         ]
       },
       {
@@ -612,5 +613,71 @@
       "prezi": "Compartir → Compartir enlace público (vista) → Copiar enlace.",
       "padlet": "Compartir → «Insertar en tu blog o sitio web» → copia la dirección que contiene /embed/."
     }
+  },
+  "clock": {
+    "button": "Reloj",
+    "title": "Reloj de la clase",
+    "activity": "Actividad",
+    "break": "Descanso",
+    "label": "Nombre de la actividad",
+    "labelPlaceholder": "Lluvia de ideas",
+    "instructions": "Instrucciones (opcional)",
+    "minutes": "Minutos",
+    "custom": "Otro",
+    "start": "Iniciar",
+    "pause": "Pausar",
+    "resume": "Reanudar",
+    "addMinute": "+1 min",
+    "stop": "Terminar",
+    "focus": "Vista enfocada",
+    "time": "¡Tiempo!",
+    "breakOver": "¡Volvemos!",
+    "paused": "En pausa",
+    "breakLabel": "Descanso",
+    "running": "En curso",
+    "chime": "Sonido al terminar",
+    "none": "No hay reloj activo.",
+    "back": "Volver al tablero",
+    "started": "Reloj iniciado",
+    "remaining": "Tiempo restante"
+  },
+  "ready": {
+    "mark": "Mis diapositivas están listas",
+    "unmark": "Quitar «lista»",
+    "badge": "Lista",
+    "marked": "Marcaste tus diapositivas como listas",
+    "unmarked": "Ya no aparecen como listas",
+    "filters": "Filtrar por avance",
+    "ready": "Listos",
+    "withSlides": "Con diapositivas",
+    "noSlides": "Sin diapositivas",
+    "presentReady": "Presentar listos"
+  },
+  "polls": {
+    "title": "Encuestas",
+    "create": "Crear encuesta",
+    "question": "Pregunta",
+    "questionPlaceholder": "¿Cuál de mis ideas desarrollo?",
+    "options": "Opciones",
+    "option": "Opción {{n}}",
+    "addOption": "Agregar opción",
+    "anonymous": "Anónima (nadie ve quién votó)",
+    "created": "Encuesta creada",
+    "vote": "Votar",
+    "voted": "Tu voto quedó registrado",
+    "changeVote": "Puedes cambiar tu voto mientras esté abierta",
+    "votes_one": "{{count}} voto",
+    "votes_other": "{{count}} votos",
+    "close": "Cerrar",
+    "reopen": "Reabrir",
+    "delete": "Eliminar",
+    "closed": "Cerrada",
+    "open": "Abierta",
+    "by": "Por {{name}}",
+    "voters": "Quién votó",
+    "anonymousTag": "Anónima",
+    "max": "Máximo {{count}} encuestas abiertas por espacio",
+    "presenter": "Encuestas de este estudiante",
+    "none": "Sin encuestas"
   }
 }

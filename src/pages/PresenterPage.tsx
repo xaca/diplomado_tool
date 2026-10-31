@@ -10,6 +10,7 @@ import {
   Maximize,
   MessageSquareText,
   Minimize,
+  BarChart3,
   MonitorUp,
   PencilLine,
   Users,
@@ -28,6 +29,9 @@ import { useBoard } from '@/features/boards/hooks'
 import { useNotes } from '@/features/notes/hooks'
 import { PresenterNotesPanel } from '@/features/presenter/components/PresenterNotesPanel'
 import { SlideOverview } from '@/features/presenter/components/SlideOverview'
+import { PollCard } from '@/features/polls/components/PollCard'
+import { usePolls } from '@/features/polls/hooks'
+import { isWritable, lifecycleOf } from '@/features/boards/lifecycle'
 import {
   formatElapsed,
   isTypingTarget,
@@ -62,25 +66,34 @@ export function PresenterPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { boardId, studentId: param } = useParams()
-  const { role } = useAuth()
+  const { role, user } = useAuth()
   const teacher = isTeacherRole(role)
   // "Vista del docente" (M13): a second window with the notes and the next slide
   const [searchParams] = useSearchParams()
   const consoleView = teacher && searchParams.get('view') === 'console'
-  const search = consoleView ? '?view=console' : ''
+  const search = consoleView
+    ? '?view=console'
+    : searchParams.get('ready') === '1'
+      ? '?ready=1'
+      : ''
   const board = useBoard(boardId)
   const me = useMyStudentId(boardId)
   // Board order (join order), not "my card first"
   const spaces = useSpaces(boardId, null)
 
+  // M16: "Presentar listos" (?ready=1) presents only the students who marked their slides ready
+  const onlyReady = searchParams.get('ready') === '1'
   const students = useMemo(
     () =>
       teacher
         ? spaces.data.filter(
-            (space) => space.slideCount > 0 || space.id === param,
+            (space) =>
+              (space.slideCount > 0 &&
+                (!onlyReady || !!space.readyToPresent)) ||
+              space.id === param,
           )
         : spaces.data.filter((space) => space.id === me.studentId),
-    [teacher, spaces.data, param, me.studentId],
+    [teacher, spaces.data, param, me.studentId, onlyReady],
   )
   const currentId = param ?? students[0]?.id
   const studentIndex = students.findIndex((space) => space.id === currentId)
@@ -112,6 +125,9 @@ export function PresenterPage() {
   // Teacher's notes on the slide on screen (M13, D33): closed by default when projected (D34)
   const notes = useNotes(boardId, space?.id, teacher)
   const [notesOpen, setNotesOpen] = useState(consoleView)
+  // M16: the student's polls, shown with live results for class discussion
+  const polls = usePolls(teacher ? boardId : undefined, space?.id)
+  const [pollsOpen, setPollsOpen] = useState(false)
   const slideNotes = slide ? (notes.bySlide.get(slide.id) ?? []) : []
 
   // Sync with the other window (projected ↔ console), same browser only
@@ -628,6 +644,19 @@ export function PresenterPage() {
             </DropdownMenuContent>
           </DropdownMenu>
         )}
+        {teacher && polls.data.length > 0 && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn(controlButton, pollsOpen && 'bg-white/15')}
+            aria-label={t('polls.presenter')}
+            title={t('polls.presenter')}
+            aria-pressed={pollsOpen}
+            onClick={() => setPollsOpen((open) => !open)}
+          >
+            <BarChart3 />
+          </Button>
+        )}
         {teacher && !consoleView && (
           <>
             <Button
@@ -687,6 +716,26 @@ export function PresenterPage() {
           </Button>
         )}
       </footer>
+
+      {pollsOpen && teacher && space && polls.data.length > 0 && (
+        <div
+          className="absolute inset-x-0 top-12 bottom-16 z-10 mx-auto flex w-full max-w-xl flex-col gap-3 overflow-y-auto p-4"
+          data-testid="presenter-polls"
+        >
+          {polls.data.map((poll) => (
+            <PollCard
+              key={poll.id}
+              boardId={boardId}
+              studentId={space.id}
+              poll={poll}
+              myStudentId={null}
+              teacher
+              myUid={user?.uid ?? ''}
+              writable={!!board.data && isWritable(lifecycleOf(board.data))}
+            />
+          ))}
+        </div>
+      )}
 
       {overview && (
         <SlideOverview

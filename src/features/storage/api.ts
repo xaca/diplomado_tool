@@ -49,6 +49,17 @@ export async function loadBoardData(boardId: string): Promise<BoardData> {
     getDocs(collection(db, paths.members(boardId))),
   ])
   if (!board.exists()) throw new Error('board not found')
+  // M16: polls and their votes go with the board too
+  const polls = await Promise.all(
+    spaces.docs.map((space) =>
+      getDocs(collection(db, paths.polls(boardId, space.id))),
+    ),
+  )
+  const votes = await Promise.all(
+    polls.flatMap((snapshot) =>
+      snapshot.docs.map((poll) => getDocs(collection(poll.ref, 'votes'))),
+    ),
+  )
   const [slides, notes] = await Promise.all([
     Promise.all(
       spaces.docs.map((space) =>
@@ -128,7 +139,7 @@ export async function loadBoardData(boardId: string): Promise<BoardData> {
       }),
     ),
     refs: [
-      ...[...slides, ...notes].flatMap((snapshot) =>
+      ...[...slides, ...notes, ...votes, ...polls].flatMap((snapshot) =>
         snapshot.docs.map((d) => d.ref),
       ),
       // kept versions and edit locks (M15), whether they exist or not

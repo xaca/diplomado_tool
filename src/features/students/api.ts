@@ -143,6 +143,13 @@ async function deleteSlides(
   for (const item of [...slides.docs, ...notes.docs]) batch.delete(item.ref)
   for (const slide of slides.docs)
     deleteSlideExtras(batch, boardId, studentId, slide.id)
+  // M16: their polls and the votes on them
+  const polls = await getDocs(collection(db, paths.polls(boardId, studentId)))
+  for (const poll of polls.docs) {
+    const votes = await getDocs(collection(poll.ref, 'votes'))
+    for (const vote of votes.docs) batch.delete(vote.ref)
+    batch.delete(poll.ref)
+  }
 }
 
 /**

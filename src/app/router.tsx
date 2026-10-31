@@ -5,6 +5,7 @@ import { RouteError } from '@/components/layout/RouteError'
 import { BoardPage } from '@/pages/BoardPage'
 import { EditorRoute } from '@/pages/EditorRoute'
 import { EmbedGuidePage } from '@/pages/EmbedGuidePage'
+import { FocusPage } from '@/pages/FocusPage'
 import { JoinPage } from '@/pages/JoinPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
@@ -34,6 +35,8 @@ export const router = createBrowserRouter([
     children: [
       // Full screen, without the app header
       { path: 'b/:boardId/present/:studentId?', element: <PresenterPage /> },
+      // Class clock for the projector (M16)
+      { path: 'b/:boardId/focus', element: <FocusPage /> },
       {
         element: <AppShell />,
         children: [

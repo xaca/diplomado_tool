@@ -398,7 +398,8 @@
         "body": [
           "From your Google account: name, email and profile photo. Your teacher also records your name and emails to add you to the board. If you choose, a photo you upload.",
           "What you publish: your card's title and summary, the project stage you're in, your slides and the images you upload.",
-          "Technical security data: Google reCAPTCHA checks that requests come from this app."
+          "Technical security data: Google reCAPTCHA checks that requests come from this app.",
+          "Your votes in space polls: the teacher sees who voted; so does the poll’s author, unless it is anonymous."
         ]
       },
       {
@@ -612,5 +613,71 @@
       "prezi": "Share → Share public link (view) → Copy link.",
       "padlet": "Share → “Embed in your blog or website” → copy the address that contains /embed/."
     }
+  },
+  "clock": {
+    "button": "Clock",
+    "title": "Class clock",
+    "activity": "Activity",
+    "break": "Break",
+    "label": "Activity name",
+    "labelPlaceholder": "Brainstorming",
+    "instructions": "Instructions (optional)",
+    "minutes": "Minutes",
+    "custom": "Other",
+    "start": "Start",
+    "pause": "Pause",
+    "resume": "Resume",
+    "addMinute": "+1 min",
+    "stop": "Stop",
+    "focus": "Focus view",
+    "time": "Time’s up!",
+    "breakOver": "We’re back!",
+    "paused": "Paused",
+    "breakLabel": "Break",
+    "running": "Running",
+    "chime": "Sound at the end",
+    "none": "No clock running.",
+    "back": "Back to the board",
+    "started": "Clock started",
+    "remaining": "Time left"
+  },
+  "ready": {
+    "mark": "My slides are ready",
+    "unmark": "Unmark as ready",
+    "badge": "Ready",
+    "marked": "You marked your slides as ready",
+    "unmarked": "No longer marked as ready",
+    "filters": "Filter by progress",
+    "ready": "Ready",
+    "withSlides": "With slides",
+    "noSlides": "No slides",
+    "presentReady": "Present ready ones"
+  },
+  "polls": {
+    "title": "Polls",
+    "create": "Create poll",
+    "question": "Question",
+    "questionPlaceholder": "Which of my ideas should I develop?",
+    "options": "Options",
+    "option": "Option {{n}}",
+    "addOption": "Add option",
+    "anonymous": "Anonymous (nobody sees who voted)",
+    "created": "Poll created",
+    "vote": "Vote",
+    "voted": "Your vote was recorded",
+    "changeVote": "You can change your vote while it’s open",
+    "votes_one": "{{count}} vote",
+    "votes_other": "{{count}} votes",
+    "close": "Close",
+    "reopen": "Reopen",
+    "delete": "Delete",
+    "closed": "Closed",
+    "open": "Open",
+    "by": "By {{name}}",
+    "voters": "Who voted",
+    "anonymousTag": "Anonymous",
+    "max": "At most {{count}} open polls per space",
+    "presenter": "This student’s polls",
+    "none": "No polls"
   }
 }

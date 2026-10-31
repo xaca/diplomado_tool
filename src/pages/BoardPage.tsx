@@ -1,7 +1,13 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import { Paintbrush, Presentation, Settings } from 'lucide-react'
+import {
+  CircleCheck,
+  Paintbrush,
+  Presentation,
+  Settings,
+  Timer,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
@@ -19,7 +25,16 @@ import {
   sortSpacesBy,
 } from '@/features/boards/look'
 import { useTeacherBoardSync } from '@/features/boards/sync'
+import { ClockBanner } from '@/features/clock/components/ClockBanner'
+import { ClockControls } from '@/features/clock/components/ClockControls'
 import { SpaceProfileDialog } from '@/features/spaces/components/SpaceProfileDialog'
+import {
+  matchesReady,
+  READY_FILTERS,
+  readyCounts,
+  type ReadyFilter,
+} from '@/features/spaces/ready'
+import { cn } from '@/lib/utils'
 import { useMyStudentId, useSpaces } from '@/features/spaces/hooks'
 import { StageSummary } from '@/features/stages/components/StageSummary'
 import { boardStages, matchesStage } from '@/features/stages/stages'
@@ -41,6 +56,9 @@ export function BoardPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   // Teacher's stage filter (M11): a stage id, NO_STAGE, or null for everyone
   const [stageFilter, setStageFilter] = useState<string | null>(null)
+  // M16: "Listos / Con diapositivas / Sin diapositivas"
+  const [readyFilter, setReadyFilter] = useState<ReadyFilter | null>(null)
+  const [clockOpen, setClockOpen] = useState(false)
   // "Personalizar tablero" (M12): the draft is shown live until saved or cancelled
   const [draft, setDraft] = useState<BoardDraft | null>(null)
   const [compact, setCompact] = useState(false)
@@ -65,11 +83,15 @@ export function BoardPage() {
   const shown = useMemo(
     () =>
       sortSpacesBy(
-        spaces.data.filter((space) => matchesStage(space, stages, stageFilter)),
+        spaces.data.filter(
+          (space) =>
+            matchesStage(space, stages, stageFilter) &&
+            matchesReady(space, readyFilter),
+        ),
         look.sortBy,
         me.studentId,
       ),
-    [spaces.data, stages, stageFilter, look.sortBy, me.studentId],
+    [spaces.data, stages, stageFilter, readyFilter, look.sortBy, me.studentId],
   )
 
   // ---------- animations (GSAP, D31: none with reduced motion) ----------
@@ -83,7 +105,7 @@ export function BoardPage() {
       )
     update()
   }
-  const arrangement = `${look.layout}|${look.sortBy}|${stageFilter}`
+  const arrangement = `${look.layout}|${look.sortBy}|${stageFilter}|${readyFilter}`
   useLayoutEffect(() => {
     const state = flipState.current
     flipState.current = null
@@ -219,8 +241,14 @@ export function BoardPage() {
       data-testid="board-page"
       data-background={look.background}
     >
+      <ClockBanner
+        boardId={boardId}
+        clock={boardData.clock}
+        teacher={isBoardTeacher}
+      />
       <section className="mx-auto flex max-w-7xl flex-col gap-6 p-4 sm:p-6">
         <BoardHeader
+          stickyTop={boardData.clock ? 36 : 0}
           ref={header}
           board={boardData}
           title={draft?.title ?? boardData.title}
@@ -245,6 +273,22 @@ export function BoardPage() {
                 >
                   <Presentation />
                   {t('presenter.presentAll')}
+                </Button>
+              )}
+              {teacher && readyCounts(spaces.data).ready > 0 && (
+                <Button
+                  variant="secondary"
+                  nativeButton={false}
+                  render={<Link to={`/b/${boardId}/present?ready=1`} />}
+                >
+                  <CircleCheck />
+                  {t('ready.presentReady')}
+                </Button>
+              )}
+              {isBoardTeacher && (
+                <Button variant="secondary" onClick={() => setClockOpen(true)}>
+                  <Timer />
+                  {t('clock.button')}
                 </Button>
               )}
               {isBoardTeacher && (
@@ -283,7 +327,22 @@ export function BoardPage() {
               onFilter={(filter) => withFlip(() => setStageFilter(filter))}
             />
           )}
+          {teacher && spaces.data.length > 0 && (
+            <ReadyFilters
+              counts={readyCounts(spaces.data)}
+              filter={readyFilter}
+              onFilter={(filter) => withFlip(() => setReadyFilter(filter))}
+            />
+          )}
         </BoardHeader>
+        {isBoardTeacher && (
+          <ClockControls
+            boardId={boardId}
+            clock={boardData.clock}
+            open={clockOpen}
+            onOpenChange={setClockOpen}
+          />
+        )}
 
         {!writable && (
           <p className="rounded-lg bg-white/80 p-3 text-sm text-neutral-900">
@@ -349,5 +408,46 @@ export function BoardPage() {
         />
       )}
     </div>
+  )
+}
+
+/** "Listos · Con diapositivas · Sin diapositivas" (M16, D52): click again to show everyone. */
+function ReadyFilters({
+  counts,
+  filter,
+  onFilter,
+}: {
+  counts: Record<ReadyFilter, number>
+  filter: ReadyFilter | null
+  onFilter: (filter: ReadyFilter | null) => void
+}) {
+  const { t } = useTranslation()
+  const labels = {
+    ready: 'ready.ready',
+    withSlides: 'ready.withSlides',
+    noSlides: 'ready.noSlides',
+  } as const
+  return (
+    <nav
+      aria-label={t('ready.filters')}
+      className="flex flex-wrap items-center gap-2"
+      data-testid="ready-filters"
+    >
+      {READY_FILTERS.map((id) => (
+        <button
+          key={id}
+          type="button"
+          aria-pressed={filter === id}
+          onClick={() => onFilter(filter === id ? null : id)}
+          className={cn(
+            'flex h-7 items-center gap-1.5 rounded-full border bg-white/85 px-2.5 text-xs text-neutral-800 shadow-sm hover:bg-white',
+            filter === id && 'ring-2 ring-neutral-900',
+          )}
+        >
+          {t(labels[id])}
+          <span className="font-semibold">{counts[id]}</span>
+        </button>
+      ))}
+    </nav>
   )
 }

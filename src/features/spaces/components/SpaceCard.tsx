@@ -100,6 +100,14 @@ export function SpaceCard({
             ✎ {t('teacherEdits.badge')}
           </Badge>
         )}
+        {space.readyToPresent && space.slideCount > 0 && (
+          <Badge
+            className="bg-green-100 text-green-900"
+            data-testid="ready-badge"
+          >
+            ✓ {t('ready.badge')}
+          </Badge>
+        )}
         {isMine && <Badge variant="secondary">{t('space.mine')}</Badge>}
       </header>
 
