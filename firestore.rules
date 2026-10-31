@@ -817,6 +817,90 @@ service cloud.firestore {
         }
       }
 
+      // ---------- achievements (M22) ----------
+      // Keep in sync with ACHIEVEMENTS in src/model/index.ts. A student unlocks one key per write,
+      // and the same write adds 1 to that key's counter: each rule checks the other document.
+
+      function achievementKeys() {
+        return ['firstSlide', 'slides5', 'slides10', 'firstEmbed', 'ready', 'photo', 'firstStage', 'prototype',
+          'test', 'firstVote', 'firstNote', 'firstReaction', 'popularNote', 'classes3'];
+      }
+
+      function countsPath() {
+        return /databases/$(database)/documents/boards/$(boardId)/achievementStats/counts;
+      }
+
+      function myAchievementsPath() {
+        return /databases/$(database)/documents/boards/$(boardId)/achievements/$(request.auth.uid);
+      }
+
+      // The counter of `key` goes up by exactly 1 in this write
+      function countedOnce(key) {
+        return (!exists(countsPath()) && getAfter(countsPath()).data.get(key, 0) == 1)
+          || (exists(countsPath())
+            && getAfter(countsPath()).data.get(key, 0) == get(countsPath()).data.get(key, 0) + 1);
+      }
+
+      // My document gains `key` in this write (it didn't have it)
+      function unlockedNow(key) {
+        return getAfter(myAchievementsPath()).data.unlocked.get(key, null) == request.time
+          && !(exists(myAchievementsPath()) && key in get(myAchievementsPath()).data.unlocked);
+      }
+
+      function validAchievements() {
+        let data = request.resource.data;
+        return data.keys().hasOnly(['studentId', 'unlocked', 'classes', 'lastKey', 'updatedAt'])
+          && data.studentId == get(memberPath(boardId, request.auth.uid)).data.studentId
+          && data.unlocked is map && data.unlocked.keys().hasOnly(achievementKeys())
+          && data.classes is list && data.classes.size() <= 20
+          && (data.lastKey == null || data.lastKey in achievementKeys())
+          && data.updatedAt == request.time;
+      }
+
+      match /achievements/{uid} {
+        allow get: if isBoardTeacher(boardId) || (isMember(boardId) && request.auth.uid == uid);
+        allow list: if isBoardTeacher(boardId);
+        allow create: if isMember(boardId) && request.auth.uid == uid && validAchievements()
+          && (request.resource.data.unlocked.size() == 0
+            || (request.resource.data.unlocked.size() == 1
+              && request.resource.data.lastKey in request.resource.data.unlocked
+              && request.resource.data.unlocked[request.resource.data.lastKey] == request.time
+              && countedOnce(request.resource.data.lastKey)));
+        allow update: if isMember(boardId) && request.auth.uid == uid && validAchievements()
+          && (
+            // only the classes list changes
+            (request.resource.data.unlocked == resource.data.unlocked
+              && request.resource.data.lastKey == resource.data.lastKey)
+            // exactly one new key, counted
+            || (request.resource.data.unlocked.diff(resource.data.unlocked).affectedKeys()
+                  .hasOnly([request.resource.data.lastKey])
+              && !(request.resource.data.lastKey in resource.data.unlocked)
+              && request.resource.data.unlocked[request.resource.data.lastKey] == request.time
+              && countedOnce(request.resource.data.lastKey))
+          );
+        // removing a student (and purge) takes their achievements
+        allow delete: if isBoardTeacher(boardId);
+      }
+
+      match /achievementStats/{statId} {
+        allow read: if isBoardTeacher(boardId) || isMember(boardId);
+        // a student: +1 on the key they unlock in the same write
+        allow create: if isMember(boardId) && statId == 'counts'
+          && request.resource.data.keys().hasOnly([request.resource.data.lastKey, 'lastKey'])
+          && request.resource.data.lastKey in achievementKeys()
+          && request.resource.data[request.resource.data.lastKey] == 1
+          && unlockedNow(request.resource.data.lastKey);
+        allow update: if isMember(boardId) && statId == 'counts'
+          && request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly([request.resource.data.lastKey, 'lastKey'])
+          && request.resource.data.lastKey in achievementKeys()
+          && request.resource.data[request.resource.data.lastKey]
+               == resource.data.get(request.resource.data.lastKey, 0) + 1
+          && unlockedNow(request.resource.data.lastKey);
+        // the teacher fixes counts (a removed student) and purges
+        allow write: if isBoardTeacher(boardId);
+      }
+
       // ---------- attendance (M18): one record per class date, teacher only ----------
 
       // Keep the date pattern in sync with ATTENDANCE_DATE in src/model/index.ts

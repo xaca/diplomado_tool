@@ -16,6 +16,7 @@ import {
   FieldPath,
   getDoc,
   getDocs,
+  increment,
   query,
   serverTimestamp,
   setDoc,
@@ -2644,5 +2645,115 @@ describe('class participation (M10)', () => {
         ),
       )
     }
+  })
+})
+
+describe('achievements (M22)', () => {
+  const SEB = { uid: 'seb', email: 'seb@gmail.com' }
+  const mine = (db: Firestore, uid: string) =>
+    doc(db, 'boards', BOARD, 'achievements', uid)
+  const counts = (db: Firestore) =>
+    doc(db, 'boards', BOARD, 'achievementStats', 'counts')
+
+  /** What the app writes: my key (server time) + 1 on its counter, in one batch */
+  function unlock(
+    user: { uid: string; email: string },
+    studentId: string,
+    key: string,
+    options: { first?: boolean; skipCount?: boolean; countBy?: number } = {},
+  ) {
+    const db = as(user)
+    const batch = writeBatch(db)
+    batch.set(
+      mine(db, user.uid),
+      {
+        studentId,
+        unlocked: { [key]: serverTimestamp() },
+        ...(options.first && { classes: [] }),
+        lastKey: key,
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true },
+    )
+    if (!options.skipCount)
+      batch.set(
+        counts(db),
+        { [key]: increment(options.countBy ?? 1), lastKey: key },
+        { merge: true },
+      )
+    return batch.commit()
+  }
+
+  async function joined() {
+    await seed()
+    await autoJoin(as(LAURA), LAURA, 'st_laura')
+    await env.withSecurityRulesDisabled(async (context) => {
+      const db = context.firestore() as unknown as Firestore
+      await setDoc(
+        doc(db, 'boards', BOARD, 'students', 'st_seb'),
+        student([SEB.email]),
+      )
+      await setDoc(doc(db, 'boards', BOARD, 'studentEmails', SEB.email), {
+        email: SEB.email,
+        studentId: 'st_seb',
+      })
+    })
+    await autoJoin(as(SEB), SEB, 'st_seb')
+  }
+
+  it('a student unlocks one achievement at a time, always counted once', async () => {
+    await joined()
+    await assertSucceeds(
+      unlock(LAURA, 'st_laura', 'firstSlide', { first: true }),
+    )
+    await assertSucceeds(unlock(LAURA, 'st_laura', 'ready'))
+    await assertSucceeds(unlock(SEB, 'st_seb', 'firstSlide', { first: true }))
+    const after = (await getDoc(counts(as(LAURA)))).data()
+    if (after?.firstSlide !== 2 || after?.ready !== 1)
+      throw new Error(`counts: ${JSON.stringify(after)}`)
+
+    // twice, without counting, counting twice, an unknown key, someone else's doc
+    await assertFails(unlock(LAURA, 'st_laura', 'firstSlide'))
+    await assertFails(unlock(LAURA, 'st_laura', 'photo', { skipCount: true }))
+    await assertFails(unlock(LAURA, 'st_laura', 'photo', { countBy: 2 }))
+    await assertFails(unlock(LAURA, 'st_laura', 'points'))
+    await assertFails(unlock(LAURA, 'st_seb', 'photo'))
+    // a counter can't go up without unlocking
+    await assertFails(
+      setDoc(
+        counts(as(LAURA)),
+        { photo: increment(1), lastKey: 'photo' },
+        { merge: true },
+      ),
+    )
+    // the classes list may change alone
+    await assertSucceeds(
+      updateDoc(mine(as(LAURA), LAURA.uid), {
+        classes: ['c1'],
+        updatedAt: serverTimestamp(),
+      }),
+    )
+  })
+
+  it('a student reads only their own; everyone reads the counts; the teacher reads all and fixes counts', async () => {
+    await joined()
+    await unlock(LAURA, 'st_laura', 'firstSlide', { first: true })
+    await assertSucceeds(getDoc(mine(as(LAURA), LAURA.uid)))
+    await assertFails(getDoc(mine(as(SEB), LAURA.uid)))
+    await assertFails(
+      getDocs(collection(as(SEB), 'boards', BOARD, 'achievements')),
+    )
+    await assertSucceeds(getDoc(counts(as(SEB))))
+    await assertFails(getDoc(counts(as(STRANGER))))
+
+    const teacher = as(TEACHER)
+    await assertSucceeds(
+      getDocs(collection(teacher, 'boards', BOARD, 'achievements')),
+    )
+    await assertSucceeds(
+      updateDoc(counts(teacher), { firstSlide: increment(-1) }),
+    )
+    await assertSucceeds(deleteDoc(mine(teacher, LAURA.uid)))
+    await assertFails(deleteDoc(mine(as(SEB), SEB.uid)))
   })
 })

@@ -69,6 +69,13 @@ export const paths = {
     `${COLLECTIONS.boards}/${boardId}/announcementState`,
   announcementState: (boardId: string, uid: string) =>
     `${COLLECTIONS.boards}/${boardId}/announcementState/${uid}`,
+  /** M22: each member's achievements (doc id = uid) and how many unlocked each one */
+  achievements: (boardId: string) =>
+    `${COLLECTIONS.boards}/${boardId}/achievements`,
+  achievement: (boardId: string, uid: string) =>
+    `${COLLECTIONS.boards}/${boardId}/achievements/${uid}`,
+  achievementCounts: (boardId: string) =>
+    `${COLLECTIONS.boards}/${boardId}/achievementStats/counts`,
   /** M10: class participation — classes, their wall slides and the sticky notes on each */
   classes: (boardId: string) => `${COLLECTIONS.boards}/${boardId}/classes`,
   class: (boardId: string, classId: string) =>
@@ -187,6 +194,44 @@ export const clockInputSchema = z.object({
   instructions: z.string().trim().max(300),
   minutes: z.number().min(1).max(180),
 })
+
+// ---------- achievements (M22) ----------
+// Keep the list in sync with achievementKeys() in firestore.rules
+
+export const ACHIEVEMENTS = [
+  'firstSlide',
+  'slides5',
+  'slides10',
+  'firstEmbed',
+  'ready',
+  'photo',
+  'firstStage',
+  'prototype',
+  'test',
+  'firstVote',
+  'firstNote',
+  'firstReaction',
+  'popularNote',
+  'classes3',
+] as const
+export type AchievementKey = (typeof ACHIEVEMENTS)[number]
+
+/** achievements/{uid}: what I unlocked on this board (add-only, one key per write) */
+export type AchievementsDoc = {
+  studentId: string
+  /** key → when (server time) */
+  unlocked: Partial<Record<AchievementKey, unknown>>
+  /** Classes I wrote notes in (for "Constante") */
+  classes: string[]
+  /** The key unlocked by the last write (lets the rules pair it with the counter) */
+  lastKey: AchievementKey | null
+  updatedAt: unknown
+}
+
+/** achievementStats/counts: how many students unlocked each one (+1 with each unlock) */
+export type AchievementCountsDoc = Partial<Record<AchievementKey, number>> & {
+  lastKey?: AchievementKey
+}
 
 // ---------- class participation (M10): sticky-note walls ----------
 // Keep the lists and limits in sync with the classes rules in firestore.rules
