@@ -12,6 +12,7 @@ import {
   collectionGroup,
   deleteDoc,
   doc,
+  FieldPath,
   getDoc,
   getDocs,
   query,
@@ -1338,6 +1339,136 @@ describe('Design Thinking stage (M11)', () => {
         ownerPhotoURL:
           'https://res.cloudinary.com/demo/image/upload/f_auto,q_auto,c_fill,w_256,h_256/v1/pbl/prod/users/laura-gmail/avatar',
         updatedAt: serverTimestamp(),
+      }),
+    )
+  })
+})
+
+describe('board customization (M12)', () => {
+  const boardOf = (db: Firestore) => doc(db, 'boards', BOARD)
+  const look = {
+    background: 'night',
+    pattern: 'grid',
+    layout: 'stages',
+    sortBy: 'name',
+    stickyHeader: false,
+  }
+  const logoRef = (folder = 'board', assetId = 'logo1') => ({
+    assetId,
+    publicId: `pbl/prod/${BOARD}/${folder}/${assetId}`,
+    version: 1,
+    width: 512,
+    height: 256,
+    format: 'png',
+  })
+  const logoAsset = (overrides: Record<string, unknown> = {}) => ({
+    publicId: `pbl/prod/${BOARD}/board/logo1`,
+    studentId: 'board',
+    kind: 'logo',
+    width: 512,
+    height: 256,
+    format: 'png',
+    bytes: 2000,
+    status: 'active',
+    createdAt: serverTimestamp(),
+    ...overrides,
+  })
+
+  it('the board teacher sets the look; values must be known', async () => {
+    await seed()
+    await assertSucceeds(updateDoc(boardOf(as(TEACHER)), look))
+    await assertFails(updateDoc(boardOf(as(TEACHER)), { background: 'neon' }))
+    await assertFails(updateDoc(boardOf(as(TEACHER)), { layout: 'kanban' }))
+    await assertFails(updateDoc(boardOf(as(TEACHER)), { pattern: 'stripes' }))
+    await assertFails(updateDoc(boardOf(as(TEACHER)), { sortBy: 'random' }))
+    await assertFails(updateDoc(boardOf(as(TEACHER)), { stickyHeader: 'yes' }))
+  })
+
+  it('students and other teachers cannot change the look', async () => {
+    await seed()
+    await autoJoin(as(LAURA), LAURA, 'st_laura')
+    await assertFails(updateDoc(boardOf(as(LAURA)), look))
+    await assertFails(updateDoc(boardOf(as(OTHER_TEACHER)), look))
+  })
+
+  it('the teacher uploads a logo into the board folder (registry + board, one batch)', async () => {
+    await seed()
+    const db = as(TEACHER)
+    const batch = writeBatch(db)
+    batch.set(doc(db, 'boards', BOARD, 'assets', 'logo1'), logoAsset())
+    batch.update(boardOf(db), { logo: logoRef() })
+    await assertSucceeds(batch.commit())
+    await assertSucceeds(updateDoc(boardOf(db), { logo: null }))
+  })
+
+  it("a logo must be a registered image in the board's own folder", async () => {
+    await seed()
+    const db = as(TEACHER)
+    // not registered
+    await assertFails(updateDoc(boardOf(db), { logo: logoRef() }))
+    // a student's image used as the logo
+    await assertFails(
+      updateDoc(boardOf(db), { logo: logoRef('st_laura', 'a1') }),
+    )
+  })
+
+  it('students cannot register a logo', async () => {
+    await seed()
+    await autoJoin(as(LAURA), LAURA, 'st_laura')
+    await assertFails(
+      setDoc(doc(as(LAURA), 'boards', BOARD, 'assets', 'logo1'), logoAsset()),
+    )
+    await assertFails(
+      setDoc(
+        doc(as(LAURA), 'boards', BOARD, 'assets', 'logo2'),
+        logoAsset({
+          studentId: 'st_laura',
+          publicId: `pbl/prod/${BOARD}/st_laura/logo2`,
+        }),
+      ),
+    )
+  })
+
+  it("the teacher keeps their name and photo on the board (#DOCENTE); students can't", async () => {
+    await seed()
+    const profile = {
+      name: 'Profe',
+      photoURL: 'https://lh3.googleusercontent.com/a/x',
+    }
+    await assertSucceeds(
+      updateDoc(
+        boardOf(as(TEACHER)),
+        new FieldPath('teacherProfiles', TEACHER.email),
+        profile,
+      ),
+    )
+    await autoJoin(as(LAURA), LAURA, 'st_laura')
+    await assertFails(
+      updateDoc(
+        boardOf(as(LAURA)),
+        new FieldPath('teacherProfiles', LAURA.email),
+        profile,
+      ),
+    )
+  })
+
+  it("the teacher copies the roster's group to the card; the student can't change it", async () => {
+    await seed()
+    await autoJoin(as(LAURA), LAURA, 'st_laura')
+    await assertSucceeds(
+      updateDoc(doc(as(TEACHER), 'boards', BOARD, 'spaces', 'st_laura'), {
+        group: 'Equipo 1',
+      }),
+    )
+    await assertFails(
+      updateDoc(doc(as(LAURA), 'boards', BOARD, 'spaces', 'st_laura'), {
+        group: 'Equipo 9',
+        updatedAt: serverTimestamp(),
+      }),
+    )
+    await assertFails(
+      updateDoc(doc(as(TEACHER), 'boards', BOARD, 'spaces', 'st_laura'), {
+        group: 'x'.repeat(61),
       }),
     )
   })

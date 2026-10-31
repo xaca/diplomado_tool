@@ -80,6 +80,77 @@ export type BoardDoc = {
   archivedAt?: unknown
   /** The board's stage list (M11). Missing → DEFAULT_STAGES (Design Thinking). */
   stages?: StageDef[] | null
+  /** Look (M12). Missing → today's look: yellow, dots, masonry, sticky header. */
+  pattern?: BoardPattern
+  layout?: BoardLayout
+  sortBy?: BoardSort
+  stickyHeader?: boolean
+  /** Board logo, uploaded by the teacher (M12) */
+  logo?: ImageRef | null
+  /** Name and photo of each teacher, by email, for the #DOCENTE ring in the header (M12) */
+  teacherProfiles?: Record<string, TeacherProfile>
+}
+
+export type TeacherProfile = { name: string; photoURL: string | null }
+
+// ---------- board look (M12) ----------
+
+/**
+ * Background presets. `text` = the color that stays readable on it (checked in tests).
+ * Gradients list their stops so the contrast test can check each one.
+ */
+export const BOARD_BACKGROUNDS = [
+  { id: 'yellow', stops: ['#fcd34d'], text: 'dark' },
+  { id: 'mint', stops: ['#a7f3d0'], text: 'dark' },
+  { id: 'sky', stops: ['#bae6fd'], text: 'dark' },
+  { id: 'lavender', stops: ['#ddd6fe'], text: 'dark' },
+  { id: 'peach', stops: ['#fed7aa'], text: 'dark' },
+  { id: 'sand', stops: ['#f5efe6'], text: 'dark' },
+  { id: 'white', stops: ['#ffffff'], text: 'dark' },
+  { id: 'charcoal', stops: ['#262626'], text: 'light' },
+  { id: 'sunset', stops: ['#fde68a', '#fca5a5'], text: 'dark' },
+  { id: 'ocean', stops: ['#a5f3fc', '#a5b4fc'], text: 'dark' },
+  { id: 'forest', stops: ['#bbf7d0', '#99f6e4'], text: 'dark' },
+  { id: 'night', stops: ['#1e293b', '#4c1d95'], text: 'light' },
+] as const satisfies readonly {
+  id: string
+  stops: readonly string[]
+  text: 'dark' | 'light'
+}[]
+export type BoardBackground = (typeof BOARD_BACKGROUNDS)[number]['id']
+export const BOARD_BACKGROUND_IDS = BOARD_BACKGROUNDS.map((b) => b.id) as [
+  BoardBackground,
+  ...BoardBackground[],
+]
+export const BOARD_PATTERNS = ['dots', 'grid', 'none'] as const
+export type BoardPattern = (typeof BOARD_PATTERNS)[number]
+export const BOARD_LAYOUTS = [
+  'masonry',
+  'grid',
+  'list',
+  'stages',
+  'groups',
+] as const
+export type BoardLayout = (typeof BOARD_LAYOUTS)[number]
+export const BOARD_SORTS = ['joined', 'name', 'updated'] as const
+export type BoardSort = (typeof BOARD_SORTS)[number]
+
+/** Keep in sync with validBoard() in firestore.rules */
+export const boardLookSchema = z.object({
+  background: z.enum(BOARD_BACKGROUND_IDS),
+  pattern: z.enum(BOARD_PATTERNS),
+  layout: z.enum(BOARD_LAYOUTS),
+  sortBy: z.enum(BOARD_SORTS),
+  stickyHeader: z.boolean(),
+})
+export type BoardLook = z.infer<typeof boardLookSchema>
+
+export const DEFAULT_LOOK: BoardLook = {
+  background: 'yellow',
+  pattern: 'dots',
+  layout: 'masonry',
+  sortBy: 'joined',
+  stickyHeader: true,
 }
 
 export type StudentSource = 'import' | 'manual' | 'invite'
@@ -117,6 +188,8 @@ export type SpaceDoc = {
   slideCount: number
   /** Card cover image (M4) */
   cover?: ImageRef | null
+  /** The student's group (e.g. "Equipo 1"), copied from the roster for the "Por grupo" layout (M12) */
+  group?: string
   /** Where the student is in the process (M11): a StageDef id of this board; null = no ring */
   stage?: string | null
   stageUpdatedAt?: unknown
@@ -231,7 +304,9 @@ export const MAX_NOTE_LENGTH = 2000
 
 export const noteTextSchema = z.string().trim().min(1).max(MAX_NOTE_LENGTH)
 
-export type AssetKind = 'cover' | 'slide'
+export type AssetKind = 'cover' | 'slide' | 'logo'
+/** Registry `studentId` (and Cloudinary folder) of board-level images, e.g. the logo (M12) */
+export const BOARD_ASSET_OWNER = 'board'
 export type AssetStatus = 'active' | 'orphaned' | 'deleted'
 
 /** boards/{boardId}/assets/{assetId}: one per upload (storage usage, cleanup in M7) */

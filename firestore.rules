@@ -125,10 +125,22 @@ service cloud.firestore {
 
     // ---------- boards/{boardId} ----------
 
-    function validBoard() {
+    // M12: the board logo, uploaded by its teacher into the board's own folder (see media-api)
+    function validBoardLogo(logo, boardId) {
+      return logo == null
+        || (logo is map
+          && logo.keys().hasOnly(['assetId', 'publicId', 'version', 'width', 'height', 'format'])
+          && logo.assetId is string
+          && logo.publicId is string && logo.publicId.matches('pbl/(dev|prod)/' + boardId + '/board/' + logo.assetId)
+          && logo.version is int && logo.width is int && logo.height is int && logo.format is string
+          && existsAfter(/databases/$(database)/documents/boards/$(boardId)/assets/$(logo.assetId)));
+    }
+
+    function validBoard(boardId) {
       let data = request.resource.data;
       return data.keys().hasOnly(['title', 'description', 'teacherEmails', 'joinCode', 'joinCodeEnabled', 'status',
-          'archiveAfterDays', 'background', 'createdAt', 'updatedAt', 'lastActivityAt', 'archivedAt', 'stages'])
+          'archiveAfterDays', 'background', 'createdAt', 'updatedAt', 'lastActivityAt', 'archivedAt', 'stages',
+          'pattern', 'layout', 'sortBy', 'stickyHeader', 'logo', 'teacherProfiles'])
         && isString(data.title, 1, 120)
         && isString(data.description, 0, 500)
         && data.teacherEmails is list && myEmail() in data.teacherEmails
@@ -136,15 +148,24 @@ service cloud.firestore {
         && data.status in ['active', 'locked', 'archived']
         && data.archiveAfterDays is int && data.archiveAfterDays >= 7 && data.archiveAfterDays <= 3650
         // M11: the board's stage list (null = Design Thinking defaults); entries are checked by the app
-        && (!('stages' in data) || data.stages == null || (data.stages is list && data.stages.size() >= 1 && data.stages.size() <= 9));
+        && (!('stages' in data) || data.stages == null || (data.stages is list && data.stages.size() >= 1 && data.stages.size() <= 9))
+        // M12: look (keep in sync with boardLookSchema in src/model/index.ts)
+        && data.background in ['yellow', 'mint', 'sky', 'lavender', 'peach', 'sand', 'white', 'charcoal',
+             'sunset', 'ocean', 'forest', 'night']
+        && (!('pattern' in data) || data.pattern in ['dots', 'grid', 'none'])
+        && (!('layout' in data) || data.layout in ['masonry', 'grid', 'list', 'stages', 'groups'])
+        && (!('sortBy' in data) || data.sortBy in ['joined', 'name', 'updated'])
+        && (!('stickyHeader' in data) || data.stickyHeader is bool)
+        && (!('logo' in data) || validBoardLogo(data.logo, boardId))
+        && (!('teacherProfiles' in data) || (data.teacherProfiles is map && data.teacherProfiles.size() <= 10));
     }
 
     match /boards/{boardId} {
       allow get: if (verified() && myEmail() in resource.data.teacherEmails) || isMember(boardId);
       // The teacher dashboard queries `teacherEmails array-contains <my email>`
       allow list: if verified() && myEmail() in resource.data.teacherEmails;
-      allow create: if isTeacher() && validBoard() && request.resource.data.status == 'active';
-      allow update: if (verified() && myEmail() in resource.data.teacherEmails && validBoard()
+      allow create: if isTeacher() && validBoard(boardId) && request.resource.data.status == 'active';
+      allow update: if (verified() && myEmail() in resource.data.teacherEmails && validBoard(boardId)
           && request.resource.data.joinCode == resource.data.joinCode)
         // members record activity (throttled in the app) while the board is writable
         || (isMember(boardId)
@@ -272,7 +293,7 @@ service cloud.firestore {
       function validSpace(studentId) {
         let data = request.resource.data;
         return data.keys().hasOnly(['studentId', 'ownerName', 'ownerPhotoURL', 'title', 'summary', 'color',
-            'slideOrder', 'slideCount', 'cover', 'stage', 'stageUpdatedAt', 'stageSetBy', 'createdAt', 'updatedAt'])
+            'slideOrder', 'slideCount', 'cover', 'stage', 'stageUpdatedAt', 'stageSetBy', 'group', 'createdAt', 'updatedAt'])
           && (!('cover' in data) || data.cover == null || validImageRef(data.cover, boardId, studentId))
           && data.studentId == studentId
           && isString(data.ownerName, 1, 120)
@@ -284,7 +305,8 @@ service cloud.firestore {
           && data.slideCount == data.slideOrder.size()
           // M11: a stage id (same pattern as STAGE_ID_PATTERN), or null for no ring
           && (!('stage' in data) || data.stage == null || (data.stage is string && data.stage.matches('[a-z0-9-]{1,40}')))
-          && (!('stageSetBy' in data) || data.stageSetBy in ['student', 'teacher']);
+          && (!('stageSetBy' in data) || data.stageSetBy in ['student', 'teacher'])
+          && (!('group' in data) || isString(data.group, 0, 60));
       }
 
       // M11: whoever changes the stage signs it, with the server time
@@ -322,9 +344,9 @@ service cloud.firestore {
                  .hasOnly(['title', 'summary', 'color', 'ownerName', 'ownerPhotoURL', 'cover', 'slideOrder',
                    'slideCount', 'stage', 'stageUpdatedAt', 'stageSetBy', 'updatedAt'])
             && stageSignedBy('student'))
-          // the teacher renames the student → keep the card name in sync
+          // the teacher renames the student or changes their group → keep the card in sync (M12)
           || (isBoardTeacher(boardId)
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ownerName']))
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ownerName', 'group']))
           // the teacher sets a student's stage (M11), while the board is writable
           || (isBoardTeacher(boardId) && boardIsActive(boardId)
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stage', 'stageUpdatedAt', 'stageSetBy'])
@@ -399,7 +421,7 @@ service cloud.firestore {
         return data.keys().hasOnly(['publicId', 'studentId', 'kind', 'width', 'height', 'format', 'bytes', 'status', 'createdAt'])
           && data.studentId is string
           && data.publicId is string && data.publicId.matches(studentPublicId(boardId, data.studentId, assetId))
-          && data.kind in ['cover', 'slide']
+          && data.kind in ['cover', 'slide', 'logo']
           && data.width is int && data.height is int && data.format is string
           && data.bytes is int && data.bytes > 0 && data.bytes <= 10 * 1024 * 1024
           && data.status == 'active'
@@ -409,9 +431,13 @@ service cloud.firestore {
       match /assets/{assetId} {
         allow read: if isBoardTeacher(boardId)
           || (isMember(boardId) && resource.data.studentId == get(memberPath(boardId, request.auth.uid)).data.studentId);
-        allow create: if validNewAsset(boardId, assetId)
-          && isSpaceOwner(boardId, request.resource.data.studentId)
-          && boardIsActive(boardId);
+        allow create: if validNewAsset(boardId, assetId) && boardIsActive(boardId)
+          && (
+            (isSpaceOwner(boardId, request.resource.data.studentId) && request.resource.data.kind != 'logo')
+            // M12: the board logo, by the board's teacher, in the board's own folder
+            || (isBoardTeacher(boardId) && request.resource.data.kind == 'logo'
+              && request.resource.data.studentId == 'board')
+          );
         // The owner marks an image unused; the teacher (via cleanup, M7) may also mark it deleted
         allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'deletedAt'])
           && (
