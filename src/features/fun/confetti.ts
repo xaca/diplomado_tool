@@ -57,7 +57,7 @@ export function burst() {
       size: rand(5, 9),
       angle: rand(0, Math.PI * 2),
       spin: rand(-0.25, 0.25),
-      color: COLORS[index % COLORS.length],
+      color: COLORS[Math.floor(Math.random() * COLORS.length)],
     }
   })
 

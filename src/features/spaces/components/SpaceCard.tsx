@@ -50,7 +50,7 @@ export function SpaceCard({
       data-flip-id={space.id}
       data-testid="space-card"
       className={cn(
-        'flex flex-col rounded-xl border border-black/5 shadow-sm transition-shadow hover:shadow-md',
+        'card-lift flex flex-col rounded-xl border border-black/5 shadow-sm hover:shadow-md',
         fit === 'flow' ? 'mb-4 break-inside-avoid' : 'h-full',
       )}
       style={{ backgroundColor: space.color }}

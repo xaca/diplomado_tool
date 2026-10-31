@@ -35,6 +35,8 @@ type Props = {
   onReorder: (order: string[]) => void
   /** M15: the teacher edits and adds slides, but reordering and deleting stay with the student */
   manage?: boolean
+  /** M20: the slide just added flies into the list */
+  addedId?: string | null
 }
 
 /** Slide list of the editor: select, add, duplicate, delete, drag (or keyboard) to reorder. */
@@ -48,6 +50,7 @@ export function SlideSidebar({
   onDelete,
   onReorder,
   manage = true,
+  addedId = null,
 }: Props) {
   const { t } = useTranslation()
   const sensors = useSensors(
@@ -92,6 +95,7 @@ export function SlideSidebar({
                 busy={busy}
                 full={full}
                 manage={manage}
+                fresh={slide.id === addedId}
                 onSelect={onSelect}
                 onDuplicate={onDuplicate}
                 onDelete={onDelete}
@@ -121,6 +125,7 @@ function SortableSlide({
   busy,
   full,
   manage,
+  fresh,
   onSelect,
   onDuplicate,
   onDelete,
@@ -131,6 +136,7 @@ function SortableSlide({
   busy: boolean
   full: boolean
   manage: boolean
+  fresh: boolean
 } & Pick<Props, 'onSelect' | 'onDuplicate' | 'onDelete'>) {
   const { t } = useTranslation()
   const {
@@ -149,8 +155,10 @@ function SortableSlide({
       className={cn(
         'group relative w-36 shrink-0 md:w-full',
         isDragging && 'z-10 opacity-80',
+        fresh && 'slide-in',
       )}
       data-testid="slide-item"
+      data-slide-id={slide.id}
     >
       <button
         type="button"

@@ -69,6 +69,7 @@ import { normalizeEmail } from '@/lib/collections'
 import { useMyStudentId } from '@/features/spaces/hooks'
 import { db } from '@/lib/firebase'
 import { useLiveDoc } from '@/lib/firestore-hooks'
+import { shrinkAway, unshrink } from '@/lib/gsap'
 import { toDate } from '@/lib/time'
 import { MAX_SLIDES, paths, type SpaceDoc } from '@/model'
 import { isTeacherRole, useAuth } from '@/providers/auth-context'
@@ -107,6 +108,7 @@ export function EditorPage() {
 
   const canvas = useRef<SlideCanvasHandle>(null)
   // Opened from the space page or the presenter on a given slide (?slide=)
+  const [addedId, setAddedId] = useState<string | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(() =>
     searchParams.get('slide'),
   )
@@ -205,7 +207,9 @@ export function EditorPage() {
     run(async () => {
       // The teacher appends at the end and never duplicates (D43)
       if (asTeacher) {
-        setSelectedId(await addSlideAsTeacher(boardId, studentId, order))
+        const id = await addSlideAsTeacher(boardId, studentId, order)
+        setSelectedId(id)
+        setAddedId(id)
         return
       }
       const index = source
@@ -217,9 +221,15 @@ export function EditorPage() {
       const copy = source
         ? latest.current.slides.find((slide) => slide.id === source.id)
         : undefined
-      setSelectedId(
-        await addSlide(boardId, studentId, order, index, copy ?? source),
+      const id = await addSlide(
+        boardId,
+        studentId,
+        order,
+        index,
+        copy ?? source,
       )
+      setSelectedId(id)
+      setAddedId(id)
       // M20: the first slide, then every 5
       const moment = isMine ? slideEvent(order.length + 1) : null
       if (moment) cheer(moment, { count: order.length + 1 })
@@ -232,6 +242,9 @@ export function EditorPage() {
     const slide = deleting
     setDeleting(null)
     if (!slide) return
+    // M20: the slide shrinks away, then goes
+    const item = document.querySelector(`[data-slide-id="${slide.id}"]`)
+    await shrinkAway(item)
     await run(async () => {
       const index = order.indexOf(slide.id)
       const rest = order.filter((id) => id !== slide.id)
@@ -245,6 +258,8 @@ export function EditorPage() {
         (notes.bySlide.get(slide.id) ?? []).map((note) => note.id),
       )
     })
+    // Still here = the delete failed: back to normal (a removed item is already gone)
+    unshrink(item)
   }
 
   const onStatus = (value: SaveStatus, error?: unknown) => {
@@ -391,6 +406,7 @@ export function EditorPage() {
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
         <SlideSidebar
           manage={!asTeacher}
+          addedId={addedId}
           slides={slides.data}
           currentId={current?.id}
           busy={busy}

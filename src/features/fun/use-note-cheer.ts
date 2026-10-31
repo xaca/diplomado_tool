@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
 import { newNotes } from '@/features/fun/cheer'
 import { useCheer } from '@/features/fun/use-cheer'
-import { useProfile } from '@/features/profile/hooks'
 import { toDate } from '@/lib/time'
 import type { NoteDoc } from '@/model'
 
@@ -36,19 +35,19 @@ export function useNoteCheer(
   enabled: boolean,
 ) {
   const cheer = useCheer()
-  const profile = useProfile()
   const times = notes.data
     .map((note) => toDate(note.createdAt).getTime())
     .filter(Number.isFinite)
   const latest = times.length ? Math.max(...times) : 0
   const count = times.length
-  const ready = enabled && !notes.loading && !profile.loading
+  const ready = enabled && !notes.loading
 
   useEffect(() => {
     if (!ready || !boardId || !studentId) return
     const key = seenKey(boardId, studentId)
     const seen = readSeen(key)
-    if (newNotes(times, seen) > 0) cheer('teacherNote')
+    // null = my profile is still loading: this runs again when `cheer` changes
+    if (newNotes(times, seen) > 0 && cheer('teacherNote') === null) return
     writeSeen(key, Math.max(seen ?? 0, latest))
     // `times` changes with `latest` / `count`
     // eslint-disable-next-line react-hooks/exhaustive-deps

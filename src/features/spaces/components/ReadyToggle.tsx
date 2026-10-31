@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { CircleCheck, Circle } from 'lucide-react'
 import { toast } from 'sonner'
@@ -21,6 +21,9 @@ export function ReadyToggle({
   const { t } = useTranslation()
   const [busy, setBusy] = useState(false)
   const cheer = useCheer()
+  // The check draws itself when I mark them, not when the page opens already "Lista"
+  const wasReady = useRef(ready)
+  const [drawn, setDrawn] = useState(false)
   return (
     <Button
       size={size}
@@ -35,6 +38,7 @@ export function ReadyToggle({
         setBusy(true)
         setReadyToPresent(boardId, studentId, !ready)
           .then(() => {
+            setDrawn(!ready && !wasReady.current)
             // M20: marking them ready is a milestone (confetti), unmarking just says so
             if (ready || !cheer('ready'))
               toast.success(ready ? t('ready.unmarked') : t('ready.marked'))
@@ -43,7 +47,11 @@ export function ReadyToggle({
           .finally(() => setBusy(false))
       }}
     >
-      {ready ? <CircleCheck /> : <Circle />}
+      {ready ? (
+        <CircleCheck className={drawn ? 'check-draw' : undefined} />
+      ) : (
+        <Circle />
+      )}
       {ready ? t('ready.badge') : t('ready.mark')}
     </Button>
   )

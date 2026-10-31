@@ -21,13 +21,15 @@ let memory = freshMemory()
 /**
  * `cheer(event)`: an encouraging toast (M20), confetti for real milestones (not with "reduce
  * motion"), and the once-only moments stored on my profile. Students only; nothing when switched
- * off. Returns whether a message showed (then the caller skips its plain "saved" toast).
+ * off. Returns whether a message showed (then the caller skips its plain "saved" toast), or
+ * null while my profile is still loading (try again when `cheer` changes).
  */
 export function useCheer() {
   const { t } = useTranslation()
   const { user, role } = useAuth()
   const profile = useProfile()
-  const ready = !!user && !profile.loading && !isTeacherRole(role)
+  const ready = !!user && !profile.loading
+  const teacher = isTeacherRole(role)
   const enabled = cheerOn(profile.data)
   const milestones = profile.data?.milestones
 
@@ -35,8 +37,9 @@ export function useCheer() {
     (
       event: CheerEvent,
       values: { count?: number; stage?: string } = {},
-    ): boolean => {
-      if (!ready || !user) return false
+    ): boolean | null => {
+      if (!ready || !user) return null
+      if (teacher) return false
       const now = Date.now()
       const decision = decideCheer(event, { enabled, milestones, memory, now })
       if (!decision) return false
@@ -53,6 +56,6 @@ export function useCheer() {
         )
       return true
     },
-    [ready, user, enabled, milestones, t],
+    [ready, user, teacher, enabled, milestones, t],
   )
 }

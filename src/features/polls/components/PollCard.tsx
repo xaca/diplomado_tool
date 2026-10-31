@@ -131,7 +131,7 @@ export function PollCard({
               >
                 {showResults && (
                   <span
-                    className="absolute inset-y-0 left-0 bg-primary/10 transition-[width] duration-500"
+                    className="bar-grow absolute inset-y-0 left-0 bg-primary/10 transition-[width] duration-500"
                     style={{ width: `${option.percent}%` }}
                     aria-hidden
                   />

@@ -1,6 +1,5 @@
 import { useEffect } from 'react'
 import { useCheer } from '@/features/fun/use-cheer'
-import { useProfile } from '@/features/profile/hooks'
 import { markTeacherEditsSeen } from '@/features/slides/api'
 
 /**
@@ -14,11 +13,11 @@ export function useTeacherEditCheer(
   unseen: boolean,
 ) {
   const cheer = useCheer()
-  const profile = useProfile()
-  const ready = unseen && !profile.loading && !!boardId && !!studentId
+  const ready = unseen && !!boardId && !!studentId
   useEffect(() => {
     if (!ready || !boardId || !studentId) return
-    cheer('teacherEdit')
+    // null = my profile is still loading: this runs again when `cheer` changes
+    if (cheer('teacherEdit') === null) return
     void markTeacherEditsSeen(boardId, studentId).catch(() => undefined)
   }, [ready, boardId, studentId, cheer])
 }
