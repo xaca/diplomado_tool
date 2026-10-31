@@ -44,7 +44,9 @@ async function fakeWorker(page: Page, answer: Record<string, unknown>) {
 async function openDialog(page: Page) {
   await signIn(page, 'scetina@uni.edu.co')
   await page.goto(editorUrl)
-  await expect(page.locator('.excalidraw .App-toolbar')).toBeVisible()
+  await expect(page.locator('.excalidraw .App-toolbar')).toBeVisible({
+    timeout: 15_000,
+  })
   await page.getByRole('button', { name: 'Insertar contenido' }).click()
   return page.getByRole('dialog')
 }

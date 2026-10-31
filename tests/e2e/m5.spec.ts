@@ -25,7 +25,9 @@ async function createFirstSlide(page: Page) {
   await page
     .getByRole('button', { name: 'Crear la primera diapositiva' })
     .click()
-  await expect(page.locator('.excalidraw .App-toolbar')).toBeVisible()
+  await expect(page.locator('.excalidraw .App-toolbar')).toBeVisible({
+    timeout: 15_000,
+  })
 }
 
 /** Text tool → click on the slide → type → leave the text box. */

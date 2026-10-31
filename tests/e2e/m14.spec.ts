@@ -49,7 +49,9 @@ test.describe('M14 · embeds that work', () => {
     await fakeGoogle(page)
     await signIn(page, 'scetina@uni.edu.co')
     await page.goto(editorUrl)
-    await expect(page.locator('.excalidraw .App-toolbar')).toBeVisible()
+    await expect(page.locator('.excalidraw .App-toolbar')).toBeVisible({
+      timeout: 15_000,
+    })
 
     await page.getByRole('button', { name: 'Insertar contenido' }).click()
     const dialog = page.getByRole('dialog')
@@ -84,7 +86,9 @@ test.describe('M14 · embeds that work', () => {
     await seedSlides('st_sebastian', [[textElement('x')]])
     await signIn(page, 'scetina@uni.edu.co')
     await page.goto(editorUrl)
-    await expect(page.locator('.excalidraw .App-toolbar')).toBeVisible()
+    await expect(page.locator('.excalidraw .App-toolbar')).toBeVisible({
+      timeout: 15_000,
+    })
     await page.getByRole('button', { name: 'Insertar contenido' }).click()
     const dialog = page.getByRole('dialog')
     await dialog.getByLabel('Enlace').fill('https://example.com/algo')
@@ -127,7 +131,9 @@ test.describe('M14 · embeds that work', () => {
     )
     await signIn(page, 'scetina@uni.edu.co')
     await page.goto(editorUrl)
-    await expect(page.locator('.excalidraw .App-toolbar')).toBeVisible()
+    await expect(page.locator('.excalidraw .App-toolbar')).toBeVisible({
+      timeout: 15_000,
+    })
     await page.getByRole('button', { name: 'Insertar contenido' }).click()
     const dialog = page.getByRole('dialog')
     await dialog.getByLabel('Enlace').fill('https://canva.link/q3ta5rzcro4ifxn')

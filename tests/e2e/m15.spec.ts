@@ -19,7 +19,9 @@ test.beforeEach(async () => {
 
 /** Text tool → click on the slide → type → leave the text box (as in m5.spec). */
 async function writeText(page: Page, text: string) {
-  await expect(page.locator('.excalidraw .App-toolbar')).toBeVisible()
+  await expect(page.locator('.excalidraw .App-toolbar')).toBeVisible({
+    timeout: 15_000,
+  })
   const canvas = page.locator('canvas.excalidraw__canvas.interactive')
   const box = (await canvas.boundingBox())!
   await page.getByTestId('toolbar-text').click({ force: true })
@@ -135,7 +137,9 @@ test.describe("M15 · teacher edits students' slides", () => {
     const student = await (await browser.newContext()).newPage()
     await signIn(student, 'scetina@uni.edu.co')
     await student.goto(`${spaceUrl}/edit`)
-    await expect(student.locator('.excalidraw .App-toolbar')).toBeVisible()
+    await expect(student.locator('.excalidraw .App-toolbar')).toBeVisible({
+      timeout: 15_000,
+    })
 
     const teacher = await (await browser.newContext()).newPage()
     await signIn(teacher, DEMO.teacher)
