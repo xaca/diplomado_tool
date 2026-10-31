@@ -10,7 +10,7 @@ Status legend: `[ ]` to do · `[x]` done
 
 - **Phase 1 — Template setup:** ✅ done (2026-10-26), commit `8f20758`
 - **Plan review (rev. 6, 2026-10-26):** ✅ consistency + free-tier review done, see [Review findings](#review-findings-rev-6)
-- **Phase 2 — "Padlet for PBL" app:** 🚧 in progress — Google sign-in enabled · M4 Steps 1–6 done (`/health` → `config: ok`) · service account key ready · **M1 ✅** · **Loop 1 (M2) ✅** ([report](reports/loop-01-m2.md)) · **Loop 2 (M3) ✅** ([report](reports/loop-02-m3.md)) · **Loop 3 (M4) ✅ code done** ([report](reports/loop-03-m4.md)) · **Loop 4 (M5) ✅ code done** ([report](reports/loop-04-m5.md)) · **Loop 5 (M6) ✅ code done** ([report](reports/loop-05-m6.md)) · **Loop 6 (M7) ✅ code done** ([report](reports/loop-06-m7.md)) · **Loop 7 (M8) ✅ code done** ([report](reports/loop-07-m8.md)) · **Extras ✅ code done** (2026-10-29): profile page `/me`, teacher's notes on slides · **Loop 8 (M10) Class participation: 📝 planned**, decisions [D12–D17](#decisions-all-answered-) waiting for you · **Loop 9 (M11) Profile photo & Design Thinking stage ✅ code done** (2026-10-31, [report](reports/loop-09-m11.md)) · **Loop 10 (M12 Board customization + M13 Notes while presenting) ✅ code done** (2026-10-31, [report](reports/loop-10-m12-m13.md)) — M1–M8 + extras deployed 2026-10-30/31; **waiting for you:** deploy Loop 10 (`npm run worker:deploy` → `npm run deploy:rules` → `npm run deploy`), App Check steps, **before 2026-11-25** (Worker live at `https://media-api.paradisserossa.workers.dev`)
+- **Phase 2 — "Padlet for PBL" app:** 🚧 in progress — Google sign-in enabled · M4 Steps 1–6 done (`/health` → `config: ok`) · service account key ready · **M1 ✅** · **Loop 1 (M2) ✅** ([report](reports/loop-01-m2.md)) · **Loop 2 (M3) ✅** ([report](reports/loop-02-m3.md)) · **Loop 3 (M4) ✅ code done** ([report](reports/loop-03-m4.md)) · **Loop 4 (M5) ✅ code done** ([report](reports/loop-04-m5.md)) · **Loop 5 (M6) ✅ code done** ([report](reports/loop-05-m6.md)) · **Loop 6 (M7) ✅ code done** ([report](reports/loop-06-m7.md)) · **Loop 7 (M8) ✅ code done** ([report](reports/loop-07-m8.md)) · **Extras ✅ code done** (2026-10-29): profile page `/me`, teacher's notes on slides · **Loop 8 (M10) Class participation: 📝 planned**, decisions [D12–D17](#decisions-all-answered-) waiting for you · **Loop 9 (M11) Profile photo & Design Thinking stage ✅ code done** (2026-10-31, [report](reports/loop-09-m11.md)) · **Loop 10 (M12 Board customization + M13 Notes while presenting) ✅ code done** (2026-10-31, [report](reports/loop-10-m12-m13.md)) · **Loop 12 (M14) Embeds that work: 📝 planned**, decisions [D36–D41](#decisions-all-answered-) waiting for you — M1–M8 + extras deployed 2026-10-30/31; **waiting for you:** deploy Loop 10 (`npm run worker:deploy` → `npm run deploy:rules` → `npm run deploy`), App Check steps, **before 2026-11-25** (Worker live at `https://media-api.paradisserossa.workers.dev`)
 
 ## ▶ Resume here (last session: 2026-10-31)
 
@@ -49,6 +49,13 @@ Checks at the end of the session: rules tests 68/68 · unit 71/71 · admin CLI �
 - Stored in its own `classes` collection: **all existing features stay as they are** (see "What does NOT change" in M10).
 - **To start:** confirm or change decisions **[D12–D17](#decisions-all-answered-)** (format, limits, visibility, teacher powers, backup, location), then say **"run loop 8"**.
 
+**Planned: Loop 12 = [M14 Embeds that work](#m14--embeds-that-work-f17--loop-12)** (not started)
+
+- Production check (2026-10-31, read-only): of 50 slides, **1 embed** (a Figma Slides deck that stays on Figma's loading screen, most likely not shared publicly) and **3 links pasted as plain text** (Google Slides, Google Forms, a `canva.link` short link). Students don't know how to embed.
+- An **"Insertar contenido"** button: paste a link → the app recognizes Google Slides / Docs / Sheets / Forms / Drive, YouTube, Vimeo, Loom, Figma, Canva, Miro, Notion, Genially, Prezi, Padlet; converts it to the embeddable form, previews it and tells the student exactly how to share it.
+- Existing slides improve on their own (links fixed when shown), links typed as text get a **"Convertir"** button and become clickable, and every embed shows a **loading animation** with a "¿No carga?" fix and an "Abrir" button.
+- **To start:** confirm or change **[D36–D41](#decisions-all-answered-)**, then say **"run loop 12"**.
+
 **Loop 10 = [M12 Board customization](#m12--board-customization-f15-f16--loop-10)** ✅ code done 2026-10-31
 
 - A **"Personalizar tablero"** panel for the teacher, with live preview: **name and description** (today there's no screen to rename a board), **logo**, **background** (colors, gradients, patterns), **layout** (Muro · Cuadrícula · Lista · Por etapa · Por grupo), **sticky header**.
@@ -74,24 +81,25 @@ Checks at the end of the session: rules tests 68/68 · unit 71/71 · admin CLI �
 
 A Padlet-style board where **each student owns one space** and documents their project process as **slides**. The teacher can **present each student's space** in full screen.
 
-| #   | Feature                                                                                                                                                    | Who                                                  |
-| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| F1  | Sign in with Google, using **any** of the student's emails (personal Gmail or university)                                                                  | everyone                                             |
-| F2  | Board dashboard: columns of cards, one card per student (like the reference image), live updates                                                           | everyone in the board                                |
-| F3  | Space editor: **one Excalidraw canvas per slide** (text, images, links, embeds, shapes, drawing); add / reorder slides                                     | the student who owns the space                       |
-| F4  | Space profile: title, summary, cover image, color                                                                                                          | the student                                          |
-| F5  | Presentation mode: full screen, keyboard navigation, **next / previous student**                                                                           | teacher (students: their own space)                  |
-| F6  | Boards: create a board, add students, invite link                                                                                                          | teacher                                              |
-| F7  | Import / export with **JSON** (students, board backup)                                                                                                     | teacher                                              |
-| F8  | **Storage & cleanup**: image usage, remove unused images, **"Archived projects"** for inactive boards, purge                                               | teacher (dashboard) + you (admin CLI)                |
-| F9  | **Spanish (default) / English** interface                                                                                                                  | everyone                                             |
-| F10 | **Profile** (`/me`): display name, photo on cards, language ✅                                                                                             | everyone                                             |
-| F11 | **Teacher's notes** on each slide, private to the teacher and the student ✅ (M13: also while presenting)                                                  | teacher writes · the student reads                   |
-| F12 | **Class participation**: per class, the teacher opens **1–5 participation slides**; students add, edit and delete their own contributions (text + picture) | teacher creates and moderates · students participate |
-| F13 | **Profile photo**: Google photo, **an uploaded photo** or initials                                                                                         | everyone                                             |
-| F14 | **Design Thinking stage**: a ring around the student's photo with their current stage, or "Vitrineando"; stage summary + filter on the dashboard           | the student sets it · the teacher sees and can set   |
-| F15 | **Board customization**: name, description, logo, background, layout, sticky header, with live preview; GSAP animations                                    | teacher sets it · everyone sees it                   |
-| F16 | **Teacher distinction**: "#DOCENTE" ring + badge on the teacher's photo; the board's teachers shown in its header                                          | everyone                                             |
+| #   | Feature                                                                                                                                                          | Who                                                  |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| F1  | Sign in with Google, using **any** of the student's emails (personal Gmail or university)                                                                        | everyone                                             |
+| F2  | Board dashboard: columns of cards, one card per student (like the reference image), live updates                                                                 | everyone in the board                                |
+| F3  | Space editor: **one Excalidraw canvas per slide** (text, images, links, embeds, shapes, drawing); add / reorder slides                                           | the student who owns the space                       |
+| F4  | Space profile: title, summary, cover image, color                                                                                                                | the student                                          |
+| F5  | Presentation mode: full screen, keyboard navigation, **next / previous student**                                                                                 | teacher (students: their own space)                  |
+| F6  | Boards: create a board, add students, invite link                                                                                                                | teacher                                              |
+| F7  | Import / export with **JSON** (students, board backup)                                                                                                           | teacher                                              |
+| F8  | **Storage & cleanup**: image usage, remove unused images, **"Archived projects"** for inactive boards, purge                                                     | teacher (dashboard) + you (admin CLI)                |
+| F9  | **Spanish (default) / English** interface                                                                                                                        | everyone                                             |
+| F10 | **Profile** (`/me`): display name, photo on cards, language ✅                                                                                                   | everyone                                             |
+| F11 | **Teacher's notes** on each slide, private to the teacher and the student ✅ (M13: also while presenting)                                                        | teacher writes · the student reads                   |
+| F12 | **Class participation**: per class, the teacher opens **1–5 participation slides**; students add, edit and delete their own contributions (text + picture)       | teacher creates and moderates · students participate |
+| F13 | **Profile photo**: Google photo, **an uploaded photo** or initials                                                                                               | everyone                                             |
+| F14 | **Design Thinking stage**: a ring around the student's photo with their current stage, or "Vitrineando"; stage summary + filter on the dashboard                 | the student sets it · the teacher sees and can set   |
+| F15 | **Board customization**: name, description, logo, background, layout, sticky header, with live preview; GSAP animations                                          | teacher sets it · everyone sees it                   |
+| F16 | **Teacher distinction**: "#DOCENTE" ring + badge on the teacher's photo; the board's teachers shown in its header                                                | everyone                                             |
+| F17 | **Embeds that work**: guided "Insertar contenido" (Google, YouTube, Figma, Canva, Notion, Miro…), automatic link fixes, loading state and fallback, how-to guide | the student inserts · everyone views                 |
 
 Students can see their classmates' spaces **read-only**. **Class participation** (F12) is the one place where everybody writes together, on **separate slides** that never touch the students' own spaces.
 
@@ -715,21 +723,22 @@ Saved as `reports/loop-NN-<milestone>.md` (committed) and summarized in the chat
 
 ### Loop roadmap
 
-| Loop  | Milestone                                 | I build                                                                                                                                                                                              | You do at the end                                                                                      |
-| ----- | ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| 0 ✅  | **M1 finish**                             | —                                                                                                                                                                                                    | `npm run admin -- setup --email paradisserossa@gmail.com` · log in as teacher and as student           |
-| 1 ✅  | **Infra + M2** Boards, students & joining | emulator seed, Playwright setup, `npm test`; teacher dashboard, create board, students table, JSON import + quick add, auto-join, invite link, merge, rules + tests                                  | `npm run deploy:rules` (rules + indexes) · acceptance test                                             |
-| 2 ✅  | **M3** Dashboard                          | Padlet-like board view, live cards, space profile (no cover yet)                                                                                                                                     | `npm run deploy:rules` · acceptance test                                                               |
-| 3 ✅  | **M4** Uploads (Worker Steps 7–12)        | token check, permission check, signed uploads, cover image, asset registry, rules                                                                                                                    | `npx wrangler deploy` · upload a real image · `npm run deploy:rules`                                   |
-| 4 ✅  | **M5** Excalidraw slides                  | editor, autosave (throttled), images via Cloudinary, viewer, self-hosted fonts                                                                                                                       | `npm run deploy:rules` · acceptance test                                                               |
-| 5 ✅  | **M6** Presentation                       | full screen, keyboard, next student, GSAP transitions                                                                                                                                                | acceptance test                                                                                        |
-| 6 ✅  | **M7** Lifecycle & backups                | archived projects, cleanup, purge, JSON backup/restore, CLI commands, Worker delete/usage                                                                                                            | `npx wrangler deploy` · `npm run deploy:rules` · try cleanup on a test board                           |
-| 7 ✅  | **M8** Hardening & launch                 | App Check code, final rules review, privacy notice, metadata                                                                                                                                         | create a reCAPTCHA v3 key + register App Check (console) · `npm run deploy` (hosting)                  |
-| 8 📝  | **M10** Class participation               | classes with 1–5 participation slides, contribution cards (text + picture), own edit / delete, teacher moderation, open / close, present, Worker `scope: 'class'`, orphans, backup v2, rules + tests | answer D12–D17 · `npm run worker:deploy` · `npm run deploy:rules` · acceptance test                    |
-| 9 ✅  | **M11** Profile photo & DT stage          | uploaded profile photo (crop, Worker `scope: 'avatar'`), stage ring on every avatar, stage picker, board stage list (teacher), dashboard summary + filter, rules + tests                             | answer D18–D24 · `npm run worker:deploy` · `npm run deploy:rules` · `npm run deploy` · acceptance test |
-| 10 ✅ | **M12** Board customization               | "Personalizar tablero" panel (name, logo, background, layout, sticky header), #DOCENTE ring, GSAP Flip / ScrollTrigger animations, Worker `scope: 'board'`, rules + tests                            | answer D25–D32 · `npm run worker:deploy` · `npm run deploy:rules` · `npm run deploy` · acceptance test |
-| 11 ✅ | **M13** Notes while presenting            | notes panel in the presenter (N), quick add / edit / delete on the slide on screen, "Vista del docente" window synced by BroadcastChannel, e2e                                                       | answer D33–D35 · `npm run deploy` · acceptance test (no rules / Worker change)                         |
-| —     | **M9** More teachers                      | when you need it                                                                                                                                                                                     | —                                                                                                      |
+| Loop  | Milestone                                 | I build                                                                                                                                                                                               | You do at the end                                                                                      |
+| ----- | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| 0 ✅  | **M1 finish**                             | —                                                                                                                                                                                                     | `npm run admin -- setup --email paradisserossa@gmail.com` · log in as teacher and as student           |
+| 1 ✅  | **Infra + M2** Boards, students & joining | emulator seed, Playwright setup, `npm test`; teacher dashboard, create board, students table, JSON import + quick add, auto-join, invite link, merge, rules + tests                                   | `npm run deploy:rules` (rules + indexes) · acceptance test                                             |
+| 2 ✅  | **M3** Dashboard                          | Padlet-like board view, live cards, space profile (no cover yet)                                                                                                                                      | `npm run deploy:rules` · acceptance test                                                               |
+| 3 ✅  | **M4** Uploads (Worker Steps 7–12)        | token check, permission check, signed uploads, cover image, asset registry, rules                                                                                                                     | `npx wrangler deploy` · upload a real image · `npm run deploy:rules`                                   |
+| 4 ✅  | **M5** Excalidraw slides                  | editor, autosave (throttled), images via Cloudinary, viewer, self-hosted fonts                                                                                                                        | `npm run deploy:rules` · acceptance test                                                               |
+| 5 ✅  | **M6** Presentation                       | full screen, keyboard, next student, GSAP transitions                                                                                                                                                 | acceptance test                                                                                        |
+| 6 ✅  | **M7** Lifecycle & backups                | archived projects, cleanup, purge, JSON backup/restore, CLI commands, Worker delete/usage                                                                                                             | `npx wrangler deploy` · `npm run deploy:rules` · try cleanup on a test board                           |
+| 7 ✅  | **M8** Hardening & launch                 | App Check code, final rules review, privacy notice, metadata                                                                                                                                          | create a reCAPTCHA v3 key + register App Check (console) · `npm run deploy` (hosting)                  |
+| 8 📝  | **M10** Class participation               | classes with 1–5 participation slides, contribution cards (text + picture), own edit / delete, teacher moderation, open / close, present, Worker `scope: 'class'`, orphans, backup v2, rules + tests  | answer D12–D17 · `npm run worker:deploy` · `npm run deploy:rules` · acceptance test                    |
+| 9 ✅  | **M11** Profile photo & DT stage          | uploaded profile photo (crop, Worker `scope: 'avatar'`), stage ring on every avatar, stage picker, board stage list (teacher), dashboard summary + filter, rules + tests                              | answer D18–D24 · `npm run worker:deploy` · `npm run deploy:rules` · `npm run deploy` · acceptance test |
+| 10 ✅ | **M12** Board customization               | "Personalizar tablero" panel (name, logo, background, layout, sticky header), #DOCENTE ring, GSAP Flip / ScrollTrigger animations, Worker `scope: 'board'`, rules + tests                             | answer D25–D32 · `npm run worker:deploy` · `npm run deploy:rules` · `npm run deploy` · acceptance test |
+| 10 ✅ | **M13** Notes while presenting            | notes panel in the presenter (N), quick add / edit / delete on the slide on screen, "Vista del docente" window synced by BroadcastChannel, e2e                                                        | answer D33–D35 · `npm run deploy` · acceptance test (no rules / Worker change)                         |
+| 12 📝 | **M14** Embeds that work                  | "Insertar contenido" dialog (detect, convert, preview, instructions), display-time link fixes, text-link → embed, embed loading / fallback, "¿Cómo insertar…?" guide, Worker short-link resolver, e2e | answer D36–D41 · `npm run worker:deploy` · `npm run deploy` · acceptance test with real links          |
+| —     | **M9** More teachers                      | when you need it                                                                                                                                                                                      | —                                                                                                      |
 
 **Starting a loop:** say **"run loop N"** (e.g. "run loop 1"). I'll work through it and come back with the report.
 
@@ -1006,6 +1015,76 @@ While presenting a student's slides in class, the teacher writes feedback **on t
 
 **Risks:** a teacher may open the panel on the projector by mistake (mitigated: closed by default, "Visible en pantalla" label, the console window).
 
+### M14 — Embeds that work (F17) — Loop 12
+
+Students document their process with tools they already use (Google Slides, Figma, Canva…). Today the slide editor only has Excalidraw's generic "web embed" tool, so students paste links as text or use links that can't play inside a frame.
+
+**What we found (production, 2026-10-31, read-only, no personal data)**
+
+| Case                                               | Count | Why it fails                                                                                                                              |
+| -------------------------------------------------- | ----- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Figma Slides deck embed (`embed.figma.com/deck/…`) | 1     | Correct format; Figma shows its own loading screen forever when the viewer has no access → the file must be shared "Anyone with the link" |
+| Google Slides link typed as text                   | 1     | Not an embed; an `/edit` link can't run in a frame anyway (needs `/embed` or `/preview`)                                                  |
+| Google Forms link typed as text                    | 1     | Not an embed; needs `?embedded=true`                                                                                                      |
+| `canva.link/…` short link typed as text            | 1     | Short links redirect; the frame needs the final `canva.com/design/…/view?embed` link                                                      |
+
+Our site doesn't block frames (no CSP `frame-src`), so the fixes are on the link format, the sharing settings and guidance.
+
+**What people see**
+
+- **Editor → "Insertar contenido"** (a clear button next to the toolbar, also when pasting a link on the canvas): paste a link → the app shows the **service it recognized** (icon + name), **converts** it to the embeddable form, shows a **live preview** in the dialog and a short **checklist for that service** ("Compartir → Cualquier persona con el enlace → Lector"). "Insertar" places it in the slide at the right size (16:9 for slides and videos, 4:3 for documents, tall for forms).
+- **Supported services (v1):**
+
+| Service                                   | Accepted links                                    | Embedded as                                       | What the student must do                                                 |
+| ----------------------------------------- | ------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------ |
+| Google Slides                             | `/presentation/d/ID/edit`, `/view`, `/pub`        | `/presentation/d/ID/embed?start=false&loop=false` | Share → "Cualquier persona con el enlace" (or File → Publicar en la web) |
+| Google Docs / Sheets                      | `/document/d/ID/…`, `/spreadsheets/d/ID/…`        | `…/preview`                                       | Share → anyone with the link                                             |
+| Google Forms                              | `/forms/d/e/ID/viewform`, `forms.gle/…`           | `…/viewform?embedded=true`                        | Nothing (forms are public when sent)                                     |
+| Google Drive (video, PDF)                 | `/file/d/ID/view`                                 | `/file/d/ID/preview`                              | Share → anyone with the link                                             |
+| YouTube                                   | `watch?v=`, `youtu.be/`, `shorts/`                | `youtube-nocookie.com/embed/ID` (privacy)         | Public or unlisted video                                                 |
+| Vimeo                                     | `vimeo.com/ID`                                    | `player.vimeo.com/video/ID`                       | Embedding allowed                                                        |
+| Loom                                      | `loom.com/share/ID`                               | `loom.com/embed/ID`                               | Nothing                                                                  |
+| Figma (design, prototype, FigJam, Slides) | `figma.com/design                                 | proto                                             | board                                                                    | deck/…` | `embed.figma.com/…?embed-host=pbl` | Share → "Anyone with the link can view" |
+| Canva                                     | `canva.com/design/ID/…`, `canva.link/…`           | `canva.com/design/ID/view?embed`                  | Share → "Cualquier persona con el enlace" (view)                         |
+| Miro                                      | `miro.com/app/board/ID`                           | `miro.com/app/live-embed/ID`                      | Share → anyone with the link can view                                    |
+| Notion                                    | `*.notion.site/…`                                 | same link                                         | Share → Publish to web                                                   |
+| Genially, Prezi, Padlet                   | `view.genial.ly/…`, `prezi.com/…`, `padlet.com/…` | their embed URL                                   | Public / "anyone with the link"                                          |
+
+Anything else stays a normal link (button "Abrir enlace"), as today.
+
+- **Existing slides fix themselves:** when a slide is shown (viewer, presenter, editor), known links are rewritten to their embeddable form (e.g. Google `/edit` → `/embed`, YouTube → nocookie). No data migration.
+- **Links typed as text:** the editor shows a hint on that slide ("Este enlace se puede ver dentro de la diapositiva") with **"Convertir"** (replaces the text by the embed, same place). In the viewer and presenter, links inside text are **clickable** (open in a new tab).
+- **Short links** (`canva.link`, `forms.gle`, `youtu.be`…): the media-api Worker resolves the redirect (**only for an allow-list of shorteners**, no page content is read) so the dialog can convert them.
+- **Loading:**
+  - The slide shows a **shimmer skeleton** with "Cargando diapositiva…" and fades in (GSAP) when ready.
+  - Each embed shows an **overlay with the service's icon and a spinner** until the frame loads.
+  - After **12 s** without loading, or for services that need sign-in, the overlay changes to **"¿No carga?"** with the fix for that service ("Pídele a … que lo comparta como 'Cualquier persona con el enlace'") and an **"Abrir en una pestaña nueva"** button.
+  - Every embed has a small **"↗ Abrir"** chip in the viewer and presenter.
+  - Presenter: the next slide's embeds start loading in the background (hidden) so they're ready when you move.
+- **"¿Cómo insertar…?" guide:** a short page per service (3–4 steps, es / en), linked from the editor, the dialog and the "¿No carga?" message. The teacher can share its link with the class.
+
+**What does NOT change**
+
+- Excalidraw slides, images, text and drawings; the slide data format (embeds stay Excalidraw `embeddable` elements); every embed is still sandboxed and allow-listed.
+
+**How it's built**
+
+- [ ] `embeds.ts` (pure, unit-tested): provider registry (hosts, URL patterns → embed URL, aspect ratio, sandbox extras, instructions key, needs-sharing flag), `detectEmbed(url)`, `toEmbedUrl(url)`; replaces `EMBED_HOSTS`
+- [ ] Display-time rewrite in `renderSlideSvg` (iframe `src` → `toEmbedUrl`), per-provider sandbox extras (e.g. `allow-forms` for Forms), `allow="fullscreen; autoplay; encrypted-media"`
+- [ ] `InsertEmbedDialog` in the editor (paste, detect, convert, live preview, checklist, insert sized element) + paste-on-canvas hook
+- [ ] Text-link checker in the editor (hint + "Convertir"); clickable URLs in rendered text
+- [ ] Embed loading overlay + 12 s fallback + "↗ Abrir" chip (viewer, presenter); slide shimmer skeleton + GSAP fade-in; presenter pre-warm of the next slide's embeds
+- [ ] Worker: `POST /links/resolve` (signed-in users, allow-listed shortener hosts, follows ≤ 5 redirects with HEAD / GET without body, returns the final URL only); tests
+- [ ] Guide page `/ayuda/insertar` (es / en) + links
+- [ ] Privacy notice: embedded services (Google, YouTube nocookie, Figma, Canva…) load from their own servers when a slide is shown
+- [ ] Tests: unit (every provider: accepted / rejected links, conversion, short links, sizes), Worker (resolver allow-list, redirect limit, no content), e2e (insert a Google Slides `/edit` link → embedded as `/embed`; YouTube link → nocookie; text link → "Convertir"; an embed that never loads shows "¿No carga?" + "Abrir"; the slide skeleton shows while loading) + the full existing suite
+- [ ] **Manual compatibility check** (you + me, real public test files): each service in the table, viewer and presenter, Chrome + Safari (Safari blocks some third-party cookies) → result table in the report
+- [ ] **Your turn:** `npm run worker:deploy` · `npm run deploy` · acceptance test with real links
+
+**Free-tier budget:** the Worker resolver only for short links (a few calls per week); no Firestore change; embeds load from the providers.
+
+**Risks:** providers change their embed URLs (registry in one file, unit tests per provider); Safari / Brave block third-party cookies, so private Figma or Google files never load there (the "¿No carga?" message explains it: share publicly); some services may refuse frames entirely (they stay links with "Abrir").
+
 ### M9 — More teachers (when needed)
 
 - [ ] `/admin/staff` screen, co-teachers, admin sees all boards
@@ -1219,49 +1298,55 @@ Full review of the plan for consistency, free-tier limits and security, done bef
 
 ## Decisions (all answered ✅)
 
-D12–D17 (class participation, M10) are **proposed** (⏳): confirm or change them before Loop 8. D18–D24 (M11) and D25–D35 (M12, M13) confirmed 2026-10-31. D18–D24 (M11) confirmed 2026-10-31.
+D12–D17 (class participation, M10) and D36–D41 (embeds, M14) are **proposed** (⏳): confirm or change them before Loop 8 / Loop 12. D18–D24 (M11) and D25–D35 (M12, M13) confirmed 2026-10-31. D18–D24 (M11) confirmed 2026-10-31.
 
-| #   | Decision                | Answer                                                                                                                                                             |
-| --- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| D1  | Image storage           | **Cloudinary**, signed uploads via the media-api                                                                                                                   |
-| D2  | Slide editor            | **Excalidraw** canvas per slide (MIT, free, no key, no watermark)                                                                                                  |
-| D3  | Text                    | **Excalidraw's text tool** (font, size, color, align; no inline bold/italic)                                                                                       |
-| D4  | Teacher / admin roles   | **Recognized by email**: `staffEmails/{email}` (you = admin via CLI); everyone else signs in as a student                                                          |
-| D5  | Classmates' spaces      | **Visible read-only**                                                                                                                                              |
-| D6  | Joining a board         | **A: teacher adds students (auto-join) + B: invite link**                                                                                                          |
-| D7  | Language                | **Spanish (default) + English**                                                                                                                                    |
-| D8  | Import / export         | **JSON** + quick-add paste box                                                                                                                                     |
-| D9  | Students with 2 emails  | **Person + email index**                                                                                                                                           |
-| D10 | First admin             | **Your personal Gmail**, via `npm run admin -- setup` from this console                                                                                            |
-| D11 | Removing old data       | **Teacher dashboard (Storage page) + local CLI**, via the media-api                                                                                                |
-| Q1  | Free canvas             | **Excalidraw** (the whole project must be free, academic use)                                                                                                      |
-| Q2  | Cloudflare Worker       | **Yes**, built step by step (M4 walkthrough)                                                                                                                       |
-| Q3  | Old boards              | **Auto-move to "Proyectos archivados" after 90 days without use** (configurable); purge is manual, after a backup                                                  |
-| Q4  | Default language        | **Spanish**                                                                                                                                                        |
-| Q5  | Admin email             | **Your personal Gmail**                                                                                                                                            |
-| D12 | ⏳ Participation format | **Proposed:** each participation slide = the teacher's prompt + a grid of contribution cards (not a shared Excalidraw canvas, which would overwrite people's work) |
-| D13 | ⏳ Limits               | **Proposed:** 1–5 slides per class; up to 3 contributions per student per slide; text ≤ 1000 + 1 picture                                                           |
-| D14 | ⏳ Visibility           | **Proposed:** the whole class sees every contribution with the author's name (anonymous mode: Later)                                                               |
-| D15 | ⏳ Teacher powers       | **Proposed:** edit / delete any contribution (marked "editado por el docente"), open / close each class; a removed student's contributions stay                    |
-| D16 | ⏳ Backup               | **Proposed:** classes and contributions are part of the board backup (v2) and restored with it                                                                     |
-| D17 | ⏳ Where it lives       | **Proposed:** a "Clases" section in each board (not a separate board), so members and rules are reused                                                             |
-| D18 | Photo options           | Google photo · uploaded photo · initials (on `/me`); the uploaded photo is cropped square in the browser                                                           |
-| D19 | Photo storage           | one fixed Cloudinary file per person (`users/{uid}/avatar`, overwritten on change), signed by the Worker only for staff or board members                           |
-| D20 | Stage scope             | the stage is **per board** (on the student's space), not per person, because each course is a different project                                                    |
-| D21 | Stage list              | default = Design Thinking: Empatizar · Definir · Idear · Prototipar · Evaluar + **Vitrineando** (here to learn / no project); teacher can edit per board           |
-| D22 | Look                    | colored ring; on large avatars the label curved along the ring like #OPENTOWORK (#EMPATIZANDO … #VITRINEANDO); Vitrineando = dashed ring + eye icon                |
-| D23 | Who sets the stage      | the student, and the teacher too (marked "puesta por el docente"); teacher gets a summary + filter on the dashboard                                                |
-| D24 | Order                   | run **Loop 9 (M11) before Loop 8 (M10)**: smaller, and class contributions then show the photo + ring from the start                                               |
-| D25 | Where                   | a "Personalizar tablero" side panel on the board itself with live preview (not a separate settings page)                                                           |
-| D26 | Backgrounds             | 12 presets (colors + soft gradients) × dots / grid / none, readable text guaranteed; custom background images: Later (credits, contrast)                           |
-| D27 | Layouts                 | Muro · Cuadrícula · Lista · Por etapa · Por grupo, plus order; chosen by the teacher, everyone sees the same (no per-student choice in v1)                         |
-| D28 | Logo                    | one uploaded image per board (teacher only), shown in the header, the students' board card and the presenter                                                       |
-| D29 | Sticky header           | on by default (teacher can turn it off), shrinks while scrolling                                                                                                   |
-| D30 | Teacher distinction     | "#DOCENTE" ring (dark + gold) with a cap badge wherever a teacher's photo appears, and the board's teachers in its header                                          |
-| D31 | Animations              | GSAP Flip / ScrollTrigger as listed in M12; always off with "reduce motion"; no per-board switch                                                                   |
-| D32 | Order                   | run **Loop 10 (M12) next**, then Loop 8 (M10); M12 doesn't depend on M10, and M10 then reuses the #DOCENTE ring                                                    |
-| D33 | Notes in the presenter  | teacher only; side panel (key N) on the slide on screen, same notes as F11 (private to the teacher and that student)                                               |
-| D34 | Projector safety        | panel closed by default + "Visible en pantalla" label + optional "Vista del docente" second window synced by BroadcastChannel                                      |
-| D35 | When                    | build M13 **inside Loop 10** (both touch the presenter and the teacher's tools)                                                                                    |
+| #   | Decision                | Answer                                                                                                                                                                                                  |
+| --- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| D1  | Image storage           | **Cloudinary**, signed uploads via the media-api                                                                                                                                                        |
+| D2  | Slide editor            | **Excalidraw** canvas per slide (MIT, free, no key, no watermark)                                                                                                                                       |
+| D3  | Text                    | **Excalidraw's text tool** (font, size, color, align; no inline bold/italic)                                                                                                                            |
+| D4  | Teacher / admin roles   | **Recognized by email**: `staffEmails/{email}` (you = admin via CLI); everyone else signs in as a student                                                                                               |
+| D5  | Classmates' spaces      | **Visible read-only**                                                                                                                                                                                   |
+| D6  | Joining a board         | **A: teacher adds students (auto-join) + B: invite link**                                                                                                                                               |
+| D7  | Language                | **Spanish (default) + English**                                                                                                                                                                         |
+| D8  | Import / export         | **JSON** + quick-add paste box                                                                                                                                                                          |
+| D9  | Students with 2 emails  | **Person + email index**                                                                                                                                                                                |
+| D10 | First admin             | **Your personal Gmail**, via `npm run admin -- setup` from this console                                                                                                                                 |
+| D11 | Removing old data       | **Teacher dashboard (Storage page) + local CLI**, via the media-api                                                                                                                                     |
+| Q1  | Free canvas             | **Excalidraw** (the whole project must be free, academic use)                                                                                                                                           |
+| Q2  | Cloudflare Worker       | **Yes**, built step by step (M4 walkthrough)                                                                                                                                                            |
+| Q3  | Old boards              | **Auto-move to "Proyectos archivados" after 90 days without use** (configurable); purge is manual, after a backup                                                                                       |
+| Q4  | Default language        | **Spanish**                                                                                                                                                                                             |
+| Q5  | Admin email             | **Your personal Gmail**                                                                                                                                                                                 |
+| D12 | ⏳ Participation format | **Proposed:** each participation slide = the teacher's prompt + a grid of contribution cards (not a shared Excalidraw canvas, which would overwrite people's work)                                      |
+| D13 | ⏳ Limits               | **Proposed:** 1–5 slides per class; up to 3 contributions per student per slide; text ≤ 1000 + 1 picture                                                                                                |
+| D14 | ⏳ Visibility           | **Proposed:** the whole class sees every contribution with the author's name (anonymous mode: Later)                                                                                                    |
+| D15 | ⏳ Teacher powers       | **Proposed:** edit / delete any contribution (marked "editado por el docente"), open / close each class; a removed student's contributions stay                                                         |
+| D16 | ⏳ Backup               | **Proposed:** classes and contributions are part of the board backup (v2) and restored with it                                                                                                          |
+| D17 | ⏳ Where it lives       | **Proposed:** a "Clases" section in each board (not a separate board), so members and rules are reused                                                                                                  |
+| D18 | Photo options           | Google photo · uploaded photo · initials (on `/me`); the uploaded photo is cropped square in the browser                                                                                                |
+| D19 | Photo storage           | one fixed Cloudinary file per person (`users/{uid}/avatar`, overwritten on change), signed by the Worker only for staff or board members                                                                |
+| D20 | Stage scope             | the stage is **per board** (on the student's space), not per person, because each course is a different project                                                                                         |
+| D21 | Stage list              | default = Design Thinking: Empatizar · Definir · Idear · Prototipar · Evaluar + **Vitrineando** (here to learn / no project); teacher can edit per board                                                |
+| D22 | Look                    | colored ring; on large avatars the label curved along the ring like #OPENTOWORK (#EMPATIZANDO … #VITRINEANDO); Vitrineando = dashed ring + eye icon                                                     |
+| D23 | Who sets the stage      | the student, and the teacher too (marked "puesta por el docente"); teacher gets a summary + filter on the dashboard                                                                                     |
+| D24 | Order                   | run **Loop 9 (M11) before Loop 8 (M10)**: smaller, and class contributions then show the photo + ring from the start                                                                                    |
+| D25 | Where                   | a "Personalizar tablero" side panel on the board itself with live preview (not a separate settings page)                                                                                                |
+| D26 | Backgrounds             | 12 presets (colors + soft gradients) × dots / grid / none, readable text guaranteed; custom background images: Later (credits, contrast)                                                                |
+| D27 | Layouts                 | Muro · Cuadrícula · Lista · Por etapa · Por grupo, plus order; chosen by the teacher, everyone sees the same (no per-student choice in v1)                                                              |
+| D28 | Logo                    | one uploaded image per board (teacher only), shown in the header, the students' board card and the presenter                                                                                            |
+| D29 | Sticky header           | on by default (teacher can turn it off), shrinks while scrolling                                                                                                                                        |
+| D30 | Teacher distinction     | "#DOCENTE" ring (dark + gold) with a cap badge wherever a teacher's photo appears, and the board's teachers in its header                                                                               |
+| D31 | Animations              | GSAP Flip / ScrollTrigger as listed in M12; always off with "reduce motion"; no per-board switch                                                                                                        |
+| D32 | Order                   | run **Loop 10 (M12) next**, then Loop 8 (M10); M12 doesn't depend on M10, and M10 then reuses the #DOCENTE ring                                                                                         |
+| D33 | Notes in the presenter  | teacher only; side panel (key N) on the slide on screen, same notes as F11 (private to the teacher and that student)                                                                                    |
+| D34 | Projector safety        | panel closed by default + "Visible en pantalla" label + optional "Vista del docente" second window synced by BroadcastChannel                                                                           |
+| D35 | When                    | build M13 **inside Loop 10** (both touch the presenter and the teacher's tools)                                                                                                                         |
+| D36 | ⏳ Services             | **Proposed:** the 13 services in the M14 table (Google Slides / Docs / Sheets / Forms / Drive, YouTube, Vimeo, Loom, Figma, Canva, Miro, Notion, Genially / Prezi / Padlet); anything else stays a link |
+| D37 | ⏳ Fix old slides       | **Proposed:** rewrite known links when a slide is shown (no migration, no edits to students' slides)                                                                                                    |
+| D38 | ⏳ Text links           | **Proposed:** hint + "Convertir" in the editor (student decides); links in text clickable in viewer / presenter                                                                                         |
+| D39 | ⏳ Short links          | **Proposed:** the Worker resolves redirects for an allow-list of shorteners only (canva.link, forms.gle, youtu.be, figma short links)                                                                   |
+| D40 | ⏳ Loading / fallback   | **Proposed:** shimmer + spinner overlay, "¿No carga?" after 12 s with the service's fix, "↗ Abrir" always; presenter pre-loads the next slide's embeds                                                  |
+| D41 | ⏳ Help                 | **Proposed:** a "¿Cómo insertar…?" guide page (es / en) per service, linked from the editor and the fallback                                                                                            |
 
 **Next step:** see the Phase 2 status line at the top and the latest loop report.
