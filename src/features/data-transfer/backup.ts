@@ -60,6 +60,14 @@ const slideSchema = z.object({
 
 const uidSchema = z.string().regex(/^[A-Za-z0-9_-]{1,128}$/)
 
+const reactionsSchema = z.record(
+  uidSchema,
+  z.object({
+    name: z.string().min(1).max(120),
+    emojis: z.array(z.enum(REACTIONS)).min(1).max(REACTIONS.length),
+  }),
+)
+
 const stickyNoteBackupSchema = z
   .object({
     /** {authorUid}_{n}: kept so the author still owns it after a restore */
@@ -72,13 +80,7 @@ const stickyNoteBackupSchema = z
     authorStudentId: z.string().max(128).nullable(),
     authorName: z.string().min(1).max(120),
     authorRole: z.enum(['student', 'teacher']),
-    reactions: z.record(
-      uidSchema,
-      z.object({
-        name: z.string().min(1).max(120),
-        emojis: z.array(z.enum(REACTIONS)).min(1).max(REACTIONS.length),
-      }),
-    ),
+    reactions: reactionsSchema,
     editedByTeacher: z.boolean(),
   })
   .refine((note) => note.id.startsWith(`${note.authorUid}_`), {
@@ -92,11 +94,15 @@ const classBackupSchema = z.object({
   slides: z
     .array(
       z.object({
-        title: z.string().min(1).max(120),
+        // optional since M10b (D91)
+        title: z.string().max(120),
         instructions: z.string().max(500),
         layout: z.enum(CLASS_LAYOUTS),
         zones: z.array(z.string().max(40)).max(4),
         locked: z.boolean(),
+        /** M10b: the teacher's drawing (image references only) and the slide's reactions */
+        drawing: slideSchema.omit({ id: true }).optional(),
+        reactions: reactionsSchema.optional(),
         notes: z.array(stickyNoteBackupSchema).max(2000),
       }),
     )
@@ -222,6 +228,13 @@ export function classBackupOf(
           layout: slide.layout,
           zones: slide.zones,
           locked: slide.locked,
+          ...(slide.content && {
+            drawing: { content: slide.content, files: slide.files ?? {} },
+          }),
+          ...(slide.reactions &&
+            Object.keys(slide.reactions).length > 0 && {
+              reactions: slide.reactions,
+            }),
           notes: (notes.get(id) ?? []).map(({ id: noteId, data }) => ({
             id: noteId,
             text: data.text,

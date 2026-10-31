@@ -236,12 +236,22 @@ export async function loadBoard(boardId: string) {
         board.logo,
       ],
       // images of the kept versions (M15) count too
-      slideAssetIds: slides.flatMap((s) =>
-        s.docs.map((doc) => {
-          const data = doc.data() as SlideDoc
-          return [...(data.assetIds ?? []), ...(data.versionAssetIds ?? [])]
-        }),
-      ),
+      slideAssetIds: [
+        ...slides.flatMap((s) =>
+          s.docs.map((doc) => {
+            const data = doc.data() as SlideDoc
+            return [...(data.assetIds ?? []), ...(data.versionAssetIds ?? [])]
+          }),
+        ),
+        // M10b: images in the teacher's class drawings are in use too
+        ...classSlides.flatMap((s) =>
+          s.docs.map((doc) =>
+            Object.values((doc.data() as ClassSlideDoc).files ?? {}).map(
+              (file) => file.assetId,
+            ),
+          ),
+        ),
+      ],
     }),
     refs,
   }

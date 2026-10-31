@@ -151,11 +151,18 @@ export async function restoreBoardFile(
         updatedAt: serverTimestamp(),
       },
     ])
-    klass.slides.forEach(({ notes, ...slide }, index) => {
+    klass.slides.forEach(({ notes, drawing, ...slide }, index) => {
       writes.push([
         doc(db, paths.classSlide(boardId, classDoc.id, slideIds[index])),
         {
           ...slide,
+          reactions: slide.reactions ?? {},
+          // M10b: the teacher's drawing keeps its image references
+          ...(drawing && {
+            content: drawing.content,
+            files: drawing.files,
+            bytes: new Blob([drawing.content]).size,
+          }),
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         },

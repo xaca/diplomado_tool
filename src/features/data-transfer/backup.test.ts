@@ -300,6 +300,42 @@ describe('class walls in backups (M10)', () => {
     expect(buildBackup(snapshot).classes).toEqual([])
   })
 
+  it('M10b: keeps the teacher’s drawing and the slide’s reactions; titles may be empty', () => {
+    const drawn = classBackupOf(
+      { title: 'C', date: '2026-11-12', status: 'open', slideOrder: ['s1'] },
+      new Map([
+        [
+          's1',
+          {
+            title: '',
+            instructions: '',
+            layout: 'free' as const,
+            zones: [],
+            locked: false,
+            content: '{"elements":[]}',
+            files: {},
+            bytes: 15,
+            reactions: { u2: { name: 'Elma', emojis: ['🎉' as const] } },
+            createdAt: now,
+            updatedAt: now,
+          },
+        ],
+      ]),
+      new Map(),
+    )
+    expect(drawn.slides[0]).toMatchObject({
+      title: '',
+      drawing: { content: '{"elements":[]}', files: {} },
+      reactions: { u2: { name: 'Elma', emojis: ['🎉'] } },
+    })
+    const backup = buildBackup({ ...snapshot, classes: [drawn] })
+    expect(parseBoardFile(JSON.parse(JSON.stringify(backup))).kind).toBe(
+      'backup',
+    )
+    // no drawing, no reactions: nothing extra in the file
+    expect(klass.slides[1]).not.toHaveProperty('drawing')
+  })
+
   it('refuses notes with an id that is not their author’s, or unknown emojis', () => {
     const backup = buildBackup({ ...snapshot, classes: [klass] })
     const broken = (patch: object) => ({

@@ -219,12 +219,22 @@ export async function loadBoardData(boardId: string): Promise<BoardData> {
       boardData.logo,
     ],
     // images of the kept versions (M15) count too: a restore must find them
-    slideAssetIds: slides.flatMap((snapshot) =>
-      snapshot.docs.map((slide) => {
-        const data = slide.data() as SlideDoc
-        return [...(data.assetIds ?? []), ...(data.versionAssetIds ?? [])]
-      }),
-    ),
+    slideAssetIds: [
+      ...slides.flatMap((snapshot) =>
+        snapshot.docs.map((slide) => {
+          const data = slide.data() as SlideDoc
+          return [...(data.assetIds ?? []), ...(data.versionAssetIds ?? [])]
+        }),
+      ),
+      // M10b: images in the teacher's class drawings are in use too
+      ...classSlides.flatMap((snapshot) =>
+        snapshot.docs.map((slide) =>
+          Object.values((slide.data() as ClassSlideDoc).files ?? {}).map(
+            (file) => file.assetId,
+          ),
+        ),
+      ),
+    ],
     refs: [
       ...[...slides, ...notes, ...votes, ...polls].flatMap((snapshot) =>
         snapshot.docs.map((d) => d.ref),
