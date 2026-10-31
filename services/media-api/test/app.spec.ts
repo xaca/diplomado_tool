@@ -352,6 +352,27 @@ describe('GET /usage', () => {
 	});
 });
 
+describe("teacher edits a student's slide (M15)", () => {
+	const docs = (status = 'active'): Docs => ({
+		[`boards/${BOARD}`]: { status, teacherEmails: [TEACHER.email], lastActivityAt: NOW - DAY, archiveAfterDays: 90 },
+		[`boards/${BOARD}/spaces/st_laura`]: { studentId: 'st_laura' },
+	});
+
+	it("signs the board teacher's upload into the student's folder", async () => {
+		const response = await handle(sign({ boardId: BOARD, studentId: 'st_laura' }, { token: TEACHER.token }), env, deps(docs()));
+		expect(response.status).toBe(200);
+		const body = (await response.json()) as { params: Record<string, string> };
+		expect(body.params.public_id).toBe(`pbl/dev/${BOARD}/st_laura/asset123`);
+	});
+
+	it('refuses a missing space, a locked board and teachers of other boards', async () => {
+		expect((await handle(sign({ boardId: BOARD, studentId: 'st_nobody' }, { token: TEACHER.token }), env, deps(docs()))).status).toBe(403);
+		expect((await handle(sign({ boardId: BOARD, studentId: 'st_laura' }, { token: TEACHER.token }), env, deps(docs('locked')))).status).toBe(403);
+		const otherBoard: Docs = { ...docs(), [`boards/${BOARD}`]: { status: 'active', teacherEmails: ['otro@gmail.com'], lastActivityAt: NOW, archiveAfterDays: 90 } };
+		expect((await handle(sign({ boardId: BOARD, studentId: 'st_laura' }, { token: TEACHER.token }), env, deps(otherBoard))).status).toBe(403);
+	});
+});
+
 describe('board logo (M12)', () => {
 	const teacherDocs = (status = 'active'): Docs => ({
 		[`boards/${BOARD}`]: { status, teacherEmails: [TEACHER.email], lastActivityAt: NOW - DAY, archiveAfterDays: 90 },

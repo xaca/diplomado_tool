@@ -87,13 +87,22 @@ function isWritable(board: FirestoreDoc, now: number) {
 	return board.status === 'active' && !(last + days * DAY_MS <= now);
 }
 
-/** May this user upload into this student's space? Asked to Firestore with the user's own token. */
+/**
+ * May this user upload into this student's space? The student themselves, or (M15) the board's
+ * teacher improving a student's slide. Asked to Firestore with the user's own token.
+ */
 async function assertCanUpload(caller: Caller, boardId: string, studentId: string, deps: Deps) {
 	await asCaller(async () => {
-		const member = await deps.readDoc(`boards/${boardId}/members/${caller.uid}`, caller.token, caller.appCheck);
-		if (!member || member.studentId !== studentId) throw new HttpError(403, 'not your space');
 		const board = await deps.readDoc(`boards/${boardId}`, caller.token, caller.appCheck);
 		if (!board || !isWritable(board, deps.now())) throw new HttpError(403, 'board is not active');
+		const teachers = Array.isArray(board.teacherEmails) ? board.teacherEmails : [];
+		if (teachers.includes(caller.email)) {
+			const space = await deps.readDoc(`boards/${boardId}/spaces/${studentId}`, caller.token, caller.appCheck);
+			if (!space) throw new HttpError(403, 'no such space');
+			return;
+		}
+		const member = await deps.readDoc(`boards/${boardId}/members/${caller.uid}`, caller.token, caller.appCheck);
+		if (!member || member.studentId !== studentId) throw new HttpError(403, 'not your space');
 	});
 }
 
