@@ -89,3 +89,41 @@ export function cleanMarks(marks: Record<string, AttendanceMark>) {
 export function byDateDesc<T extends { date: string }>(records: readonly T[]) {
   return [...records].sort((a, b) => b.date.localeCompare(a.date))
 }
+
+/** YYYY-MM-DD → that day at local midnight (for display) */
+export function dateFromKey(date: string) {
+  const [year, month, day] = date.split('-').map(Number)
+  return new Date(year, month - 1, day)
+}
+
+/** "mar, 3 nov" */
+export function formatClassDate(date: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  }).format(dateFromKey(date))
+}
+
+/** 0.875 → "88 %" in Spanish, "88%" in English */
+export function formatRate(rate: number, locale: string) {
+  return new Intl.NumberFormat(locale, {
+    style: 'percent',
+    maximumFractionDigits: 0,
+  }).format(rate)
+}
+
+/** Same marks (states and notes), whatever the key order: nothing to save. */
+export function sameMarks(
+  a: Record<string, AttendanceMark>,
+  b: Record<string, AttendanceMark>,
+) {
+  const left = cleanMarks(a)
+  const right = cleanMarks(b)
+  const ids = new Set([...Object.keys(left), ...Object.keys(right)])
+  return [...ids].every(
+    (id) =>
+      left[id]?.status === right[id]?.status &&
+      (left[id]?.note ?? '') === (right[id]?.note ?? ''),
+  )
+}

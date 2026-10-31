@@ -3,8 +3,11 @@ import {
   byDateDesc,
   cleanMarks,
   countMarks,
+  dateFromKey,
+  formatRate,
   localDate,
   markEveryone,
+  sameMarks,
   studentStats,
   summaryChanges,
 } from '@/features/attendance/attendance'
@@ -22,6 +25,12 @@ describe('attendance (M18)', () => {
   it("today is the teacher's local day", () => {
     expect(localDate(new Date(2026, 10, 3, 23, 59))).toBe('2026-11-03')
     expect(localDate(new Date(2026, 0, 9, 0, 1))).toBe('2026-01-09')
+  })
+
+  it('class dates are local days', () => {
+    expect(dateFromKey('2026-11-03').getDate()).toBe(3)
+    expect(localDate(dateFromKey('2026-01-31'))).toBe('2026-01-31')
+    expect(formatRate(2 / 3, 'en')).toBe('67%')
   })
 
   it('"Todos presentes" fills only the students without a mark', () => {
@@ -98,6 +107,28 @@ describe('attendance (M18)', () => {
         { date: '2026-11-10' },
       ]).map((r) => r.date),
     ).toEqual(['2026-12-01', '2026-11-10', '2026-11-03'])
+  })
+
+  it('unsaved changes: states or notes differ (blank notes and key order do not count)', () => {
+    expect(
+      sameMarks(
+        { a: { status: 'late', note: ' bus ' }, b: { status: 'present' } },
+        {
+          b: { status: 'present', note: '  ' },
+          a: { status: 'late', note: 'bus' },
+        },
+      ),
+    ).toBe(true)
+    expect(
+      sameMarks({ a: { status: 'late' } }, { a: { status: 'present' } }),
+    ).toBe(false)
+    expect(
+      sameMarks(
+        { a: { status: 'late' } },
+        { a: { status: 'late', note: 'x' } },
+      ),
+    ).toBe(false)
+    expect(sameMarks({}, { a: { status: 'late' } })).toBe(false)
   })
 
   it('validates what the app saves', () => {

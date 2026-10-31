@@ -399,7 +399,8 @@
           "De tu cuenta de Google: nombre, correo y foto de perfil. Tu docente también registra tu nombre y tus correos para agregarte al tablero. Si lo eliges, una foto que tú subes.",
           "Lo que publicas: el título y resumen de tu tarjeta, la etapa del proyecto en la que vas, tus diapositivas y las imágenes que subes.",
           "Datos técnicos de seguridad: Google reCAPTCHA comprueba que las solicitudes vienen de esta aplicación.",
-          "Tus votos en las encuestas de los espacios: el docente ve quién votó; el autor de la encuesta también, salvo que sea anónima."
+          "Tus votos en las encuestas de los espacios: el docente ve quién votó; el autor de la encuesta también, salvo que sea anónima.",
+          "Tu asistencia a clase (presente, tarde, ausente o excusa, con una nota opcional del docente): la registra tu docente; tú ves solo la tuya (sin las notas) y tus compañeros nunca la ven. Tu docente puede copiar tu correo para escribirte desde su propio correo; la app no envía correos."
         ]
       },
       {
@@ -692,5 +693,88 @@
     "max": "Máximo {{count}} encuestas abiertas por espacio",
     "presenter": "Encuestas de este estudiante",
     "none": "Sin encuestas"
+  },
+  "attendance": {
+    "button": "Asistencia",
+    "title": "Asistencia",
+    "take": "Tomar asistencia",
+    "history": "Historial",
+    "date": "Fecha",
+    "topic": "Tema de la clase (opcional)",
+    "topicPlaceholder": "Sesión 4 · Prototipos",
+    "everyonePresent": "Todos presentes",
+    "save": "Guardar asistencia",
+    "saved": "Asistencia guardada",
+    "unsaved": "Cambios sin guardar",
+    "upToDate": "Todo guardado",
+    "note": "Nota para {{name}}",
+    "notePlaceholder": "Llegó 20 min tarde, excusa médica…",
+    "addNote": "Nota",
+    "group": "Grupo",
+    "allGroups": "Todos los grupos",
+    "unmarked": "Sin marcar: {{count}}",
+    "deleteDay": "Eliminar este día",
+    "deleteDayTitle": "¿Eliminar la asistencia del {{date}}?",
+    "deleteDayBody": "Se borran las marcas de ese día, también de lo que ven los estudiantes.",
+    "deleted": "Día eliminado",
+    "noDays": "Aún no has tomado asistencia en este tablero.",
+    "classes_one": "{{count}} clase",
+    "classes_other": "{{count}} clases",
+    "rate": "% asistencia",
+    "exportCsv": "Descargar CSV",
+    "clear": "Sin marca",
+    "student": "Estudiante",
+    "noStudents": "Este tablero aún no tiene estudiantes.",
+    "markFor": "Asistencia de {{name}}",
+    "mine": "Mi asistencia",
+    "theirs": "Asistencia",
+    "mineRate": "{{rate}} de asistencia",
+    "mineEmpty": "Aún no hay clases registradas.",
+    "openDay": "Ver o editar",
+    "new": "Nueva",
+    "status": {
+      "present": "Presente",
+      "late": "Tarde",
+      "absent": "Ausente",
+      "excused": "Excusa"
+    },
+    "short": {
+      "present": "P",
+      "late": "T",
+      "absent": "A",
+      "excused": "E"
+    }
+  },
+  "emails": {
+    "button": "Correos",
+    "title": "Correos de los estudiantes",
+    "hint": "La app no envía correos: cópialos o ábrelos en tu correo con todos en copia oculta (CCO).",
+    "to": "Para",
+    "everyone": "Todos los estudiantes",
+    "byGroup": "Grupo",
+    "byStage": "Etapa",
+    "progress": "Avance",
+    "ready": "Listos para presentar",
+    "notReady": "Aún no listos",
+    "absences": "Ausencias",
+    "absentOn": "Ausentes el {{date}}",
+    "allAddresses": "Todos sus correos (si tienen varios)",
+    "count": "{{students}} estudiantes · {{emails}} correos",
+    "copy": "Copiar correos",
+    "copied": "Correos copiados",
+    "write": "Escribir correo",
+    "writePart": "Escribir correo ({{part}} de {{total}})",
+    "csv": "Descargar CSV",
+    "none": "Nadie coincide con este filtro.",
+    "selectAll": "Todos",
+    "selectNone": "Ninguno",
+    "manyLinks": "Son muchos correos para un solo mensaje: tu correo se abrirá {{total}} veces, una por grupo."
+  },
+  "csv": {
+    "name": "Nombre",
+    "group": "Grupo",
+    "email": "Correo",
+    "emails": "Correos",
+    "topic": "Tema"
   }
 }

@@ -11,6 +11,11 @@ const TeacherBoardPage = lazy(() =>
     default: m.TeacherBoardPage,
   })),
 )
+const AttendancePage = lazy(() =>
+  import('@/pages/AttendancePage').then((m) => ({
+    default: m.AttendancePage,
+  })),
+)
 const StoragePage = lazy(() =>
   import('@/pages/StoragePage').then((m) => ({ default: m.StoragePage })),
 )
@@ -27,6 +32,14 @@ export function TeacherBoardRoute() {
   return (
     <Suspense>
       <TeacherBoardPage />
+    </Suspense>
+  )
+}
+
+export function AttendanceRoute() {
+  return (
+    <Suspense>
+      <AttendancePage />
     </Suspense>
   )
 }

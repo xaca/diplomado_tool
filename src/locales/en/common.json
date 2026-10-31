@@ -399,7 +399,8 @@
           "From your Google account: name, email and profile photo. Your teacher also records your name and emails to add you to the board. If you choose, a photo you upload.",
           "What you publish: your card's title and summary, the project stage you're in, your slides and the images you upload.",
           "Technical security data: Google reCAPTCHA checks that requests come from this app.",
-          "Your votes in space polls: the teacher sees who voted; so does the poll’s author, unless it is anonymous."
+          "Your votes in space polls: the teacher sees who voted; so does the poll’s author, unless it is anonymous.",
+          "Your class attendance (present, late, absent or excused, with an optional note by the teacher): your teacher records it; you see only yours (without the notes) and classmates never see it. Your teacher may copy your email to write to you from their own mail account; the app doesn't send email."
         ]
       },
       {
@@ -692,5 +693,88 @@
     "max": "At most {{count}} open polls per space",
     "presenter": "This student’s polls",
     "none": "No polls"
+  },
+  "attendance": {
+    "button": "Attendance",
+    "title": "Attendance",
+    "take": "Take attendance",
+    "history": "History",
+    "date": "Date",
+    "topic": "Class topic (optional)",
+    "topicPlaceholder": "Session 4 · Prototypes",
+    "everyonePresent": "Everyone present",
+    "save": "Save attendance",
+    "saved": "Attendance saved",
+    "unsaved": "Unsaved changes",
+    "upToDate": "All saved",
+    "note": "Note for {{name}}",
+    "notePlaceholder": "Arrived 20 min late, medical excuse…",
+    "addNote": "Note",
+    "group": "Group",
+    "allGroups": "All groups",
+    "unmarked": "Not marked: {{count}}",
+    "deleteDay": "Delete this day",
+    "deleteDayTitle": "Delete the attendance of {{date}}?",
+    "deleteDayBody": "That day's marks are deleted, also from what students see.",
+    "deleted": "Day deleted",
+    "noDays": "You haven't taken attendance on this board yet.",
+    "classes_one": "{{count}} class",
+    "classes_other": "{{count}} classes",
+    "rate": "% attendance",
+    "exportCsv": "Download CSV",
+    "clear": "No mark",
+    "student": "Student",
+    "noStudents": "This board has no students yet.",
+    "markFor": "Attendance of {{name}}",
+    "mine": "My attendance",
+    "theirs": "Attendance",
+    "mineRate": "{{rate}} attendance",
+    "mineEmpty": "No classes recorded yet.",
+    "openDay": "View or edit",
+    "new": "New",
+    "status": {
+      "present": "Present",
+      "late": "Late",
+      "absent": "Absent",
+      "excused": "Excused"
+    },
+    "short": {
+      "present": "P",
+      "late": "L",
+      "absent": "A",
+      "excused": "E"
+    }
+  },
+  "emails": {
+    "button": "Emails",
+    "title": "Students' emails",
+    "hint": "The app doesn't send email: copy them, or open them in your mail app with everyone in BCC.",
+    "to": "To",
+    "everyone": "All students",
+    "byGroup": "Group",
+    "byStage": "Stage",
+    "progress": "Progress",
+    "ready": "Ready to present",
+    "notReady": "Not ready yet",
+    "absences": "Absences",
+    "absentOn": "Absent on {{date}}",
+    "allAddresses": "All their emails (if they have several)",
+    "count": "{{students}} students · {{emails}} emails",
+    "copy": "Copy emails",
+    "copied": "Emails copied",
+    "write": "Write email",
+    "writePart": "Write email ({{part}} of {{total}})",
+    "csv": "Download CSV",
+    "none": "Nobody matches this filter.",
+    "selectAll": "All",
+    "selectNone": "None",
+    "manyLinks": "Too many emails for one message: your mail app will open {{total}} times, one per group."
+  },
+  "csv": {
+    "name": "Name",
+    "group": "Group",
+    "email": "Email",
+    "emails": "Emails",
+    "topic": "Topic"
   }
 }

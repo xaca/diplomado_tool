@@ -15,6 +15,7 @@ import { ProfilePage } from '@/pages/ProfilePage'
 import { SpacePage } from '@/pages/SpacePage'
 import { StudentHomePage } from '@/pages/StudentHomePage'
 import {
+  AttendanceRoute,
   StorageRoute,
   TeacherBoardRoute,
   TeacherHomeRoute,
@@ -68,6 +69,11 @@ export const router = createBrowserRouter([
               {
                 path: 'teacher/boards/:boardId/storage',
                 element: <StorageRoute />,
+              },
+              // M18: attendance by date
+              {
+                path: 'teacher/boards/:boardId/attendance',
+                element: <AttendanceRoute />,
               },
             ],
           },

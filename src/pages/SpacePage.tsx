@@ -19,6 +19,7 @@ import { useMyStudentId, useSpaces } from '@/features/spaces/hooks'
 import { ReadyToggle } from '@/features/spaces/components/ReadyToggle'
 import { ClockBanner } from '@/features/clock/components/ClockBanner'
 import { PollsSection } from '@/features/polls/components/PollsSection'
+import { MyAttendance } from '@/features/attendance/components/MyAttendance'
 import { displayNameOf } from '@/features/profile/api'
 import { useProfile } from '@/features/profile/hooks'
 import { setSpaceStage } from '@/features/stages/api'
@@ -276,6 +277,10 @@ export function SpacePage() {
               </li>
             ))}
           </ol>
+        )}
+
+        {(isMine || isBoardTeacher) && (
+          <MyAttendance boardId={boardId} studentId={spaceId} mine={isMine} />
         )}
 
         {user && (

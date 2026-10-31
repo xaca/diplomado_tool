@@ -1,7 +1,14 @@
 import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, Download, ExternalLink, UserPlus } from 'lucide-react'
+import {
+  ArrowLeft,
+  ClipboardCheck,
+  Download,
+  ExternalLink,
+  Mail,
+  UserPlus,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { InvitePanel } from '@/features/boards/components/InvitePanel'
@@ -9,6 +16,7 @@ import { LifecyclePanel } from '@/features/boards/components/LifecyclePanel'
 import { useBoard } from '@/features/boards/hooks'
 import { useTeacherBoardSync } from '@/features/boards/sync'
 import { StagesPanel } from '@/features/stages/components/StagesPanel'
+import { EmailsDialog } from '@/features/students/components/EmailsDialog'
 import { ImportDialog } from '@/features/students/components/ImportDialog'
 import { StudentFormDialog } from '@/features/students/components/StudentFormDialog'
 import { StudentsTable } from '@/features/students/components/StudentsTable'
@@ -30,6 +38,7 @@ export function TeacherBoardPage() {
     [spaces.loading, spaces.data],
   )
   const [adding, setAdding] = useState(false)
+  const [emailing, setEmailing] = useState(false)
   // M12: my name / photo on the board header, and each card's group from the roster
   useTeacherBoardSync(
     board.data,
@@ -77,14 +86,24 @@ export function TeacherBoardPage() {
               <p className="text-muted-foreground">{board.data.description}</p>
             )}
           </div>
-          <Button
-            variant="outline"
-            nativeButton={false}
-            render={<Link to={`/b/${boardId}`} />}
-          >
-            <ExternalLink />
-            {t('boards.open')}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              nativeButton={false}
+              render={<Link to={`/teacher/boards/${boardId}/attendance`} />}
+            >
+              <ClipboardCheck />
+              {t('attendance.button')}
+            </Button>
+            <Button
+              variant="outline"
+              nativeButton={false}
+              render={<Link to={`/b/${boardId}`} />}
+            >
+              <ExternalLink />
+              {t('boards.open')}
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -114,6 +133,14 @@ export function TeacherBoardPage() {
             <Button
               variant="outline"
               disabled={students.data.length === 0}
+              onClick={() => setEmailing(true)}
+            >
+              <Mail />
+              {t('emails.button')}
+            </Button>
+            <Button
+              variant="outline"
+              disabled={students.data.length === 0}
               onClick={() =>
                 downloadJson(
                   `estudiantes-${slugify(board.data!.title)}.json`,
@@ -137,6 +164,15 @@ export function TeacherBoardPage() {
           />
         )}
       </div>
+
+      {emailing && (
+        <EmailsDialog
+          boardId={boardId}
+          board={board.data}
+          students={students.data}
+          onClose={() => setEmailing(false)}
+        />
+      )}
 
       {adding && (
         <StudentFormDialog

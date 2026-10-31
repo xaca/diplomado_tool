@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import {
   CircleCheck,
+  ClipboardCheck,
   Paintbrush,
   Pencil,
   Presentation,
@@ -312,6 +313,17 @@ export function BoardPage() {
               >
                 <Timer />
                 <HeaderActionLabel>{t('clock.button')}</HeaderActionLabel>
+              </Button>
+            )}
+            {isBoardTeacher && (
+              <Button
+                variant="secondary"
+                title={t('attendance.button')}
+                nativeButton={false}
+                render={<Link to={`/teacher/boards/${boardId}/attendance`} />}
+              >
+                <ClipboardCheck />
+                <HeaderActionLabel>{t('attendance.button')}</HeaderActionLabel>
               </Button>
             )}
             {isBoardTeacher && (
