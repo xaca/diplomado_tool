@@ -352,6 +352,27 @@ describe('GET /usage', () => {
 	});
 });
 
+describe('board logo (M12)', () => {
+	const teacherDocs = (status = 'active'): Docs => ({
+		[`boards/${BOARD}`]: { status, teacherEmails: [TEACHER.email], lastActivityAt: NOW - DAY, archiveAfterDays: 90 },
+	});
+
+	it("signs an upload into the board's own folder for its teacher", async () => {
+		const response = await handle(sign({ scope: 'board', boardId: BOARD }, { token: TEACHER.token }), env, deps(teacherDocs()));
+		expect(response.status).toBe(200);
+		const body = (await response.json()) as { params: Record<string, string>; signature: string };
+		expect(body.params.public_id).toBe(`pbl/dev/${BOARD}/board/asset123`);
+		expect(body.signature).toBe(await signParams(body.params, env.CLOUDINARY_API_SECRET));
+	});
+
+	it('students, other boards and locked boards are refused', async () => {
+		const asStudent = await handle(sign({ scope: 'board', boardId: BOARD }), env, deps({ ...joinedLaura, ...teacherDocs() }));
+		expect(asStudent.status).toBe(403);
+		expect((await handle(sign({ scope: 'board', boardId: BOARD }, { token: TEACHER.token }), env, deps(teacherDocs('locked')))).status).toBe(403);
+		expect((await handle(sign({ scope: 'board', boardId: '../x' }, { token: TEACHER.token }), env, deps(teacherDocs()))).status).toBe(400);
+	});
+});
+
 describe('profile photos (M11)', () => {
 	it('signs one fixed, overwritable file per person for a board member', async () => {
 		const response = await handle(sign({ scope: 'avatar', boardId: BOARD }), env, deps(joinedLaura));

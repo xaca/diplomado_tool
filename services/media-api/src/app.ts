@@ -180,6 +180,29 @@ const routes: Record<string, Handler> = {
 			});
 		}
 
+		// M12: the board logo, by the board's teacher, into the board's own folder
+		if (body?.scope === 'board') {
+			const boardId = typeof body.boardId === 'string' ? body.boardId : '';
+			if (!ID_PATTERN.test(boardId)) throw new HttpError(400, 'invalid boardId');
+			const board = await assertBoardTeacher(caller, boardId, deps);
+			if (!isWritable(board, deps.now())) throw new HttpError(403, 'board is not active');
+			const assetId = deps.newId();
+			const params = uploadParams({
+				env: environmentOf(request),
+				boardId,
+				studentId: 'board',
+				assetId,
+				timestamp: Math.floor(deps.now() / 1000),
+			});
+			return json({
+				assetId,
+				cloudName: env.CLOUDINARY_CLOUD_NAME,
+				apiKey: env.CLOUDINARY_API_KEY,
+				params,
+				signature: await signParams(params, cloudinarySecret(env)),
+			});
+		}
+
 		const boardId = typeof body?.boardId === 'string' ? body.boardId : '';
 		const studentId = typeof body?.studentId === 'string' ? body.studentId : '';
 		if (!ID_PATTERN.test(boardId) || !ID_PATTERN.test(studentId)) throw new HttpError(400, 'invalid boardId or studentId');
