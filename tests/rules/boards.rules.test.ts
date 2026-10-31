@@ -1856,3 +1856,125 @@ describe("teacher's class tools (M16)", () => {
     await assertFails(getDoc(voteRef(as(LAURA), 'st_seb')))
   })
 })
+
+describe('attendance (M18)', () => {
+  const SEB = { uid: 'seb', email: 'seb@gmail.com' }
+  const day = (db: Firestore, date = '2026-11-03') =>
+    doc(db, 'boards', BOARD, 'attendance', date)
+  const summary = (db: Firestore, studentId: string) =>
+    doc(db, 'boards', BOARD, 'attendanceByStudent', studentId)
+  const record = (overrides: Record<string, unknown> = {}) => ({
+    date: '2026-11-03',
+    topic: 'Sesión 4 · Prototipos',
+    marks: {
+      st_laura: { status: 'late', note: 'Bus' },
+      st_seb: { status: 'present' },
+    },
+    takenBy: TEACHER.email,
+    updatedAt: serverTimestamp(),
+    ...overrides,
+  })
+  const own = (dates: Record<string, string>) => ({
+    dates,
+    updatedAt: serverTimestamp(),
+  })
+
+  /** Laura and Seb joined; the teacher took attendance on Nov 3 */
+  async function withAttendance() {
+    await seed()
+    await autoJoin(as(LAURA), LAURA, 'st_laura')
+    await env.withSecurityRulesDisabled(async (context) => {
+      const db = context.firestore() as unknown as Firestore
+      await setDoc(
+        doc(db, 'boards', BOARD, 'students', 'st_seb'),
+        student([SEB.email]),
+      )
+      await setDoc(doc(db, 'boards', BOARD, 'studentEmails', SEB.email), {
+        email: SEB.email,
+        studentId: 'st_seb',
+      })
+      await setDoc(day(db), record({ updatedAt: Timestamp.now() }))
+      await setDoc(summary(db, 'st_laura'), {
+        dates: { '2026-11-03': 'late' },
+        updatedAt: Timestamp.now(),
+      })
+      await setDoc(summary(db, 'st_seb'), {
+        dates: { '2026-11-03': 'present' },
+        updatedAt: Timestamp.now(),
+      })
+    })
+    await autoJoin(as(SEB), SEB, 'st_seb')
+  }
+
+  it('the board teacher takes attendance: the record and the summaries in one batch', async () => {
+    await seed()
+    const db = as(TEACHER)
+    const batch = writeBatch(db)
+    batch.set(day(db, '2026-11-10'), record({ date: '2026-11-10' }))
+    batch.set(summary(db, 'st_laura'), own({ '2026-11-10': 'late' }))
+    await assertSucceeds(batch.commit())
+    await assertSucceeds(getDoc(day(db, '2026-11-10')))
+    await assertSucceeds(getDocs(collection(db, 'boards', BOARD, 'attendance')))
+    await assertSucceeds(
+      updateDoc(day(db, '2026-11-10'), {
+        marks: { st_laura: { status: 'present' } },
+        updatedAt: serverTimestamp(),
+      }),
+    )
+    await assertSucceeds(deleteDoc(day(db, '2026-11-10')))
+  })
+
+  it('the record is checked: date id, topic, signed by me, server time', async () => {
+    await seed()
+    const db = as(TEACHER)
+    await assertFails(
+      setDoc(day(db, '2026-13-01'), record({ date: '2026-13-01' })),
+    )
+    await assertFails(setDoc(day(db, 'hoy'), record({ date: 'hoy' })))
+    await assertFails(setDoc(day(db), record({ date: '2026-11-04' })))
+    await assertFails(setDoc(day(db), record({ topic: 'x'.repeat(121) })))
+    await assertFails(setDoc(day(db), record({ takenBy: OTHER_TEACHER.email })))
+    await assertFails(setDoc(day(db), record({ updatedAt: Timestamp.now() })))
+    await assertFails(setDoc(day(db), record({ marks: 'todos' })))
+    await assertFails(setDoc(day(db), { ...record(), extra: true }))
+    await assertFails(
+      setDoc(summary(db, 'st_laura'), {
+        dates: 'x',
+        updatedAt: serverTimestamp(),
+      }),
+    )
+  })
+
+  it("students and other teachers can't read or write the records", async () => {
+    await withAttendance()
+    for (const user of [LAURA, OTHER_TEACHER, STRANGER]) {
+      const db = as(user)
+      await assertFails(getDoc(day(db)))
+      await assertFails(getDocs(collection(db, 'boards', BOARD, 'attendance')))
+      await assertFails(
+        setDoc(
+          day(db, '2026-11-10'),
+          record({ date: '2026-11-10', takenBy: user.email }),
+        ),
+      )
+      await assertFails(deleteDoc(day(db)))
+      await assertFails(
+        setDoc(summary(db, 'st_laura'), own({ '2026-11-03': 'present' })),
+      )
+    }
+  })
+
+  it("a student reads only their own summary (both accounts), never a classmate's", async () => {
+    await withAttendance()
+    await autoJoin(as(LAURA_UNI), LAURA_UNI, 'st_laura', false)
+    await assertSucceeds(getDoc(summary(as(LAURA), 'st_laura')))
+    await assertSucceeds(getDoc(summary(as(LAURA_UNI), 'st_laura')))
+    await assertFails(getDoc(summary(as(LAURA), 'st_seb')))
+    await assertFails(
+      getDocs(collection(as(LAURA), 'boards', BOARD, 'attendanceByStudent')),
+    )
+    await assertSucceeds(getDoc(summary(as(SEB), 'st_seb')))
+    await assertFails(getDoc(summary(as(STRANGER), 'st_laura')))
+    await assertFails(getDoc(summary(as(OTHER_TEACHER), 'st_laura')))
+  })
+})

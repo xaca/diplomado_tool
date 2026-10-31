@@ -576,6 +576,35 @@ service cloud.firestore {
         }
       }
 
+      // ---------- attendance (M18): one record per class date, teacher only ----------
+
+      // Keep the date pattern in sync with ATTENDANCE_DATE in src/model/index.ts
+      function validAttendance(date) {
+        let data = request.resource.data;
+        return data.keys().hasOnly(['date', 'topic', 'marks', 'takenBy', 'updatedAt'])
+          && date.matches('[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])')
+          && data.date == date
+          && isString(data.topic, 0, 120)
+          && data.marks is map && data.marks.size() <= 500
+          && data.takenBy == myEmail()
+          && data.updatedAt == request.time;
+      }
+
+      match /attendance/{date} {
+        allow read, delete: if isBoardTeacher(boardId);
+        allow create, update: if isBoardTeacher(boardId) && validAttendance(date);
+      }
+
+      // Each student's own summary (dates and states, never the teacher's notes): the student reads it
+      match /attendanceByStudent/{studentId} {
+        allow get: if isBoardTeacher(boardId) || isSpaceOwner(boardId, studentId);
+        allow list, delete: if isBoardTeacher(boardId);
+        allow create, update: if isBoardTeacher(boardId)
+          && request.resource.data.keys().hasOnly(['dates', 'updatedAt'])
+          && request.resource.data.dates is map && request.resource.data.dates.size() <= 400
+          && request.resource.data.updatedAt == request.time;
+      }
+
       // ---------- assets/{assetId}: registry of every upload (storage usage, cleanup in M7) ----------
 
       function validNewAsset(boardId, assetId) {

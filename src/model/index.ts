@@ -51,6 +51,15 @@ export const paths = {
   /** M15: who is editing a slide right now */
   lock: (boardId: string, studentId: string, slideId: string) =>
     `${COLLECTIONS.boards}/${boardId}/spaces/${studentId}/locks/${slideId}`,
+  /** M18: one doc per class date (YYYY-MM-DD), and each student's own summary */
+  attendances: (boardId: string) =>
+    `${COLLECTIONS.boards}/${boardId}/attendance`,
+  attendance: (boardId: string, date: string) =>
+    `${COLLECTIONS.boards}/${boardId}/attendance/${date}`,
+  attendanceSummaries: (boardId: string) =>
+    `${COLLECTIONS.boards}/${boardId}/attendanceByStudent`,
+  attendanceSummary: (boardId: string, studentId: string) =>
+    `${COLLECTIONS.boards}/${boardId}/attendanceByStudent/${studentId}`,
   joinCode: (code: string) => `${COLLECTIONS.joinCodes}/${code}`,
 }
 
@@ -137,6 +146,45 @@ export const clockInputSchema = z.object({
   label: z.string().trim().max(80),
   instructions: z.string().trim().max(300),
   minutes: z.number().min(1).max(180),
+})
+
+// ---------- attendance (M18) ----------
+
+export const ATTENDANCE_STATUSES = [
+  'present',
+  'late',
+  'absent',
+  'excused',
+] as const
+export type AttendanceStatus = (typeof ATTENDANCE_STATUSES)[number]
+export type AttendanceMark = { status: AttendanceStatus; note?: string }
+/** A class date: YYYY-MM-DD (the teacher's local day). Keep in sync with firestore.rules */
+export const ATTENDANCE_DATE = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/
+
+/** attendance/{date}: the teacher's record of one class (teacher only) */
+export type AttendanceDoc = {
+  date: string
+  topic: string
+  /** studentId → mark; students not marked are missing */
+  marks: Record<string, AttendanceMark>
+  takenBy: string
+  updatedAt: unknown
+}
+
+/** attendanceByStudent/{studentId}: what that student sees (dates and states, no notes) */
+export type AttendanceSummaryDoc = {
+  dates: Record<string, AttendanceStatus>
+  updatedAt: unknown
+}
+
+export const attendanceMarkSchema = z.object({
+  status: z.enum(ATTENDANCE_STATUSES),
+  note: z.string().trim().max(200).optional(),
+})
+export const attendanceInputSchema = z.object({
+  date: z.string().regex(ATTENDANCE_DATE),
+  topic: z.string().trim().max(120),
+  marks: z.record(z.string().min(1).max(128), attendanceMarkSchema),
 })
 
 /** spaces/{studentId}/polls/{pollId}: a quick vote in a student's space */
