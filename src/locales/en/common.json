@@ -42,11 +42,25 @@
     "hint": "Your name and photo appear on your cards in active boards.",
     "name": "Name",
     "nameHint": "Leave it empty to use your Google account name.",
-    "showPhoto": "Show my Google photo",
-    "showPhotoHint": "If you hide it, your cards show your initials.",
     "saved": "Profile saved",
     "skipped_one": "{{count}} card in a closed or archived board keeps the old name.",
-    "skipped_other": "{{count}} cards in closed or archived boards keep the old name."
+    "skipped_other": "{{count}} cards in closed or archived boards keep the old name.",
+    "photo": "Photo",
+    "photoGoogle": "Google photo",
+    "photoUpload": "My photo",
+    "photoInitials": "Initials",
+    "photoHint": "Your cards show the photo you choose.",
+    "upload": "Upload photo",
+    "change": "Change photo",
+    "remove": "Remove photo",
+    "cropTitle": "Adjust your photo",
+    "cropHint": "Drag to move and use the slider to zoom.",
+    "zoom": "Zoom",
+    "uploading": "Uploading… {{percent}}%",
+    "uploaded": "Photo updated",
+    "removed": "Photo removed",
+    "uploadFailed": "The photo couldn't be uploaded. Try another image (JPG, PNG or WebP).",
+    "uploadForbidden": "You can upload a photo once you're on a course board."
   },
   "roles": {
     "admin": "Teacher (admin)",
@@ -368,7 +382,7 @@
   },
   "privacy": {
     "title": "Privacy notice",
-    "updated": "Updated: October 27, 2026",
+    "updated": "Updated: October 31, 2026",
     "intro": "{{app}} is an academic tool to document and present course projects (project-based learning). This notice explains which personal data it uses and how, under Colombian Law 1581 of 2012 and Decree 1377 of 2013.",
     "sections": [
       {
@@ -380,8 +394,8 @@
       {
         "title": "Which data we use",
         "body": [
-          "From your Google account: name, email and profile photo. Your teacher also registers your name and emails to add you to the board.",
-          "What you publish: your card's title and summary, your slides and the images you upload.",
+          "From your Google account: name, email and profile photo. Your teacher also records your name and emails to add you to the board. If you choose, a photo you upload.",
+          "What you publish: your card's title and summary, the project stage you're in, your slides and the images you upload.",
           "Technical security data: Google reCAPTCHA checks that requests come from this app."
         ]
       },
@@ -422,5 +436,34 @@
     "recaptcha": "This site is protected by reCAPTCHA; the Google Privacy Policy and Terms of Service apply.",
     "googlePrivacy": "Google Privacy Policy",
     "googleTerms": "Google Terms"
+  },
+  "stages": {
+    "empathize": "Empathizing",
+    "define": "Defining",
+    "ideate": "Ideating",
+    "prototype": "Prototyping",
+    "test": "Testing",
+    "browsing": "Just browsing",
+    "none": "No stage",
+    "tooltip": "Stage: {{stage}}",
+    "question": "Which stage are you in?",
+    "questionHint": "It shows as a ring around your photo. “Just browsing”: you're here to learn or don't have a project yet.",
+    "teacherLegend": "Student's stage",
+    "setByTeacher": "set by the teacher",
+    "since": "since {{when}}",
+    "saved": "Stage saved",
+    "summary": "Students per stage",
+    "showAll": "Show all",
+    "panelTitle": "Process stages",
+    "panelHint": "Students pick one and it shows as a ring on their photo. Default: Design Thinking.",
+    "changeColor": "Change color",
+    "browsingKind": "“Only learning” stage",
+    "newName": "Stage name",
+    "name": "Stage {{n}}",
+    "up": "Move up",
+    "down": "Move down",
+    "remove": "Remove stage",
+    "add": "Add stage",
+    "reset": "Back to Design Thinking"
   }
 }

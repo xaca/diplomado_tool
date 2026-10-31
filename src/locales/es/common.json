@@ -42,11 +42,25 @@
     "hint": "Tu nombre y foto aparecen en tus tarjetas de los tableros activos.",
     "name": "Nombre",
     "nameHint": "Déjalo vacío para usar el nombre de tu cuenta de Google.",
-    "showPhoto": "Mostrar mi foto de Google",
-    "showPhotoHint": "Si la ocultas, tus tarjetas muestran tus iniciales.",
     "saved": "Perfil guardado",
     "skipped_one": "{{count}} tarjeta de un tablero cerrado o archivado conserva el nombre anterior.",
-    "skipped_other": "{{count}} tarjetas de tableros cerrados o archivados conservan el nombre anterior."
+    "skipped_other": "{{count}} tarjetas de tableros cerrados o archivados conservan el nombre anterior.",
+    "photo": "Foto",
+    "photoGoogle": "Foto de Google",
+    "photoUpload": "Mi foto",
+    "photoInitials": "Iniciales",
+    "photoHint": "Tus tarjetas muestran la foto que elijas.",
+    "upload": "Subir foto",
+    "change": "Cambiar foto",
+    "remove": "Quitar foto",
+    "cropTitle": "Ajusta tu foto",
+    "cropHint": "Arrastra para mover y usa el control para acercar.",
+    "zoom": "Acercar",
+    "uploading": "Subiendo… {{percent}} %",
+    "uploaded": "Foto actualizada",
+    "removed": "Foto eliminada",
+    "uploadFailed": "No se pudo subir la foto. Intenta con otra imagen (JPG, PNG o WebP).",
+    "uploadForbidden": "Podrás subir una foto cuando estés en un tablero del curso."
   },
   "roles": {
     "admin": "Docente (admin)",
@@ -368,7 +382,7 @@
   },
   "privacy": {
     "title": "Aviso de privacidad",
-    "updated": "Actualizado: 27 de octubre de 2026",
+    "updated": "Actualizado: 31 de octubre de 2026",
     "intro": "{{app}} es una herramienta académica para documentar y presentar proyectos del curso (aprendizaje basado en proyectos). Este aviso explica qué datos personales usa y cómo, conforme a la Ley 1581 de 2012 y el Decreto 1377 de 2013 de Colombia.",
     "sections": [
       {
@@ -380,8 +394,8 @@
       {
         "title": "Qué datos usamos",
         "body": [
-          "De tu cuenta de Google: nombre, correo y foto de perfil. Tu docente también registra tu nombre y tus correos para agregarte al tablero.",
-          "Lo que publicas: el título y resumen de tu tarjeta, tus diapositivas y las imágenes que subes.",
+          "De tu cuenta de Google: nombre, correo y foto de perfil. Tu docente también registra tu nombre y tus correos para agregarte al tablero. Si lo eliges, una foto que tú subes.",
+          "Lo que publicas: el título y resumen de tu tarjeta, la etapa del proyecto en la que vas, tus diapositivas y las imágenes que subes.",
           "Datos técnicos de seguridad: Google reCAPTCHA comprueba que las solicitudes vienen de esta aplicación."
         ]
       },
@@ -422,5 +436,34 @@
     "recaptcha": "Este sitio está protegido por reCAPTCHA; aplican la Política de privacidad y las Condiciones del servicio de Google.",
     "googlePrivacy": "Política de privacidad de Google",
     "googleTerms": "Condiciones de Google"
+  },
+  "stages": {
+    "empathize": "Empatizando",
+    "define": "Definiendo",
+    "ideate": "Ideando",
+    "prototype": "Prototipando",
+    "test": "Evaluando",
+    "browsing": "Vitrineando",
+    "none": "Sin etapa",
+    "tooltip": "Etapa: {{stage}}",
+    "question": "¿En qué etapa vas?",
+    "questionHint": "Aparece como un aro alrededor de tu foto. «Vitrineando»: estás para aprender o aún no tienes proyecto.",
+    "teacherLegend": "Etapa del estudiante",
+    "setByTeacher": "puesta por el docente",
+    "since": "desde {{when}}",
+    "saved": "Etapa guardada",
+    "summary": "Estudiantes por etapa",
+    "showAll": "Ver todos",
+    "panelTitle": "Etapas del proceso",
+    "panelHint": "Los estudiantes eligen una y aparece como un aro en su foto. Por defecto: Design Thinking.",
+    "changeColor": "Cambiar color",
+    "browsingKind": "Etapa «solo aprendiendo»",
+    "newName": "Nombre de la etapa",
+    "name": "Etapa {{n}}",
+    "up": "Subir",
+    "down": "Bajar",
+    "remove": "Quitar etapa",
+    "add": "Agregar etapa",
+    "reset": "Volver a Design Thinking"
   }
 }

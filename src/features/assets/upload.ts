@@ -30,7 +30,7 @@ export function logUploadFailure(error: unknown) {
   console.error(`[upload] failed at ${stage}`, error)
 }
 
-type CloudinaryResponse = {
+export type CloudinaryResponse = {
   public_id: string
   version: number
   width: number
@@ -88,7 +88,7 @@ export function registerError(error: unknown) {
   )
 }
 
-function sendToCloudinary(
+export function sendToCloudinary(
   signed: SignedUpload,
   file: Blob,
   onProgress?: (percent: number) => void,

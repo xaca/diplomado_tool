@@ -15,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useAuthActions, useLanguage } from '@/features/auth/hooks'
-import { displayNameOf } from '@/features/profile/api'
+import { cardPhoto, displayNameOf } from '@/features/profile/api'
 import { useProfile } from '@/features/profile/hooks'
 import { SUPPORTED_LANGUAGES } from '@/lib/i18n'
 import { initials } from '@/lib/initials'
@@ -32,7 +32,7 @@ export function UserMenu() {
   if (!user) return null
 
   const name = displayNameOf(user, profile.data)
-  const photoURL = profile.data?.showPhoto === false ? null : user.photoURL
+  const photoURL = cardPhoto(user, profile.data)
 
   return (
     <DropdownMenu>

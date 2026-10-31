@@ -92,6 +92,25 @@ export const mediaApi = {
       true,
     ),
 
+  /**
+   * Signs my profile photo upload (M11): one fixed file per person. Students name one board they
+   * belong to (proof they're in a class); teachers don't need to.
+   */
+  signAvatar: (boardId?: string) =>
+    request<SignedUpload>(
+      '/uploads/sign',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scope: 'avatar', boardId }),
+      },
+      true,
+    ),
+
+  /** Deletes my uploaded profile photo from Cloudinary. */
+  deleteAvatar: () =>
+    request<{ deleted: boolean }>('/avatar/delete', { method: 'POST' }, true),
+
   /** Deletes unused images (already marked "orphaned") from Cloudinary. Board teacher only. */
   deleteAssets: (boardId: string, assetIds: string[]) =>
     request<DeleteAssetsResponse>(

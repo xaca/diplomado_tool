@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { ImageUp, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -13,15 +13,23 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Switch } from '@/components/ui/switch'
+import { ACCEPTED_TYPES, checkFile } from '@/features/assets/prepare-image'
+import { logUploadFailure, UploadError } from '@/features/assets/upload'
 import { useLanguage } from '@/features/auth/hooks'
-import { displayNameOf, saveProfile } from '@/features/profile/api'
+import {
+  cardPhoto,
+  displayNameOf,
+  photoSourceOf,
+  saveProfile,
+} from '@/features/profile/api'
+import { removeAvatar, uploadAvatar } from '@/features/profile/avatar'
+import { AvatarCropDialog } from '@/features/profile/components/AvatarCropDialog'
 import { useProfile } from '@/features/profile/hooks'
+import { StageAvatar } from '@/features/stages/components/StageAvatar'
 import { SUPPORTED_LANGUAGES } from '@/lib/i18n'
-import { initials } from '@/lib/initials'
 import { cn } from '@/lib/utils'
-import { userProfileSchema, type UserDoc } from '@/model'
-import { useAuth } from '@/providers/auth-context'
+import { userProfileSchema, type PhotoSource, type UserDoc } from '@/model'
+import { isTeacherRole, useAuth } from '@/providers/auth-context'
 
 export function ProfilePage() {
   const { t } = useTranslation()
@@ -46,19 +54,26 @@ function ProfileForm({ profile }: { profile: UserDoc | null }) {
   const { t } = useTranslation()
   const { user, role } = useAuth()
   const [name, setName] = useState(profile?.profileName ?? '')
-  const [showPhoto, setShowPhoto] = useState(profile?.showPhoto ?? true)
+  const [photoSource, setPhotoSource] = useState<PhotoSource>(
+    photoSourceOf(profile),
+  )
   const [saving, setSaving] = useState(false)
+  const [cropping, setCropping] = useState<ImageBitmap | null>(null)
+  const [uploading, setUploading] = useState<number | null>(null)
+  const fileInput = useRef<HTMLInputElement>(null)
 
   if (!user) return null
-  const valid = userProfileSchema.safeParse({ name, showPhoto }).success
+  const avatar = profile?.avatar ?? null
+  const valid = userProfileSchema.safeParse({ name, photoSource }).success
   const shownName = name.trim() || displayNameOf(user, null)
+  const preview = cardPhoto(user, { photoSource, avatar })
 
   async function submit(event: React.FormEvent) {
     event.preventDefault()
     if (!user || !valid) return
     setSaving(true)
     try {
-      const { skipped } = await saveProfile(user, { name, showPhoto })
+      const { skipped } = await saveProfile(user, { name, photoSource })
       toast.success(t('profile.saved'))
       if (skipped > 0) toast.info(t('profile.skipped', { count: skipped }))
     } catch {
@@ -67,6 +82,62 @@ function ProfileForm({ profile }: { profile: UserDoc | null }) {
       setSaving(false)
     }
   }
+
+  async function pickFile(file: File | undefined) {
+    if (!file) return
+    if (checkFile(file)) return void toast.error(t('profile.uploadFailed'))
+    try {
+      setCropping(await createImageBitmap(file))
+    } catch {
+      toast.error(t('profile.uploadFailed'))
+    }
+  }
+
+  function closeCrop() {
+    cropping?.close()
+    setCropping(null)
+    setUploading(null)
+    if (fileInput.current) fileInput.current.value = ''
+  }
+
+  async function upload(photo: Blob) {
+    if (!user) return
+    setUploading(0)
+    try {
+      await uploadAvatar(user, photo, isTeacherRole(role), setUploading)
+      setPhotoSource('upload')
+      toast.success(t('profile.uploaded'))
+      closeCrop()
+    } catch (error) {
+      logUploadFailure(error)
+      toast.error(
+        error instanceof UploadError && error.reason === 'forbidden'
+          ? t('profile.uploadForbidden')
+          : t('profile.uploadFailed'),
+      )
+      setUploading(null)
+    }
+  }
+
+  async function remove() {
+    if (!user) return
+    setSaving(true)
+    try {
+      await removeAvatar(user)
+      if (photoSource === 'upload') setPhotoSource('google')
+      toast.success(t('profile.removed'))
+    } catch {
+      toast.error(t('errors.generic'))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const sources: { value: PhotoSource; label: string }[] = [
+    { value: 'google', label: t('profile.photoGoogle') },
+    { value: 'upload', label: t('profile.photoUpload') },
+    { value: 'initials', label: t('profile.photoInitials') },
+  ]
 
   return (
     <Card>
@@ -80,16 +151,7 @@ function ProfileForm({ profile }: { profile: UserDoc | null }) {
             className="flex items-center gap-3"
             data-testid="profile-preview"
           >
-            <Avatar className="size-12">
-              {showPhoto && (
-                <AvatarImage
-                  src={user.photoURL ?? undefined}
-                  alt=""
-                  referrerPolicy="no-referrer"
-                />
-              )}
-              <AvatarFallback>{initials(shownName)}</AvatarFallback>
-            </Avatar>
+            <StageAvatar name={shownName} photoURL={preview} size={48} />
             <div className="flex min-w-0 flex-col">
               <span className="truncate font-medium">{shownName}</span>
               <span className="truncate text-sm text-muted-foreground">
@@ -113,22 +175,68 @@ function ProfileForm({ profile }: { profile: UserDoc | null }) {
             </span>
           </div>
 
-          <div className="flex items-center justify-between gap-4">
-            <Label
-              htmlFor="profile-photo"
-              className="flex flex-col items-start gap-1"
+          <fieldset className="flex flex-col gap-2">
+            <legend className="mb-1 text-sm font-medium">
+              {t('profile.photo')}
+            </legend>
+            <div
+              role="radiogroup"
+              aria-label={t('profile.photo')}
+              className="flex flex-wrap gap-2"
             >
-              <span>{t('profile.showPhoto')}</span>
-              <span className="text-xs font-normal text-muted-foreground">
-                {t('profile.showPhotoHint')}
-              </span>
-            </Label>
-            <Switch
-              id="profile-photo"
-              checked={showPhoto}
-              onCheckedChange={setShowPhoto}
+              {sources.map((source) => (
+                <Button
+                  key={source.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={photoSource === source.value}
+                  variant={photoSource === source.value ? 'default' : 'outline'}
+                  onClick={() =>
+                    source.value === 'upload' && !avatar
+                      ? fileInput.current?.click()
+                      : setPhotoSource(source.value)
+                  }
+                >
+                  {source.label}
+                </Button>
+              ))}
+            </div>
+            <span className="text-xs text-muted-foreground">
+              {t('profile.photoHint')}
+            </span>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                disabled={saving}
+                onClick={() => fileInput.current?.click()}
+              >
+                <ImageUp />
+                {avatar ? t('profile.change') : t('profile.upload')}
+              </Button>
+              {avatar && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={saving}
+                  onClick={() => void remove()}
+                >
+                  <Trash2 />
+                  {t('profile.remove')}
+                </Button>
+              )}
+            </div>
+            <input
+              ref={fileInput}
+              type="file"
+              accept={ACCEPTED_TYPES.join(',')}
+              className="hidden"
+              data-testid="avatar-file"
+              onChange={(event) => void pickFile(event.target.files?.[0])}
             />
-          </div>
+          </fieldset>
 
           <Button
             type="submit"
@@ -139,6 +247,15 @@ function ProfileForm({ profile }: { profile: UserDoc | null }) {
           </Button>
         </form>
       </CardContent>
+      {cropping && (
+        <AvatarCropDialog
+          bitmap={cropping}
+          busy={uploading !== null}
+          progress={uploading ?? 0}
+          onCancel={closeCrop}
+          onConfirm={(photo) => void upload(photo)}
+        />
+      )}
     </Card>
   )
 }
