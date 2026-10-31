@@ -121,10 +121,11 @@ export function StageAvatar({
           {initials(name)}
         </AvatarFallback>
       </Avatar>
+      {/* size-full: buttons (e.g. the user menu) shrink any svg without a size-* class */}
       {ring && (
         <svg
           viewBox="0 0 100 100"
-          className="pointer-events-none absolute inset-0 overflow-visible"
+          className="pointer-events-none absolute inset-0 size-full overflow-visible"
           aria-hidden
           data-ring
         >

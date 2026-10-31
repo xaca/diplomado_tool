@@ -159,6 +159,15 @@ test.describe('M12 · board customization', () => {
     await expect(
       page.getByRole('banner').first().locator('[data-teacher]'),
     ).toHaveCount(1)
+    // The ring wraps the photo (inside a button too: buttons shrink unsized svgs)
+    const menuAvatar = page
+      .getByRole('banner')
+      .first()
+      .locator('[data-teacher]')
+    const avatarBox = await menuAvatar.boundingBox()
+    const ringBox = await menuAvatar.locator('[data-ring]').boundingBox()
+    expect(ringBox?.width).toBeCloseTo(avatarBox!.width, 0)
+    expect(ringBox?.x).toBeCloseTo(avatarBox!.x, 0)
 
     // …and students see it too
     await signIn(page, 'elma@gmail.com')
