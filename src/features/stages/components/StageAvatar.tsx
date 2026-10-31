@@ -2,6 +2,8 @@ import { useId, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { GraduationCap } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { useAccessory } from '@/features/boards/accessory-context'
+import { AccessoryArt } from '@/features/boards/components/Accessory'
 import { ringText, stageLabel } from '@/features/stages/stages'
 import { gsap, useGSAP } from '@/lib/gsap'
 import { initials } from '@/lib/initials'
@@ -40,6 +42,8 @@ export function StageAvatar({
   const { t } = useTranslation()
   const pathId = useId()
   const root = useRef<HTMLSpanElement>(null)
+  // M21: a seasonal accessory on students' photos (never on the teacher's #DOCENTE)
+  const accessory = useAccessory()
   const ring = teacher
     ? {
         key: 'teacher',
@@ -165,6 +169,7 @@ export function StageAvatar({
           <GraduationCap style={{ width: '65%', height: '65%' }} />
         </span>
       )}
+      {accessory && !teacher && <AccessoryArt kind={accessory} size={size} />}
     </span>
   )
 }

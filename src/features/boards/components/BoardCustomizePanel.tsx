@@ -28,6 +28,7 @@ import {
   updateBoardInfo,
 } from '@/features/boards/api'
 import { backgroundCss } from '@/features/boards/look'
+import { StylePicker } from '@/features/boards/components/StylePicker'
 import { IMAGE_SIZES, imageUrl } from '@/lib/cloudinary'
 import type { WithId } from '@/lib/firestore-hooks'
 import { gsap, motionAllowed } from '@/lib/gsap'
@@ -161,41 +162,45 @@ export function BoardCustomizePanel({
 
         <LogoPicker board={board} />
 
-        <section className="flex flex-col gap-3">
-          <h3 className="text-sm font-semibold">{t('look.background')}</h3>
-          <div
-            className="grid grid-cols-6 gap-2"
-            role="radiogroup"
-            aria-label={t('look.background')}
-          >
-            {BOARD_BACKGROUNDS.map((preset) => (
-              <button
-                key={preset.id}
-                type="button"
-                role="radio"
-                aria-checked={draft.background === preset.id}
-                aria-label={t(`look.backgrounds.${preset.id}`)}
-                title={t(`look.backgrounds.${preset.id}`)}
-                onClick={() => set({ background: preset.id })}
-                className={cn(
-                  'aspect-square rounded-lg border shadow-sm transition-transform hover:scale-105',
-                  draft.background === preset.id &&
-                    'ring-2 ring-primary ring-offset-2',
-                )}
-                style={{ background: backgroundCss(preset.stops) }}
-              />
-            ))}
-          </div>
-          <Choice
-            label={t('look.pattern')}
-            value={draft.pattern}
-            options={BOARD_PATTERNS.map((id) => ({
-              id,
-              label: t(`look.patterns.${id}`),
-            }))}
-            onChange={(pattern) => set({ pattern })}
-          />
-        </section>
+        <StylePicker look={draft} onChange={set} />
+
+        {!draft.style && (
+          <section className="flex flex-col gap-3">
+            <h3 className="text-sm font-semibold">{t('look.background')}</h3>
+            <div
+              className="grid grid-cols-6 gap-2"
+              role="radiogroup"
+              aria-label={t('look.background')}
+            >
+              {BOARD_BACKGROUNDS.map((preset) => (
+                <button
+                  key={preset.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={draft.background === preset.id}
+                  aria-label={t(`look.backgrounds.${preset.id}`)}
+                  title={t(`look.backgrounds.${preset.id}`)}
+                  onClick={() => set({ background: preset.id })}
+                  className={cn(
+                    'aspect-square rounded-lg border shadow-sm transition-transform hover:scale-105',
+                    draft.background === preset.id &&
+                      'ring-2 ring-primary ring-offset-2',
+                  )}
+                  style={{ background: backgroundCss(preset.stops) }}
+                />
+              ))}
+            </div>
+            <Choice
+              label={t('look.pattern')}
+              value={draft.pattern}
+              options={BOARD_PATTERNS.map((id) => ({
+                id,
+                label: t(`look.patterns.${id}`),
+              }))}
+              onChange={(pattern) => set({ pattern })}
+            />
+          </section>
+        )}
 
         <section className="flex flex-col gap-3">
           <h3 className="text-sm font-semibold">{t('look.layout')}</h3>

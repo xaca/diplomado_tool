@@ -1,4 +1,12 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import {
+  lazy,
+  Suspense,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { Link, useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import {
@@ -26,13 +34,11 @@ import {
 } from '@/features/boards/components/BoardHeader'
 import { useBoard } from '@/features/boards/hooks'
 import { isWritable, lifecycleOf } from '@/features/boards/lifecycle'
-import {
-  backgroundOf,
-  boardStyle,
-  resolveLook,
-  sortSpacesBy,
-} from '@/features/boards/look'
+import { resolveLook, sortSpacesBy } from '@/features/boards/look'
 import { useTeacherBoardSync } from '@/features/boards/sync'
+import { AccessoryContext } from '@/features/boards/accessory-context'
+import { boardTheme, hasTagline } from '@/features/boards/styles'
+import { localDate } from '@/features/attendance/attendance'
 import { ClockBanner } from '@/features/clock/components/ClockBanner'
 import { ClockControls } from '@/features/clock/components/ClockControls'
 import { SpaceProfileDialog } from '@/features/spaces/components/SpaceProfileDialog'
@@ -50,6 +56,13 @@ import { normalizeEmail } from '@/lib/collections'
 import { Flip, gsap, motionAllowed, useGSAP } from '@/lib/gsap'
 import { toDate } from '@/lib/time'
 import { isTeacherRole, useAuth } from '@/providers/auth-context'
+
+// M21: the style's background animation is its own chunk (only boards with one load it)
+const AmbientEffects = lazy(() =>
+  import('@/features/boards/components/AmbientEffects').then((m) => ({
+    default: m.AmbientEffects,
+  })),
+)
 
 /** The Padlet-like board: one live card per student, in the teacher's look (M12). */
 export function BoardPage() {
@@ -216,7 +229,7 @@ export function BoardPage() {
           { opacity: 1, duration: 0.5 },
         )
     },
-    { dependencies: [look.background, look.pattern] },
+    { dependencies: [look.background, look.pattern, look.style] },
   )
 
   if (board.loading) {
@@ -245,221 +258,247 @@ export function BoardPage() {
   const writable = isWritable(lifecycleOf(boardData))
   const mySpace = spaces.data.find((space) => space.id === me.studentId)
   const editing = spaces.data.find((space) => space.id === editingId)
-  const tone = backgroundOf(look).text
+  // M21: the teacher's style (or the background as chosen), with its decorations
+  const theme = boardTheme(look, localDate())
+  const tone = theme.tone
+  const accessory = (look.accessories && theme.style?.accessory) || null
+  const tagline =
+    look.tagline ||
+    (hasTagline(theme.style?.id)
+      ? t(`styles.taglines.${theme.style.id}`, {
+          year: new Date().getFullYear(),
+        })
+      : '')
 
   return (
-    <div
-      ref={page}
-      className="min-h-svh transition-colors duration-500"
-      style={boardStyle(look)}
-      data-testid="board-page"
-      data-background={look.background}
-    >
-      <ClockBanner
-        boardId={boardId}
-        clock={boardData.clock}
-        teacher={isBoardTeacher}
-      />
-      <BoardHeader
-        ref={header}
-        board={boardData}
-        title={draft?.title ?? boardData.title}
-        description={draft?.description ?? boardData.description}
-        studentCount={spaces.data.length}
-        tone={tone}
-        backdrop={backgroundOf(look).stops[0]}
-        sticky={look.stickyHeader}
-        compact={compact}
-        actions={
-          <>
-            {mySpace && writable && (
-              <Button
-                title={t('dashboard.editMine')}
-                onClick={() => setEditingId(mySpace.id)}
-              >
-                <Pencil />
-                <HeaderActionLabel>{t('dashboard.editMine')}</HeaderActionLabel>
-              </Button>
-            )}
-            {teacher && spaces.data.some((space) => space.slideCount > 0) && (
-              <Button
-                variant="secondary"
-                nativeButton={false}
-                title={t('presenter.presentAll')}
-                render={<Link to={`/b/${boardId}/present`} />}
-              >
-                <Presentation />
-                <HeaderActionLabel>
-                  {t('presenter.presentAll')}
-                </HeaderActionLabel>
-              </Button>
-            )}
-            {teacher && readyCounts(spaces.data).ready > 0 && (
-              <Button
-                variant="secondary"
-                nativeButton={false}
-                title={t('ready.presentReady')}
-                render={<Link to={`/b/${boardId}/present?ready=1`} />}
-              >
-                <CircleCheck />
-                <HeaderActionLabel>{t('ready.presentReady')}</HeaderActionLabel>
-              </Button>
-            )}
-            {isBoardTeacher && (
-              <Button
-                variant="secondary"
-                title={t('clock.button')}
-                onClick={() => setClockOpen(true)}
-              >
-                <Timer />
-                <HeaderActionLabel>{t('clock.button')}</HeaderActionLabel>
-              </Button>
-            )}
-            {isBoardTeacher && (
-              <Button
-                variant="secondary"
-                title={t('attendance.button')}
-                nativeButton={false}
-                render={<Link to={`/teacher/boards/${boardId}/attendance`} />}
-              >
-                <ClipboardCheck />
-                <HeaderActionLabel>{t('attendance.button')}</HeaderActionLabel>
-              </Button>
-            )}
-            {isBoardTeacher && (
-              <Button
-                variant="secondary"
-                title={t('look.customize')}
-                onClick={() =>
-                  setDraft({
-                    ...resolveLook(boardData),
-                    title: boardData.title,
-                    description: boardData.description,
-                  })
-                }
-              >
-                <Paintbrush />
-                <HeaderActionLabel>{t('look.customize')}</HeaderActionLabel>
-              </Button>
-            )}
-            {teacher && (
-              <Button
-                variant="secondary"
-                nativeButton={false}
-                title={t('boards.manage')}
-                render={<Link to={`/teacher/boards/${boardId}`} />}
-              >
-                <Settings />
-                <HeaderActionLabel>{t('boards.manage')}</HeaderActionLabel>
-              </Button>
-            )}
-          </>
-        }
+    <AccessoryContext.Provider value={accessory}>
+      <div
+        ref={page}
+        className="min-h-svh transition-colors duration-500"
+        style={theme.css}
+        data-testid="board-page"
+        data-background={look.background}
+        data-board-style={theme.style?.id}
       >
-        {teacher && spaces.data.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2">
-            <StageSummary
-              spaces={spaces.data}
-              stages={stages}
-              filter={stageFilter}
-              onFilter={(filter) => withFlip(() => setStageFilter(filter))}
-            />
-            <ReadyFilters
-              counts={readyCounts(spaces.data)}
-              filter={readyFilter}
-              onFilter={(filter) => withFlip(() => setReadyFilter(filter))}
-            />
-            {(stageFilter !== null || readyFilter !== null) && (
-              <button
-                type="button"
-                className="px-1 text-sm underline underline-offset-2"
-                onClick={() =>
-                  withFlip(() => {
-                    setStageFilter(null)
-                    setReadyFilter(null)
-                  })
-                }
-              >
-                {t('stages.showAll')}
-              </button>
-            )}
-          </div>
+        {look.ambient && theme.style?.ambient && (
+          <Suspense>
+            <AmbientEffects kind={theme.style.ambient} />
+          </Suspense>
         )}
-      </BoardHeader>
-      <section className="mx-auto flex max-w-7xl flex-col gap-6 p-4 sm:p-6">
-        {isBoardTeacher && (
-          <ClockControls
-            boardId={boardId}
-            clock={boardData.clock}
-            open={clockOpen}
-            onOpenChange={setClockOpen}
-          />
-        )}
-
-        {!writable && (
-          <p className="rounded-lg bg-white/80 p-3 text-sm text-neutral-900">
-            {t('dashboard.readOnly')}
-          </p>
-        )}
-
-        {!ready ? (
-          <div className="columns-1 gap-4 sm:columns-2 lg:columns-3 xl:columns-4">
-            {[40, 56, 32, 48].map((height, index) => (
-              <Skeleton
-                key={index}
-                className="mb-4 break-inside-avoid bg-white/60"
-                style={{ height: height * 4 }}
-              />
-            ))}
-          </div>
-        ) : spaces.data.length === 0 ? (
-          <div className="rounded-xl bg-white/80 p-8 text-center text-neutral-900">
-            <p className="font-medium">{t('dashboard.emptyTitle')}</p>
-            <p className="text-sm text-neutral-600">
-              {teacher
-                ? t('dashboard.emptyTeacher')
-                : t('dashboard.emptyStudent')}
-            </p>
-          </div>
-        ) : (
-          <BoardCards
-            ref={grid}
-            boardId={boardId}
-            spaces={shown}
-            layout={look.layout}
-            stages={stages}
-            myStudentId={me.studentId}
-            teacher={teacher}
-            tone={tone}
-            onEdit={writable ? setEditingId : undefined}
-          />
-        )}
-      </section>
-
-      {editing && (
-        <SpaceProfileDialog
-          key={editing.id}
+        <ClockBanner
           boardId={boardId}
-          space={editing}
-          stages={stages}
-          open
-          onOpenChange={(open) => !open && setEditingId(null)}
+          clock={boardData.clock}
+          teacher={isBoardTeacher}
         />
-      )}
-
-      {draft && (
-        <BoardCustomizePanel
+        <BoardHeader
+          ref={header}
           board={boardData}
-          draft={draft}
-          onChange={(next) =>
-            next.layout !== draft.layout || next.sortBy !== draft.sortBy
-              ? withFlip(() => setDraft(next))
-              : setDraft(next)
+          title={draft?.title ?? boardData.title}
+          description={draft?.description ?? boardData.description}
+          studentCount={spaces.data.length}
+          tone={tone}
+          backdrop={theme.backdrop}
+          garland={theme.style?.garland}
+          tagline={tagline}
+          sticky={look.stickyHeader}
+          compact={compact}
+          actions={
+            <>
+              {mySpace && writable && (
+                <Button
+                  title={t('dashboard.editMine')}
+                  onClick={() => setEditingId(mySpace.id)}
+                >
+                  <Pencil />
+                  <HeaderActionLabel>
+                    {t('dashboard.editMine')}
+                  </HeaderActionLabel>
+                </Button>
+              )}
+              {teacher && spaces.data.some((space) => space.slideCount > 0) && (
+                <Button
+                  variant="secondary"
+                  nativeButton={false}
+                  title={t('presenter.presentAll')}
+                  render={<Link to={`/b/${boardId}/present`} />}
+                >
+                  <Presentation />
+                  <HeaderActionLabel>
+                    {t('presenter.presentAll')}
+                  </HeaderActionLabel>
+                </Button>
+              )}
+              {teacher && readyCounts(spaces.data).ready > 0 && (
+                <Button
+                  variant="secondary"
+                  nativeButton={false}
+                  title={t('ready.presentReady')}
+                  render={<Link to={`/b/${boardId}/present?ready=1`} />}
+                >
+                  <CircleCheck />
+                  <HeaderActionLabel>
+                    {t('ready.presentReady')}
+                  </HeaderActionLabel>
+                </Button>
+              )}
+              {isBoardTeacher && (
+                <Button
+                  variant="secondary"
+                  title={t('clock.button')}
+                  onClick={() => setClockOpen(true)}
+                >
+                  <Timer />
+                  <HeaderActionLabel>{t('clock.button')}</HeaderActionLabel>
+                </Button>
+              )}
+              {isBoardTeacher && (
+                <Button
+                  variant="secondary"
+                  title={t('attendance.button')}
+                  nativeButton={false}
+                  render={<Link to={`/teacher/boards/${boardId}/attendance`} />}
+                >
+                  <ClipboardCheck />
+                  <HeaderActionLabel>
+                    {t('attendance.button')}
+                  </HeaderActionLabel>
+                </Button>
+              )}
+              {isBoardTeacher && (
+                <Button
+                  variant="secondary"
+                  title={t('look.customize')}
+                  onClick={() =>
+                    setDraft({
+                      ...resolveLook(boardData),
+                      title: boardData.title,
+                      description: boardData.description,
+                    })
+                  }
+                >
+                  <Paintbrush />
+                  <HeaderActionLabel>{t('look.customize')}</HeaderActionLabel>
+                </Button>
+              )}
+              {teacher && (
+                <Button
+                  variant="secondary"
+                  nativeButton={false}
+                  title={t('boards.manage')}
+                  render={<Link to={`/teacher/boards/${boardId}`} />}
+                >
+                  <Settings />
+                  <HeaderActionLabel>{t('boards.manage')}</HeaderActionLabel>
+                </Button>
+              )}
+            </>
           }
-          onClose={() => withFlip(() => setDraft(null))}
-        />
-      )}
-    </div>
+        >
+          {teacher && spaces.data.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2">
+              <StageSummary
+                spaces={spaces.data}
+                stages={stages}
+                filter={stageFilter}
+                onFilter={(filter) => withFlip(() => setStageFilter(filter))}
+              />
+              <ReadyFilters
+                counts={readyCounts(spaces.data)}
+                filter={readyFilter}
+                onFilter={(filter) => withFlip(() => setReadyFilter(filter))}
+              />
+              {(stageFilter !== null || readyFilter !== null) && (
+                <button
+                  type="button"
+                  className="px-1 text-sm underline underline-offset-2"
+                  onClick={() =>
+                    withFlip(() => {
+                      setStageFilter(null)
+                      setReadyFilter(null)
+                    })
+                  }
+                >
+                  {t('stages.showAll')}
+                </button>
+              )}
+            </div>
+          )}
+        </BoardHeader>
+        <section className="relative z-[1] mx-auto flex max-w-7xl flex-col gap-6 p-4 sm:p-6">
+          {isBoardTeacher && (
+            <ClockControls
+              boardId={boardId}
+              clock={boardData.clock}
+              open={clockOpen}
+              onOpenChange={setClockOpen}
+            />
+          )}
+
+          {!writable && (
+            <p className="rounded-lg bg-white/80 p-3 text-sm text-neutral-900">
+              {t('dashboard.readOnly')}
+            </p>
+          )}
+
+          {!ready ? (
+            <div className="columns-1 gap-4 sm:columns-2 lg:columns-3 xl:columns-4">
+              {[40, 56, 32, 48].map((height, index) => (
+                <Skeleton
+                  key={index}
+                  className="mb-4 break-inside-avoid bg-white/60"
+                  style={{ height: height * 4 }}
+                />
+              ))}
+            </div>
+          ) : spaces.data.length === 0 ? (
+            <div className="rounded-xl bg-white/80 p-8 text-center text-neutral-900">
+              <p className="font-medium">{t('dashboard.emptyTitle')}</p>
+              <p className="text-sm text-neutral-600">
+                {teacher
+                  ? t('dashboard.emptyTeacher')
+                  : t('dashboard.emptyStudent')}
+              </p>
+            </div>
+          ) : (
+            <BoardCards
+              ref={grid}
+              boardId={boardId}
+              spaces={shown}
+              layout={look.layout}
+              stages={stages}
+              myStudentId={me.studentId}
+              teacher={teacher}
+              tone={tone}
+              onEdit={writable ? setEditingId : undefined}
+            />
+          )}
+        </section>
+
+        {editing && (
+          <SpaceProfileDialog
+            key={editing.id}
+            boardId={boardId}
+            space={editing}
+            stages={stages}
+            open
+            onOpenChange={(open) => !open && setEditingId(null)}
+          />
+        )}
+
+        {draft && (
+          <BoardCustomizePanel
+            board={boardData}
+            draft={draft}
+            onChange={(next) =>
+              next.layout !== draft.layout || next.sortBy !== draft.sortBy
+                ? withFlip(() => setDraft(next))
+                : setDraft(next)
+            }
+            onClose={() => withFlip(() => setDraft(null))}
+          />
+        )}
+      </div>
+    </AccessoryContext.Provider>
   )
 }
 

@@ -212,3 +212,28 @@
     animation: none;
   }
 }
+
+/* M21 board styles: the cards' accent line, and the Christmas lights twinkling */
+[data-board-style] [data-card] {
+  border-top: 3px solid var(--card-accent);
+}
+
+@keyframes garland-twinkle {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.garland-twinkle {
+  animation: garland-twinkle 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .garland-twinkle {
+    animation: none;
+  }
+}

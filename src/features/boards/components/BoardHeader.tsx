@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { Users } from 'lucide-react'
 import { HomeLink } from '@/components/layout/HomeLink'
 import { UserMenu } from '@/components/layout/UserMenu'
+import { Garland } from '@/features/boards/components/Garland'
+import type { Garland as GarlandKind } from '@/features/boards/styles'
 import { IMAGE_SIZES, imageUrl } from '@/lib/cloudinary'
 import { cn } from '@/lib/utils'
 import type { BoardDoc, TeacherProfile } from '@/model'
@@ -22,6 +24,9 @@ type Props = {
   actions: ReactNode
   /** Under the title: stage summary, read-only notice… */
   children?: ReactNode
+  /** M21: the style's decoration along the top, and the line next to the title */
+  garland?: GarlandKind
+  tagline?: string
 }
 
 /** An action's text: hidden (still the accessible name) on phones and in the compact header. */
@@ -51,6 +56,8 @@ export const BoardHeader = forwardRef<HTMLElement, Props>(function BoardHeader(
     compact,
     actions,
     children,
+    garland,
+    tagline,
   },
   ref,
 ) {
@@ -96,6 +103,8 @@ export const BoardHeader = forwardRef<HTMLElement, Props>(function BoardHeader(
         // Full width, edge to edge (the cards below keep their centered column)
         'px-4 sm:px-6 lg:px-8',
         shrink ? 'py-2 shadow-md' : 'py-4',
+        garland && 'pt-6',
+        !sticky && 'relative z-[1]',
         sticky &&
           'sticky top-[var(--clock-banner-h,0px)] z-30 backdrop-blur-md',
       )}
@@ -109,6 +118,7 @@ export const BoardHeader = forwardRef<HTMLElement, Props>(function BoardHeader(
       data-testid="board-header"
       data-compact={shrink || undefined}
     >
+      {garland && <Garland kind={garland} />}
       {/* Top row: home · (compact: logo + title) · actions · user menu */}
       <div className="flex items-center gap-3">
         <HomeLink
@@ -170,6 +180,15 @@ export const BoardHeader = forwardRef<HTMLElement, Props>(function BoardHeader(
               )}
             </p>
             {heading}
+            {tagline && (
+              <p
+                className="font-heading text-lg font-semibold opacity-95 sm:text-xl"
+                data-testid="board-tagline"
+                data-intro
+              >
+                {tagline}
+              </p>
+            )}
             {description && (
               <p className="max-w-3xl text-balance opacity-90" data-intro>
                 {description}

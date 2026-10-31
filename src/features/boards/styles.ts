@@ -275,3 +275,20 @@ export function boardTheme(look: BoardLook, today: string) {
   }
   return { style, tone: style.text, backdrop: style.stops[0], css }
 }
+
+/** Styles with their own line next to the title (es / en: styles.taglines.<id>) */
+export const TAGLINE_STYLES = [
+  'navidad',
+  'amigo-secreto',
+  'halloween',
+  'verano',
+  'flores',
+  'graduacion',
+] as const satisfies readonly BoardStyleId[]
+export type TaglineStyle = (typeof TAGLINE_STYLES)[number]
+
+export function hasTagline(
+  id: BoardStyleId | null | undefined,
+): id is TaglineStyle {
+  return TAGLINE_STYLES.includes(id as TaglineStyle)
+}

@@ -28,6 +28,10 @@ import { MyAttendance } from '@/features/attendance/components/MyAttendance'
 import { displayNameOf } from '@/features/profile/api'
 import { useProfile } from '@/features/profile/hooks'
 import { clearCardStatus } from '@/features/spaces/api'
+import { AccessoryContext } from '@/features/boards/accessory-context'
+import { resolveLook } from '@/features/boards/look'
+import { boardTheme } from '@/features/boards/styles'
+import { localDate } from '@/features/attendance/attendance'
 import { setSpaceStage } from '@/features/stages/api'
 import { StageAvatar } from '@/features/stages/components/StageAvatar'
 import { StagePicker } from '@/features/stages/components/StagePicker'
@@ -110,8 +114,13 @@ export function SpacePage() {
     }
   }
 
+  // M21: the board style's accessory on the student's photo (when the teacher has them on)
+  const look = resolveLook(board.data)
+  const accessory =
+    (look.accessories && boardTheme(look, localDate()).style?.accessory) || null
+
   return (
-    <>
+    <AccessoryContext.Provider value={accessory}>
       <ClockBanner
         boardId={boardId}
         clock={board.data?.clock}
@@ -341,6 +350,6 @@ export function SpacePage() {
           />
         )}
       </section>
-    </>
+    </AccessoryContext.Provider>
   )
 }
