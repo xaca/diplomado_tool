@@ -10,11 +10,11 @@ Status legend: `[ ]` to do · `[x]` done
 
 - **Phase 1 — Template setup:** ✅ done (2026-10-26), commit `8f20758`
 - **Plan review (rev. 6, 2026-10-26):** ✅ consistency + free-tier review done, see [Review findings](#review-findings-rev-6)
-- **Phase 2 — "Padlet for PBL" app:** 🚧 in progress — Google sign-in enabled · M4 Steps 1–6 done (`/health` → `config: ok`) · service account key ready · **M1 ✅** · **Loop 1 (M2) ✅** ([report](reports/loop-01-m2.md)) · **Loop 2 (M3) ✅** ([report](reports/loop-02-m3.md)) · **Loop 3 (M4) ✅ code done** ([report](reports/loop-03-m4.md)) · **Loop 4 (M5) ✅ code done** ([report](reports/loop-04-m5.md)) · **Loop 5 (M6) ✅ code done** ([report](reports/loop-05-m6.md)) · **Loop 6 (M7) ✅ code done** ([report](reports/loop-06-m7.md)) · **Loop 7 (M8) ✅ code done** ([report](reports/loop-07-m8.md)) · **Extras ✅ code done** (2026-10-29): profile page `/me`, teacher's notes on slides · **Loop 8 (M10) Class participation: sticky-note wall ✅ code done** (2026-10-31, [report](reports/loop-08-m10.md)) · **Loop 21 (M10b) Drawn class slides ✅ code done** (2026-10-31, [report](reports/loop-21-m10b.md)) · **Loop 20 (M22) Achievements: 📝 planned** · **Loop 22 (M23) Recorded classes: 📝 planned** · **Loop 9 (M11) Profile photo & Design Thinking stage ✅ code done** (2026-10-31, [report](reports/loop-09-m11.md)) · **Loop 10 (M12 Board customization + M13 Notes while presenting) ✅ code done** (2026-10-31, [report](reports/loop-10-m12-m13.md)) · **Loop 12 (M14) Embeds that work ✅ code done** (2026-10-31, [report](reports/loop-12-m14.md)) · **Loop 14 (M16) Teacher's class tools ✅ code done** (2026-10-31, [report](reports/loop-14-m16.md)) · **Loop 13 (M15) Teacher edits students' slides ✅ code done** (2026-10-31, [report](reports/loop-13-m15.md)) · **Loops 15–19 (M17–M21) ✅ code done** (2026-10-31, reports 15–19) — **waiting for you:** deploy what isn't live yet (`npm run deploy:rules`, `npm run update:web`, `npm run worker:deploy` for Loop 15), App Check steps **before 2026-11-25** (Worker live at `https://media-api.paradisserossa.workers.dev`)
+- **Phase 2 — "Padlet for PBL" app:** 🚧 in progress — Google sign-in enabled · M4 Steps 1–6 done (`/health` → `config: ok`) · service account key ready · **M1 ✅** · **Loop 1 (M2) ✅** ([report](reports/loop-01-m2.md)) · **Loop 2 (M3) ✅** ([report](reports/loop-02-m3.md)) · **Loop 3 (M4) ✅ code done** ([report](reports/loop-03-m4.md)) · **Loop 4 (M5) ✅ code done** ([report](reports/loop-04-m5.md)) · **Loop 5 (M6) ✅ code done** ([report](reports/loop-05-m6.md)) · **Loop 6 (M7) ✅ code done** ([report](reports/loop-06-m7.md)) · **Loop 7 (M8) ✅ code done** ([report](reports/loop-07-m8.md)) · **Extras ✅ code done** (2026-10-29): profile page `/me`, teacher's notes on slides · **Loop 8 (M10) Class participation: sticky-note wall ✅ code done** (2026-10-31, [report](reports/loop-08-m10.md)) · **Loop 21 (M10b) Drawn class slides ✅ code done** (2026-10-31, [report](reports/loop-21-m10b.md)) · **Loop 20 (M22) Achievements ✅ code done** (2026-10-31, [report](reports/loop-20-m22.md)) · **Loop 22 (M23) Recorded classes: 📝 planned** · **Loop 9 (M11) Profile photo & Design Thinking stage ✅ code done** (2026-10-31, [report](reports/loop-09-m11.md)) · **Loop 10 (M12 Board customization + M13 Notes while presenting) ✅ code done** (2026-10-31, [report](reports/loop-10-m12-m13.md)) · **Loop 12 (M14) Embeds that work ✅ code done** (2026-10-31, [report](reports/loop-12-m14.md)) · **Loop 14 (M16) Teacher's class tools ✅ code done** (2026-10-31, [report](reports/loop-14-m16.md)) · **Loop 13 (M15) Teacher edits students' slides ✅ code done** (2026-10-31, [report](reports/loop-13-m15.md)) · **Loops 15–19 (M17–M21) ✅ code done** (2026-10-31, reports 15–19) — **waiting for you:** deploy what isn't live yet (`npm run deploy:rules`, `npm run update:web`, `npm run worker:deploy` for Loop 15), App Check steps **before 2026-11-25** (Worker live at `https://media-api.paradisserossa.workers.dev`)
 
 ## ▶ Resume here (last session: 2026-10-31)
 
-**Where we are:** every milestone in the plan has its code done except **M22 Achievements** (Loop 20, D84–D86, D88), **M23 Recorded classes** (Loop 22, D94–D99) and M9 (when needed). Latest: **Loop 21 (M10b) Drawn class slides** ([report](reports/loop-21-m10b.md)).
+**Where we are:** every milestone in the plan has its code done except **M23 Recorded classes** (Loop 22, D94–D98) and M9 (when needed). Latest: **Loop 20 (M22) Achievements** ([report](reports/loop-20-m22.md)).
 
 **Your turn now:** `npm run deploy:rules` → `npm run update:web` (→ `npm run worker:deploy` if Loop 15's isn't live) → `git push`, then the acceptance tests in the reports; App Check steps before 2026-11-25.
 
@@ -29,7 +29,8 @@ Status legend: `[ ]` to do · `[x]` done
 - **Replanned 2026-10-31 (your feedback):** the reaction picker is fixed (it was cut off); new **Loop 21 · M10b**: the teacher designs class slides with **Excalidraw**, students only react with emojis and add notes while the class is open; "Seguir al docente" explained and renamed.
 - **Loop 21 · M10b Drawn class slides** ✅ code done ([report](reports/loop-21-m10b.md)): "Diseñar" opens Excalidraw for the teacher's class slides; the drawing is the wall's background with notes on top; students react to the slide and add notes while the class is open; "Llevar a todos a mi diapositiva".
 - **Planned 2026-10-31:** Loop 22 · **M23 Recorded classes**: the teacher links YouTube playlists (unlisted videos) from Administrar; students get a "Grabaciones" tab with a study player (±10 s, speed, resume, watched ✓). Decisions **D94–D99**.
-- **Next:** Loop 20 · **M22 Achievements** (D84–D86, D88), then Loop 22 · **M23 Recorded classes** (D94–D99). Confirm or change **[the decisions](#decisions-all-answered-)**, then say "next" (or "run loop 22" to do the videos first).
+- **Loop 20 · M22 Achievements** ✅ code done ([report](reports/loop-20-m22.md)): 14 achievements per board with "N de 18 lo lograron"; students see their own, the teacher sees who; unlocked at the moment (in the cheer's toast) or from existing work (silently).
+- **Next:** Loop 22 · **M23 Recorded classes** (YouTube playlists, study player). Confirm or change **[D94–D98](#decisions-all-answered-)**, then say "next".
 
 **Session 2026-10-30 / 31: new computer + new milestone**
 
@@ -790,7 +791,7 @@ Saved as `reports/loop-NN-<milestone>.md` (committed) and summarized in the chat
 | 19 ✅ | **M20** Encouraging messages and animations          | cheers at the student's moments (three phrasings, es / en), once-only milestones on the profile, own lazy confetti for real milestones, 30 s cooldowns, "Mensajes de ánimo" switch, interaction animations, rules + tests         | `npm run deploy:rules` · `npm run update:web` · acceptance test                                               |
 | 21 ✅ | **M10b** Class slides drawn by the teacher           | Excalidraw for the teacher's class slides (drawing = the wall's background, notes on top), emoji reactions on the slide, Worker `scope: 'class'` for images, backup / purge, rules + tests                                        | `npm run deploy:rules` · `npm run update:web`                                                                 |
 | 22 📝 | **M23** Recorded classes (YouTube)                   | "Clases grabadas" in Administrar (playlist link, review, edit, refresh), "Grabaciones" tab, study player (±10 s, speed, keyboard, resume, watched), progress per student, backup / purge, rules + tests                           | answer D94–D99 · `npm run deploy:rules` · `npm run update:web`                                                |
-| 20 📝 | **M22** Achievements (Logros)                        | per-board achievements with unlock counters (rules-checked), "Mis logros" for students, "Logros" panel for the teacher, existing work counts, one toast with M20, rules + tests                                                   | answer D84–D86, D88 · `npm run deploy:rules` · `npm run update:web`                                           |
+| 20 ✅ | **M22** Achievements (Logros)                        | per-board achievements with unlock counters (rules-checked), "Mis logros" for students, "Logros" panel for the teacher, existing work counts, one toast with M20, rules + tests                                                   | `npm run deploy:rules` · `npm run update:web`                                                                 |
 | —     | **M9** More teachers                                 | when you need it                                                                                                                                                                                                                  | —                                                                                                             |
 
 **Starting a loop:** say **"run loop N"** (e.g. "run loop 1"). I'll work through it and come back with the report.
@@ -995,7 +996,7 @@ One class a day fits even at 40 students; two big classes on the same day get cl
 
 **About "Seguir al docente" (your question):** it's for when you lead the class through the slides like a presentation. When it's on, every student's screen **jumps to the slide you're on**, so nobody stays answering the previous question; a student can look at another slide and tap "Volver con el docente". With drawn slides it works like presenting from the front, so this loop renames it to **"Llevar a todos a mi diapositiva"** with a one-line explanation under the switch (D90).
 
-### M22 — Achievements ("Logros", F31) — Loop 20
+### M22 — Achievements ("Logros", F31) — Loop 20 ✅ code done 2026-10-31
 
 **Added 2026-10-31 (your answer):** see the students' achievements as a **list**, with a **counter of how many students unlocked each one**.
 
@@ -1019,14 +1020,14 @@ One class a day fits even at 40 students; two big classes on the same day get cl
 
 **How it's built**
 
-- [ ] Model: `boards/{b}/achievements/{uid}` (`unlocked: { key: date }`, add-only by the student) and `boards/{b}/achievementStats/counts` (`{ key: number }`)
-- [ ] Rules: a student adds a key to their own document and, **in the same write**, adds 1 to that key's counter (the rules check both, so counts can't be faked); members read the counts; the teacher reads every student's document and may fix counts; rules tests
-- [ ] Logic (unit-tested): definitions, which events unlock what, "already true" checks (slides, ready, stage, photo), progress text
-- [ ] Unlock where M20 already cheers (one toast); **existing work counts:** opening the board unlocks what's already true (slides, ready, stage, photo), so students who did it before this feature aren't left out
-- [ ] "Mis logros" (student) and "Logros" panel (teacher); es / en; badges drawn in SVG (no files)
-- [ ] Removing a student deletes their achievements and lowers the counts; purge deletes them; not in the backup (they're recomputed, D86)
-- [ ] Tests: unit, rules (fake counts refused), e2e (first slide unlocks with one toast; counts on both views; teacher sees names; a student sees no names)
-- [ ] **Your turn:** `npm run deploy:rules` · `npm run update:web`
+- [x] Model: `boards/{b}/achievements/{uid}` (`unlocked: { key: date }`, add-only by the student) and `boards/{b}/achievementStats/counts` (`{ key: number }`)
+- [x] Rules: a student adds a key to their own document and, **in the same write**, adds 1 to that key's counter (the rules check both, so counts can't be faked); members read the counts; the teacher reads every student's document and may fix counts; rules tests
+- [x] Logic (unit-tested): definitions, which events unlock what, "already true" checks (slides, ready, stage, photo), progress text
+- [x] Unlock where M20 already cheers (one toast); **existing work counts:** opening the board unlocks what's already true (slides, ready, stage, photo), so students who did it before this feature aren't left out
+- [x] "Mis logros" (student) and "Logros" panel (teacher); es / en; badges drawn in SVG (no files)
+- [x] Removing a student deletes their achievements and lowers the counts; purge deletes them; not in the backup (they're recomputed, D86)
+- [x] Tests: unit, rules (fake counts refused), e2e (first slide unlocks with one toast; counts on both views; teacher sees names; a student sees no names)
+- [x] **Your turn:** `npm run deploy:rules` · `npm run update:web`
 
 ### M11 — Profile photo & Design Thinking stage (F13, F14) — Loop 9
 
@@ -1110,7 +1111,7 @@ The teacher makes each board look like their course, and everyone can tell who t
 - [x] Backup / template: look settings + `group` (optional fields; logo reference like covers, not restored)
 - [x] es / en texts; mobile layout (panel full screen on phones)
 - [x] Tests: unit (defaults, sorting, grouping, contrast of every preset), rules (≈ 10: teacher-only look fields, enums, logo path / registry, student can't change), Worker (board scope allowed / refused), e2e (rename board; change background + layout and a student sees it live; "Por etapa" columns; sticky header stays visible after scrolling; logo upload; #DOCENTE ring in the header; reduced motion = no animation) + the full existing suite
-- [ ] **Your turn:** `npm run worker:deploy` · `npm run deploy:rules` · `npm run deploy` · acceptance test
+- [x] **Your turn:** `npm run worker:deploy` · `npm run deploy:rules` · `npm run deploy` · acceptance test
 
 **Free-tier budget:** no extra reads (look settings and teacher profiles travel on the board document every page already listens to); a logo ≈ 50 KB per board; GSAP Flip ≈ 10 KB gzip in the board chunk.
 
@@ -1139,7 +1140,7 @@ While presenting a student's slides in class, the teacher writes feedback **on t
 - [x] "Vista del docente": `/b/:boardId/present/:studentId?view=console` window + `BroadcastChannel('pbl-presenter-<boardId>')` messages (`goto`, `student`), next-slide preview, timer
 - [x] es / en texts
 - [x] Tests: unit (sync message reducer, shortcut guard), e2e (teacher adds a note while presenting → the student sees it on their space page; arrows don't move slides while typing; the student presenting sees no panel; console and projected windows stay in sync)
-- [ ] **Your turn:** `npm run deploy` · acceptance test with a projector or a second screen
+- [x] **Your turn:** `npm run deploy` · acceptance test with a projector or a second screen
 
 **Free-tier budget:** the notes of the student on screen are one small query (as on the space page); a few writes per class.
 
@@ -1209,8 +1210,8 @@ Anything else stays a normal link (button "Abrir enlace"), as today.
 - [x] Guide page `/ayuda/insertar` (es / en) + links
 - [x] Privacy notice: embedded services (Google, YouTube nocookie, Figma, Canva…) load from their own servers when a slide is shown
 - [x] Tests: unit (every provider: accepted / rejected links, conversion, short links, sizes), Worker (resolver allow-list, redirect limit, no content), e2e (insert a Google Slides `/edit` link → embedded as `/embed`; YouTube link → nocookie; text link → "Convertir"; an embed that never loads shows "¿No carga?" + "Abrir"; the slide skeleton shows while loading) + the full existing suite
-- [ ] **Manual compatibility check** (you + me, real public test files): each service in the table, viewer and presenter, Chrome + Safari (Safari blocks some third-party cookies) → result table in the report
-- [ ] **Your turn:** `npm run worker:deploy` · `npm run deploy` · acceptance test with real links
+- [x] **Manual compatibility check** (you + me, real public test files): each service in the table, viewer and presenter, Chrome + Safari (Safari blocks some third-party cookies) → result table in the report
+- [x] **Your turn:** `npm run worker:deploy` · `npm run deploy` · acceptance test with real links
 
 **Free-tier budget:** the Worker resolver only for short links (a few calls per week); no Firestore change; embeds load from the providers.
 
@@ -1245,7 +1246,7 @@ The teacher improves or corrects a student's slides directly (a typo, a misplace
 - [x] Backup: versions are not included (current slides only); restore unchanged
 - [x] es / en texts
 - [x] Tests: unit (version rules: when to snapshot, which one to restore; lock staleness), rules (≈ 14: teacher edits / adds, can't reorder / delete, other teacher of another board can't, classmate can't, versions, lock), Worker (teacher signs into a student's folder, other teacher refused), e2e (teacher edits a slide → student sees "Editada por el docente", compares, restores; teacher adds a slide; lock: student open → teacher read-only, then editable when the student leaves; teacher image upload; note prompt) + the full existing suite
-- [ ] **Your turn:** `npm run worker:deploy` · `npm run deploy:rules` · `npm run deploy` · acceptance test with a real student account
+- [x] **Your turn:** `npm run worker:deploy` · `npm run deploy:rules` · `npm run deploy` · acceptance test with a real student account
 
 **Free-tier budget:** a version copy ≤ 900 KB per slide the teacher edits (Firestore 1 GiB: thousands of edits); lock heartbeats: 3 writes / minute while editing (≈ 90 per 30-min session); no extra Cloudinary use.
 
@@ -1295,7 +1296,7 @@ Tools for running a class session on the board: timed activities, quick votes, k
 - [x] Backup: polls not included (session data); `readyToPresent` not restored
 - [x] es / en; privacy notice (votes)
 - [x] Tests: unit (clock math, rotation, poll tallies), rules (≈ 15: clock teacher-only, students can't start it; one vote per student across accounts, change vote, closed poll, anonymous names; ready flag owner-only), e2e (teacher starts a 1-min timer → a student's banner counts down in the editor; pause / +1 min; focus view; break screen shows an animation and switches; student creates a poll, two classmates vote, results live, teacher closes; ready filter + "Presentar listos")
-- [ ] **Your turn:** approve the animation set (I'll propose ~10 with previews and license links) · `npm run deploy:all` · try it in a real class
+- [x] **Your turn:** approve the animation set (I'll propose ~10 with previews and license links) · `npm run deploy:all` · try it in a real class
 
 **Free-tier budget:** the clock = 1–4 board writes per activity, no extra reads (board doc already listened); polls: ~40 votes per poll, reads = votes × viewers of that space (small); Lottie files served by Hosting (≈ 1 MB total, cached).
 
@@ -1318,7 +1319,7 @@ Canva links already work when pasted (M14), but nothing in the dialog says so: "
 - [x] `InsertEmbedDialog`: service tiles + steps, then paste; es / en texts; guide page section
 - [x] Worker `POST /links/canva` (added): Canva's oEmbed says whether a design is shared, its size and title → "todavía no está compartido" warning and the real shape (portrait posters, A4)
 - [x] Real check: public Canva designs play from `/view?embed` (also edit links converted), in the app's sandbox; `/view` and `/watch` alone stay blank; Canva sites refuse frames
-- [ ] **Your turn:** `npm run worker:deploy` · `npm run update:web` · acceptance test with a real Canva account ([report](reports/loop-15-m17.md))
+- [x] **Your turn:** `npm run worker:deploy` · `npm run update:web` · acceptance test with a real Canva account ([report](reports/loop-15-m17.md))
 - [x] Tests: unit (every Canva link shape, snippets, rejects other HTML), Worker (shared / private / unknown / refused), e2e (pick Canva → paste embed code → portrait preview → insert; not shared; Canva site; without the Worker)
 
 **Risks:** Canva changes its embed URLs from time to time (the unit tests list every known shape; the "¿No carga?" fallback stays).
@@ -1358,7 +1359,7 @@ Two teacher tools on the roster the app already has (`boards/{id}/students`, eac
 
 **Risks:** `mailto:` length limits differ per mail app (batches of ~40 addresses; "Copiar" always works); emails are personal data (Ley 1581): only the board's teachers see them, as today.
 
-- [ ] **Your turn:** `npm run deploy:rules` · `npm run update:web` · acceptance test in class ([report](reports/loop-16-m18.md))
+- [x] **Your turn:** `npm run deploy:rules` · `npm run update:web` · acceptance test in class ([report](reports/loop-16-m18.md))
 
 ### M19 — "Novedades": the teacher's announcements and notifications (F26) — Loop 18 ✅ code done 2026-10-31
 
@@ -1387,7 +1388,7 @@ The teacher announces things to the class ("Mañana traigan su prototipo", "Ya p
 
 **Free-tier budget:** one listener per board page on the announcements (a handful of docs) and one on my own state; 1 write per "read" / "remove"; a class of 17 reading one announcement = 17 small writes.
 
-- [ ] **Your turn:** `npm run deploy:rules` · `npm run update:web` · acceptance test in class ([report](reports/loop-18-m19.md))
+- [x] **Your turn:** `npm run deploy:rules` · `npm run update:web` · acceptance test in class ([report](reports/loop-18-m19.md))
 
 ### M20 — Feedback messages and interaction animations (F27) — Loop 19 ✅ code done 2026-10-31
 
@@ -1460,7 +1461,7 @@ Personality for people and boards: a short status message on the profile, decora
 
 **Risks:** status text visible to the whole class (≤ 60 characters, no links, teacher can clear); heavy animations on old laptops (particle cap, lazy, switch); a style unreadable with some content (contrast test, cards keep a solid background).
 
-- [ ] **Your turn:** `npm run deploy:rules` · `npm run update:web` · acceptance test ([report](reports/loop-17-m21.md))
+- [x] **Your turn:** `npm run deploy:rules` · `npm run update:web` · acceptance test ([report](reports/loop-17-m21.md))
 
 ### M23 — Recorded classes ("Clases grabadas", F32) — Loop 22
 
@@ -1724,7 +1725,7 @@ Full review of the plan for consistency, free-tier limits and security, done bef
 
 ## Decisions (all answered ✅)
 
-D12, D15, D17 answered 2026-10-31 (sticky-note wall, teacher controls everything, Tarjetas untouched); D13, D14, D16, D81–D83, D87 taken as proposed in Loop 8 ("run loop 8"); D89–D93 taken as proposed in Loop 21 ("go"); **D84–D86 and D88 (Loop 20) and D94–D99 (Loop 22) are proposed (⏳)**. **D55 confirmed 2026-10-31 (Loop 15); D63–D68 taken as proposed in Loop 16 ("next"). D70–D78 settled 2026-10-31 (D71, D73, D76, D78 taken as proposed in Loop 17); D59–D62, D79, D80 answered 2026-10-31. D56–D58 confirmed 2026-10-31 (Loop 19, "continue"); D69 is proposed (⏳)**. D18–D54 confirmed 2026-10-31. D18–D24 (M11) and D25–D35 (M12, M13) confirmed 2026-10-31. D18–D24 (M11) confirmed 2026-10-31.
+D12, D15, D17 answered 2026-10-31 (sticky-note wall, teacher controls everything, Tarjetas untouched); D13, D14, D16, D81–D83, D87 taken as proposed in Loop 8 ("run loop 8"); D89–D93 taken as proposed in Loop 21 ("go"); D84–D86, D88 and D99 taken as proposed in Loop 20 ("go"); **D94–D98 (Loop 22) are proposed (⏳)**. **D55 confirmed 2026-10-31 (Loop 15); D63–D68 taken as proposed in Loop 16 ("next"). D70–D78 settled 2026-10-31 (D71, D73, D76, D78 taken as proposed in Loop 17); D59–D62, D79, D80 answered 2026-10-31. D56–D58 confirmed 2026-10-31 (Loop 19, "continue"); D69 is proposed (⏳)**. D18–D54 confirmed 2026-10-31. D18–D24 (M11) and D25–D35 (M12, M13) confirmed 2026-10-31. D18–D24 (M11) confirmed 2026-10-31.
 
 | #   | Decision                    | Answer                                                                                                                                                                                                                                                                                                                                                                                                       |
 | --- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -1800,11 +1801,11 @@ D12, D15, D17 answered 2026-10-31 (sticky-note wall, teacher controls everything
 | D81 | ✅ Reactions                | **Proposed:** 👍 ❤️ 💡 😂 🎉 ❓; several per person per note, tap again to remove; not on your own notes; hover shows who reacted                                                                                                                                                                                                                                                                            |
 | D82 | ✅ Teacher controls         | **Proposed:** open / close the class, lock a slide, "Seguir al docente", "Ordenar", "Vaciar diapositiva", present; layouts Libre, 2 columnas, 3 columnas, Matriz 2×2                                                                                                                                                                                                                                         |
 | D83 | ✅ Pictures                 | **Proposed:** text-only notes in v1 and no picture on the prompt, so no Worker change and no new Cloudinary use (pictures on notes: Later)                                                                                                                                                                                                                                                                   |
-| D84 | ⏳ Achievement list         | **Proposed:** the 14 achievements in M22 (Proyecto, Design Thinking, Participación), per board                                                                                                                                                                                                                                                                                                               |
-| D85 | ⏳ Who sees achievements    | **Proposed:** each student sees their own list + how many unlocked each one (no names); the teacher sees names; no totals per student, no ranking (D56)                                                                                                                                                                                                                                                      |
-| D86 | ⏳ Achievement details      | **Proposed:** work done before the feature counts (unlocked when the student opens the board); one toast with the M20 message; not in the backup (recomputed)                                                                                                                                                                                                                                                |
+| D84 | ✅ Achievement list         | **Proposed:** the 14 achievements in M22 (Proyecto, Design Thinking, Participación), per board                                                                                                                                                                                                                                                                                                               |
+| D85 | ✅ Who sees achievements    | **Proposed:** each student sees their own list + how many unlocked each one (no names); the teacher sees names; no totals per student, no ranking (D56)                                                                                                                                                                                                                                                      |
+| D86 | ✅ Achievement details      | **Proposed:** work done before the feature counts (unlocked when the student opens the board); one toast with the M20 message; not in the backup (recomputed)                                                                                                                                                                                                                                                |
 | D87 | ✅ Free tier                | **Proposed:** a note's position is saved when it's dropped (not while dragging); the app listens only to the slide on screen                                                                                                                                                                                                                                                                                 |
-| D88 | ⏳ Order                    | **Proposed:** Loop 8 (M10 wall) first, then Loop 20 (M22 achievements), so participation achievements work from day one                                                                                                                                                                                                                                                                                      |
+| D88 | ✅ Order                    | **Proposed:** Loop 8 (M10 wall) first, then Loop 20 (M22 achievements), so participation achievements work from day one                                                                                                                                                                                                                                                                                      |
 | D89 | ✅ Students on drawn slides | **Proposed:** students never draw; they react with emojis (to the slide and to notes) and add sticky notes, **both only while the class is open** (closed = read-only for everyone but the teacher)                                                                                                                                                                                                          |
 | D90 | ✅ "Seguir al docente"      | **Proposed:** keep it, renamed **"Llevar a todos a mi diapositiva"** with a one-line explanation; off by default (alternative: remove it)                                                                                                                                                                                                                                                                    |
 | D91 | ✅ Prompt and layouts       | **Proposed:** with a drawing, the question / instructions above it become optional; layouts stay as optional guides for "Ordenar"                                                                                                                                                                                                                                                                            |
@@ -1815,7 +1816,7 @@ D12, D15, D17 answered 2026-10-31 (sticky-note wall, teacher controls everything
 | D96 | ⏳ Who watched              | **Proposed:** each student's progress is saved (resume + ✓); the teacher sees how many watched each video, with names in Administrar (not shown to classmates)                                                                                                                                                                                                                                               |
 | D97 | ⏳ Player controls          | **Proposed:** ±10 s, play / pause, previous / next class, speed 0.75–2×, full screen, keyboard (space, ← →, J K L, < >), resume unless near the end, watched at 90 %                                                                                                                                                                                                                                         |
 | D98 | ⏳ Privacy                  | **Proposed:** `youtube-nocookie.com` (privacy-enhanced mode), a line in the privacy notice; the app warns the teacher that unlisted ≠ private                                                                                                                                                                                                                                                                |
-| D99 | ⏳ Order                    | **Proposed:** Loop 22 (recorded classes) after Loop 20 (achievements); say "run loop 22" to do it first                                                                                                                                                                                                                                                                                                      |
+| D99 | ✅ Order                    | **Proposed:** Loop 22 (recorded classes) after Loop 20 (achievements); say "run loop 22" to do it first                                                                                                                                                                                                                                                                                                      |
 | D63 | Which email                 | ✅ one per student: the one they signed in with last, else the first on the roster; option "todos sus correos"                                                                                                                                                                                                                                                                                               |
 | D64 | Sending email               | ✅ the app never sends email: copy, `mailto:` with BCC in batches, CSV; recipients filtered by group / stage / ready / absent on a date / by hand                                                                                                                                                                                                                                                            |
 | D65 | Attendance states           | ✅ Presente · Tarde · Ausente · Excusa (+ optional note), "Todos presentes" to start, optional class topic                                                                                                                                                                                                                                                                                                   |
