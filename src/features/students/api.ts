@@ -4,6 +4,7 @@ import {
   doc,
   getDoc,
   getDocs,
+  increment,
   serverTimestamp,
   setDoc,
   writeBatch,
@@ -19,6 +20,7 @@ import {
   studentInputSchema,
   type StudentDoc,
   type StudentInput,
+  type AchievementsDoc,
 } from '@/model'
 import type { PreviewItem } from '@/features/students/import'
 import { deleteSlideExtras } from '@/features/slides/api'
@@ -179,6 +181,18 @@ export async function removeStudent(boardId: string, student: Student) {
     batch.delete(doc(db, paths.member(boardId, uid)))
     // M19: their announcement read state
     batch.delete(doc(db, paths.announcementState(boardId, uid)))
+    // M22: their achievements, and one less on each counter they counted in
+    const achievements = await getDoc(doc(db, paths.achievement(boardId, uid)))
+    const keys = Object.keys(
+      (achievements.data() as AchievementsDoc | undefined)?.unlocked ?? {},
+    )
+    if (keys.length)
+      batch.set(
+        doc(db, paths.achievementCounts(boardId)),
+        Object.fromEntries(keys.map((key) => [key, increment(-1)])),
+        { merge: true },
+      )
+    batch.delete(doc(db, paths.achievement(boardId, uid)))
   }
   batch.delete(doc(db, paths.space(boardId, student.id)))
   await batch.commit()

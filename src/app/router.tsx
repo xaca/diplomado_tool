@@ -2,6 +2,7 @@ import { createBrowserRouter } from 'react-router'
 import { HomeRedirect, RequireAuth, RequireTeacher } from '@/app/guards'
 import { AppShell, type ShellHandle } from '@/components/layout/AppShell'
 import { RouteError } from '@/components/layout/RouteError'
+import { AchievementsPage } from '@/pages/AchievementsPage'
 import { BoardPage } from '@/pages/BoardPage'
 import { ClassDesignPage } from '@/pages/ClassDesignPage'
 import { ClassesPage } from '@/pages/ClassesPage'
@@ -63,6 +64,8 @@ export const router = createBrowserRouter([
             handle: { ownHeader: true } satisfies ShellHandle,
           },
           { path: 'b/:boardId/s/:studentId', element: <SpacePage /> },
+          // M22: achievements
+          { path: 'b/:boardId/logros', element: <AchievementsPage /> },
           // M10: class participation (sticky-note walls)
           { path: 'b/:boardId/class', element: <ClassesPage /> },
           { path: 'b/:boardId/class/:classId', element: <ClassPage /> },

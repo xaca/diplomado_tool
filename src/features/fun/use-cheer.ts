@@ -18,6 +18,32 @@ import { isTeacherRole, useAuth } from '@/providers/auth-context'
 // One memory for the whole tab: the 30 s cooldowns hold across screens
 let memory = freshMemory()
 
+/** The last cheer toast, so an achievement it unlocked joins it (one toast, M22) */
+let lastCheer: {
+  id: string | number
+  message: string
+  icon: string
+  at: number
+} | null = null
+
+/**
+ * M22: "🏆 Logro desbloqueado: …" — added to the cheer shown a moment ago, or its own toast.
+ */
+export function announceAchievement(line: string, standalone: string) {
+  const now = Date.now()
+  if (lastCheer && now - lastCheer.at < 4000) {
+    toast(lastCheer.message, {
+      id: lastCheer.id,
+      icon: lastCheer.icon,
+      className: 'cheer-toast',
+      description: `🏆 ${line}`,
+    })
+    lastCheer.at = now
+    return
+  }
+  toast(standalone, { icon: '🏆', className: 'cheer-toast' })
+}
+
 /**
  * `cheer(event)`: an encouraging toast (M20), confetti for real milestones (not with "reduce
  * motion"), and the once-only moments stored on my profile. Students only; nothing when switched
@@ -44,10 +70,12 @@ export function useCheer() {
       const decision = decideCheer(event, { enabled, milestones, memory, now })
       if (!decision) return false
       memory = remember(memory, event, decision, now)
-      toast(t(`fun.${event}.${pickVariant()}`, values), {
+      const message = t(`fun.${event}.${pickVariant()}`, values)
+      const id = toast(message, {
         icon: CHEER_EMOJI[event],
         className: 'cheer-toast',
       })
+      lastCheer = { id, message, icon: CHEER_EMOJI[event], at: now }
       if (decision.burst && motionAllowed())
         void import('@/features/fun/confetti').then(({ burst }) => burst())
       if (decision.milestone)

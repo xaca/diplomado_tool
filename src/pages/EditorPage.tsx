@@ -50,6 +50,7 @@ import {
 } from '@/features/slides/api'
 import { SaveIndicator } from '@/features/slides/components/SaveIndicator'
 import { slideEvent } from '@/features/fun/cheer'
+import { useAchievementUnlock } from '@/features/achievements/use-unlock'
 import { useCheer } from '@/features/fun/use-cheer'
 import { useTeacherEditCheer } from '@/features/fun/use-teacher-edit-cheer'
 import { InsertEmbedDialog } from '@/features/slides/components/InsertEmbedDialog'
@@ -94,6 +95,7 @@ export function EditorPage() {
     !!board.data?.teacherEmails.includes(normalizeEmail(user?.email ?? ''))
   const asTeacher = isBoardTeacher && !isMine
   const cheer = useCheer()
+  const unlock = useAchievementUnlock(boardId)
   const ref =
     boardId && studentId ? doc(db, paths.space(boardId, studentId)) : null
   const space = useLiveDoc<SpaceDoc>(ref, `space:${boardId}:${studentId}`)
@@ -500,6 +502,7 @@ export function EditorPage() {
             canvas.current?.insertEmbed(link, aspect)
             if (!(isMine && cheer('firstEmbed')))
               toast.success(t('embeds.inserted'))
+            if (isMine) void unlock(['firstEmbed'])
           }}
         />
       )}

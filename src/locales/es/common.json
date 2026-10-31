@@ -1082,6 +1082,85 @@
     "designHint": "Dibuja la diapositiva con Excalidraw: texto, formas, imágenes",
     "designTitle": "Diseñar la diapositiva {{number}}",
     "designDone": "Listo",
-    "reactSlide": "Reaccionar a la diapositiva"
+    "reactSlide": "Reaccionar a la diapositiva",
+    "achievementsTab": "Logros"
+  },
+  "achievements": {
+    "title": "Logros",
+    "button": "Logros",
+    "hint": "Lo que vas logrando en este tablero. No es una competencia: cada uno avanza a su ritmo.",
+    "teacherHint": "Cuántos estudiantes desbloquearon cada logro. Toca uno para ver quién lo tiene y quién aún no (para ayudar, no para comparar).",
+    "summary": "Desbloqueaste {{count}} de {{total}}",
+    "progress": "{{count}} de {{total}} lo lograron",
+    "unlockedOn": "Desbloqueado el {{date}}",
+    "locked": "Por desbloquear",
+    "unlockedToast": "¡Logro desbloqueado: {{name}}!",
+    "unlockedLine": "Logro desbloqueado: {{name}}",
+    "who": "Lo lograron ({{count}})",
+    "notYet": "Aún no ({{count}})",
+    "nobody": "Nadie todavía",
+    "groups": {
+      "project": "Proyecto",
+      "dt": "Design Thinking",
+      "participation": "Participación"
+    },
+    "items": {
+      "firstSlide": {
+        "name": "Primera diapositiva",
+        "how": "Crea tu primera diapositiva"
+      },
+      "slides5": {
+        "name": "5 diapositivas",
+        "how": "Llega a 5 diapositivas"
+      },
+      "slides10": {
+        "name": "10 diapositivas",
+        "how": "Llega a 10 diapositivas"
+      },
+      "firstEmbed": {
+        "name": "Primer contenido insertado",
+        "how": "Inserta un video, Canva u otro contenido en una diapositiva"
+      },
+      "ready": {
+        "name": "Lista para presentar",
+        "how": "Marca tus diapositivas como listas"
+      },
+      "photo": {
+        "name": "Foto de perfil",
+        "how": "Sube tu foto en Mi perfil"
+      },
+      "firstStage": {
+        "name": "Primera etapa elegida",
+        "how": "Elige en qué etapa vas en tu tarjeta"
+      },
+      "prototype": {
+        "name": "Llegó a Prototipar",
+        "how": "Avanza tu proyecto hasta Prototipar"
+      },
+      "test": {
+        "name": "Llegó a Evaluar",
+        "how": "Avanza tu proyecto hasta Evaluar"
+      },
+      "firstVote": {
+        "name": "Primer voto",
+        "how": "Vota en una encuesta"
+      },
+      "firstNote": {
+        "name": "Primera nota adhesiva",
+        "how": "Escribe una nota en el muro de una clase"
+      },
+      "firstReaction": {
+        "name": "Primera reacción",
+        "how": "Reacciona a una nota o a una diapositiva de clase"
+      },
+      "popularNote": {
+        "name": "Nota destacada",
+        "how": "Una nota tuya recibe 5 reacciones"
+      },
+      "classes3": {
+        "name": "Constante",
+        "how": "Escribe notas en 3 clases distintas"
+      }
+    }
   }
 }

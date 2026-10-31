@@ -1,9 +1,9 @@
 import { NavLink } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import { LayoutGrid, StickyNote } from 'lucide-react'
+import { LayoutGrid, StickyNote, Trophy } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-/** "Tarjetas | Clases" (M10): the board's cards (unchanged) and its class walls. */
+/** "Tarjetas | Clases | Logros" (M10, M22): the board's cards (unchanged), class walls, achievements. */
 export function BoardSections({ boardId }: { boardId: string }) {
   const { t } = useTranslation()
   const tab = ({ isActive }: { isActive: boolean }) =>
@@ -25,6 +25,10 @@ export function BoardSections({ boardId }: { boardId: string }) {
       <NavLink to={`/b/${boardId}/class`} className={tab}>
         <StickyNote className="size-4" />
         {t('classes.tab')}
+      </NavLink>
+      <NavLink to={`/b/${boardId}/logros`} className={tab}>
+        <Trophy className="size-4" />
+        {t('achievements.title')}
       </NavLink>
     </nav>
   )

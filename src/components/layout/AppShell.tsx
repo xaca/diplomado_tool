@@ -2,6 +2,7 @@ import { Link, Outlet, useMatches } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { HomeLink } from '@/components/layout/HomeLink'
 import { UserMenu } from '@/components/layout/UserMenu'
+import { AchievementSync } from '@/features/achievements/components/AchievementSync'
 import { NotificationBell } from '@/features/announcements/components/NotificationBell'
 
 /** Routes with `handle: { ownHeader: true }` render the app name and menu in their own header. */
@@ -29,6 +30,8 @@ export function AppShell() {
       )}
       <main className="flex-1">
         <Outlet />
+        {/* M22: unlocks achievements that are already true (students; renders nothing) */}
+        {boardId && <AchievementSync boardId={boardId} />}
       </main>
       <footer className="border-t px-4 py-2 text-center text-xs text-muted-foreground">
         <Link to="/privacidad" className="hover:underline">

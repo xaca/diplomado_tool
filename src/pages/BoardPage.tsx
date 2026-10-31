@@ -19,6 +19,7 @@ import {
   Settings,
   StickyNote,
   Timer,
+  Trophy,
 } from 'lucide-react'
 import { HomeLink } from '@/components/layout/HomeLink'
 import { AnnouncementsPanel } from '@/features/announcements/components/AnnouncementsPanel'
@@ -320,6 +321,20 @@ export function BoardPage() {
                 >
                   <StickyNote />
                   <HeaderActionLabel>{t('classes.tab')}</HeaderActionLabel>
+                </Button>
+              )}
+              {/* M22: achievements */}
+              {(teacher || mySpace) && (
+                <Button
+                  variant="secondary"
+                  nativeButton={false}
+                  title={t('achievements.button')}
+                  render={<Link to={`/b/${boardId}/logros`} />}
+                >
+                  <Trophy />
+                  <HeaderActionLabel>
+                    {t('achievements.button')}
+                  </HeaderActionLabel>
                 </Button>
               )}
               {mySpace && writable && (

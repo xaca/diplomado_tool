@@ -67,6 +67,7 @@ export async function loadBoardData(boardId: string): Promise<BoardData> {
     announcements,
     announcementStates,
     classes,
+    achievements,
   ] = await Promise.all([
     getDoc(doc(db, paths.board(boardId))),
     getDocs(collection(db, paths.students(boardId))),
@@ -82,6 +83,8 @@ export async function loadBoardData(boardId: string): Promise<BoardData> {
     getDocs(collection(db, paths.announcementStates(boardId))),
     // M10: class walls, their slides and notes
     getDocs(collection(db, paths.classes(boardId))),
+    // M22: achievements and their counters (not in the backup: recomputed, D86)
+    getDocs(collection(db, paths.achievements(boardId))),
   ])
   if (!board.exists()) throw new Error('board not found')
   const classSlides = await Promise.all(
@@ -265,6 +268,8 @@ export async function loadBoardData(boardId: string): Promise<BoardData> {
         .flatMap((snapshot) => snapshot.docs.map((d) => d.ref)),
       ...classSlides.flatMap((snapshot) => snapshot.docs.map((d) => d.ref)),
       ...classes.docs.map((d) => d.ref),
+      ...achievements.docs.map((d) => d.ref),
+      doc(db, paths.achievementCounts(boardId)),
     ],
   }
 }

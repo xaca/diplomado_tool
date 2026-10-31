@@ -10,6 +10,7 @@ import {
   setPollStatus,
   type Poll,
 } from '@/features/polls/api'
+import { useAchievementUnlock } from '@/features/achievements/use-unlock'
 import { useCheer } from '@/features/fun/use-cheer'
 import { useMyVote, useVoters } from '@/features/polls/hooks'
 import { results } from '@/features/polls/tally'
@@ -42,6 +43,7 @@ export function PollCard({
 }: Props) {
   const { t } = useTranslation()
   const cheer = useCheer()
+  const unlock = useAchievementUnlock(boardId)
   const [busy, setBusy] = useState(false)
   const [showVoters, setShowVoters] = useState(false)
   const mine = useMyVote(boardId, studentId, poll.id, myStudentId)
@@ -120,6 +122,7 @@ export function PollCard({
                       ),
                     () => {
                       if (!cheer('firstVote')) toast.success(t('polls.voted'))
+                      void unlock(['firstVote'])
                     },
                   )
                 }

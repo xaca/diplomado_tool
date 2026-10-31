@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import {
@@ -51,6 +51,14 @@ import {
   updateClass,
   updateClassSlide,
 } from '@/features/classes/api'
+import {
+  POPULAR_REACTIONS,
+  STEADY_CLASSES,
+  withClass,
+} from '@/features/achievements/achievements'
+import { rememberClass } from '@/features/achievements/api'
+import { useMyAchievements } from '@/features/achievements/hooks'
+import { useAchievementUnlock } from '@/features/achievements/use-unlock'
 import { BoardSections } from '@/features/classes/components/BoardSections'
 import { ReactionBar } from '@/features/classes/components/ReactionBar'
 import {
@@ -69,6 +77,7 @@ import { useClassAccess } from '@/features/classes/use-class-access'
 import {
   drawingOf,
   freeSpot,
+  totalReactions,
   tidy,
   visibleSlide,
   type Point,
@@ -111,6 +120,12 @@ export function ClassPage() {
     klass.data?.slideOrder,
   )
   const cheer = useCheer()
+  // M22: notes, reactions and classes unlock achievements (students)
+  const unlock = useAchievementUnlock(boardId)
+  const myAchievements = useMyAchievements(
+    access.member ? boardId : undefined,
+    access.uid,
+  )
   const [chosen, setChosen] = useState<string | null>(null)
   const [leftLive, setLeftLive] = useState<string | null>(null)
   const [view, setView] = useState<'wall' | 'list'>(() =>
@@ -141,6 +156,17 @@ export function ClassPage() {
     classId,
     currentId,
   )
+  // M22: "Nota destacada" when a note of mine reaches 5 reactions
+  const popular =
+    access.member &&
+    notes.data.some(
+      (note) =>
+        note.authorUid === access.uid &&
+        totalReactions(note.reactions) >= POPULAR_REACTIONS,
+    )
+  useEffect(() => {
+    if (popular) void unlock(['popularNote'])
+  }, [popular, unlock])
 
   if (!access.loading && !access.allowed)
     return (
@@ -215,6 +241,20 @@ export function ClassPage() {
           { ...draft, ...editing.at },
         )
         cheer('firstNote')
+        if (access.member && access.studentId) {
+          await unlock(['firstNote'])
+          // "Constante": notes in 3 different classes
+          const classes = withClass(myAchievements.data?.classes, classId)
+          if (classes) {
+            await rememberClass(
+              boardId,
+              { uid: access.uid, studentId: access.studentId },
+              classId,
+              true,
+            ).catch(() => undefined)
+            if (classes.length >= STEADY_CLASSES) void unlock(['classes3'])
+          }
+        }
       } else
         await editStickyNote(
           boardId,
@@ -392,7 +432,9 @@ export function ClassPage() {
                           slide.reactions,
                           { uid: access.uid!, name: access.name },
                           emoji,
-                        ).catch(fail)
+                        )
+                          .then(() => unlock(['firstReaction']))
+                          .catch(fail)
                     : undefined
                 }
               />
@@ -619,7 +661,9 @@ export function ClassPage() {
                   note.reactions,
                   { uid: access.uid, name: access.name },
                   emoji,
-                ).catch(fail)
+                )
+                  .then(() => unlock(['firstReaction']))
+                  .catch(fail)
               }
             />
           ) : (
@@ -639,7 +683,9 @@ export function ClassPage() {
                   note.reactions,
                   { uid: access.uid, name: access.name },
                   emoji,
-                ).catch(fail)
+                )
+                  .then(() => unlock(['firstReaction']))
+                  .catch(fail)
               }
             />
           )}

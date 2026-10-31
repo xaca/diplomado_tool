@@ -1082,6 +1082,85 @@
     "designHint": "Draw the slide with Excalidraw: text, shapes, images",
     "designTitle": "Design slide {{number}}",
     "designDone": "Done",
-    "reactSlide": "React to the slide"
+    "reactSlide": "React to the slide",
+    "achievementsTab": "Achievements"
+  },
+  "achievements": {
+    "title": "Achievements",
+    "button": "Achievements",
+    "hint": "What you achieve on this board. It's not a competition: everyone goes at their own pace.",
+    "teacherHint": "How many students unlocked each achievement. Tap one to see who has it and who doesn't yet (to help, not to compare).",
+    "summary": "You unlocked {{count}} of {{total}}",
+    "progress": "{{count}} of {{total}} did it",
+    "unlockedOn": "Unlocked on {{date}}",
+    "locked": "Locked",
+    "unlockedToast": "Achievement unlocked: {{name}}!",
+    "unlockedLine": "Achievement unlocked: {{name}}",
+    "who": "Did it ({{count}})",
+    "notYet": "Not yet ({{count}})",
+    "nobody": "Nobody yet",
+    "groups": {
+      "project": "Project",
+      "dt": "Design Thinking",
+      "participation": "Participation"
+    },
+    "items": {
+      "firstSlide": {
+        "name": "First slide",
+        "how": "Create your first slide"
+      },
+      "slides5": {
+        "name": "5 slides",
+        "how": "Reach 5 slides"
+      },
+      "slides10": {
+        "name": "10 slides",
+        "how": "Reach 10 slides"
+      },
+      "firstEmbed": {
+        "name": "First embed",
+        "how": "Insert a video, Canva or other content in a slide"
+      },
+      "ready": {
+        "name": "Ready to present",
+        "how": "Mark your slides as ready"
+      },
+      "photo": {
+        "name": "Profile photo",
+        "how": "Upload your photo in My profile"
+      },
+      "firstStage": {
+        "name": "First stage chosen",
+        "how": "Pick the stage you're in on your card"
+      },
+      "prototype": {
+        "name": "Reached Prototype",
+        "how": "Move your project up to Prototype"
+      },
+      "test": {
+        "name": "Reached Test",
+        "how": "Move your project up to Test"
+      },
+      "firstVote": {
+        "name": "First vote",
+        "how": "Vote in a poll"
+      },
+      "firstNote": {
+        "name": "First sticky note",
+        "how": "Write a note on a class wall"
+      },
+      "firstReaction": {
+        "name": "First reaction",
+        "how": "React to a note or a class slide"
+      },
+      "popularNote": {
+        "name": "Standout note",
+        "how": "A note of yours gets 5 reactions"
+      },
+      "classes3": {
+        "name": "Steady",
+        "how": "Write notes in 3 different classes"
+      }
+    }
   }
 }

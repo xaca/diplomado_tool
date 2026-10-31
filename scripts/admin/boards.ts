@@ -62,6 +62,7 @@ export async function loadBoard(boardId: string) {
     announcements,
     announcementStates,
     classes,
+    achievements,
   ] = await Promise.all([
     ref.collection('students').get(),
     ref.collection('spaces').get(),
@@ -76,6 +77,8 @@ export async function loadBoard(boardId: string) {
     ref.collection('announcementState').get(),
     // M10: class walls, their slides and notes
     ref.collection('classes').get(),
+    // M22: achievements (the counters doc is deleted with them)
+    ref.collection('achievements').get(),
   ])
   const classSlides = await Promise.all(
     classes.docs.map((item) => item.ref.collection('slides').get()),
@@ -211,7 +214,9 @@ export async function loadBoard(boardId: string) {
     ),
     ...classNotes.flat().flatMap((s) => s.docs.map((doc) => doc.ref)),
     ...classSlides.flatMap((s) => s.docs.map((doc) => doc.ref)),
+    ref.collection('achievementStats').doc('counts'),
     ...[
+      achievements,
       classes,
       spaces,
       members,
