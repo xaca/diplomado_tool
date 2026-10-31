@@ -18,14 +18,14 @@ Status legend: `[ ]` to do · `[x]` done
 
 **Your turn now:** `npm run release` (all tests, then Worker → rules → Hosting), `git push`, then the acceptance tests in the reports (loops 10, 12, 13, 14).
 
-**Planned 2026-10-31 (proposed ⏳, not started): [M17](#m17--canva-and-the-embed-options-f23--loop-15)–[M21](#m21--status-profile-decorations-and-board-styles-f28f30--loop-17)**
+**Planned 2026-10-31 (proposed ⏳, not started): [M17](#m17--canva-and-the-embed-options-f23--loop-15--code-done-2026-10-31)–[M21](#m21--status-profile-decorations-and-board-styles-f28f30--loop-17)**
 
-- **Loop 15 · M17 Canva:** "Insertar contenido" shows the services as tiles (Canva first) with their sharing steps; accepts Canva links, `canva.link`, Canva's **embed code** and Canva sites.
+- **Loop 15 · M17 Canva** ✅ code done ([report](reports/loop-15-m17.md)): "Insertar contenido" shows the services as tiles (Canva first) with their sharing steps; accepts Canva links, `canva.link`, Canva's **embed code** and Canva sites.
 - **Loop 16 · M18 Emails + attendance:** copy / write (BCC) / CSV the emails of everyone or a filtered group; **attendance by date** (Presente · Tarde · Ausente · Excusa), history table with %, CSV; each student sees their own.
 - **Loop 17 · M21 Status, decorations and board styles:** a status ("🛠 Prototipando", "🙋 Necesito ayuda") with expiry for students and teachers; card banner, sticker and seasonal accessories; one-click board styles (Pizarra, Cuaderno, Neón…) and seasonal ones, **Navidad** first (snow, lights, Santa hats), with dates so it switches on and off by itself.
 - **Loop 18 · M19 Novedades:** a modal announcing new features (and teacher announcements) + a 🔔 with summaries that stay until the student clears them.
 - **Loop 19 · M20 Feedback + animations:** encouraging messages and small celebrations at milestones, micro-animations on interactions, no rankings, off with "reduce motion".
-- **To start:** confirm or change **[D55–D77](#decisions-all-answered-)**, then say "run loop 15".
+- **Next:** confirm or change **[D56–D77](#decisions-all-answered-)** (D63–D68 for Loop 16), then say "run loop 16".
 
 **Session 2026-10-30 / 31: new computer + new milestone**
 
@@ -777,6 +777,7 @@ Saved as `reports/loop-NN-<milestone>.md` (committed) and summarized in the chat
 | 12 ✅ | **M14** Embeds that work                  | "Insertar contenido" dialog (detect, convert, preview, instructions), display-time link fixes, text-link → embed, embed loading / fallback, "¿Cómo insertar…?" guide, Worker short-link resolver, e2e                             | answer D36–D41 · `npm run worker:deploy` · `npm run deploy` · acceptance test with real links          |
 | 13 ✅ | **M15** Teacher edits students' slides    | teacher opens the editor on any slide, version kept before the first change, "Editada por el docente" + compare / restore, edit lock, Worker + rules for teacher uploads, e2e                                                     | answer D42–D47 · `npm run worker:deploy` · `npm run deploy:rules` · `npm run deploy` · acceptance test |
 | 14 ✅ | **M16** Teacher's class tools             | shared class clock (activity / break) on the board doc, focus view, student banners, polls in spaces (+ presenter results), "Lista para presentar" + filters + "Presentar listos", break screen with random Lottie, rules + tests | answer D48–D54 · approve the animation set · `npm run deploy:all` · acceptance test in class           |
+| 15 ✅ | **M17** Canva and the embed options       | service tiles (Canva first), embed codes with their shape, Worker `/links/canva` (oEmbed: shared? size, title), Canva sites explained, guide, e2e                                                                                 | `npm run worker:deploy` · `npm run update:web` · acceptance test with a real Canva design              |
 | —     | **M9** More teachers                      | when you need it                                                                                                                                                                                                                  | —                                                                                                      |
 
 **Starting a loop:** say **"run loop N"** (e.g. "run loop 1"). I'll work through it and come back with the report.
@@ -1210,7 +1211,7 @@ Tools for running a class session on the board: timed activities, quick votes, k
 
 **Risks:** clocks drift a few seconds between devices (mitigated by a server-time offset estimate); a poll in a space is per student, so a whole-class vote belongs to M10 class participation (Later / Loop 8); Lottie licenses must be checked one by one (the manifest records them).
 
-### M17 — Canva and the embed options (F23) — Loop 15
+### M17 — Canva and the embed options (F23) — Loop 15 ✅ code done 2026-10-31
 
 Canva links already work when pasted (M14), but nothing in the dialog says so: "Insertar contenido" is an empty paste box, and Canva's own **Compartir → Insertar** gives an HTML code (`<iframe …>`) that the app rejects today.
 
@@ -1223,10 +1224,12 @@ Canva links already work when pasted (M14), but nothing in the dialog says so: "
 
 **How it's built**
 
-- [ ] `embeds.ts`: parse pasted HTML snippets (only the `src` / `href` of the first iframe / link, never the HTML itself), `*.my.canva.site`, edit-link hint; unit tests per link shape
-- [ ] `InsertEmbedDialog`: service tiles + steps, then paste; es / en texts; guide page section
-- [ ] Production check: one real public Canva design embeds in the editor, the viewer and the presenter
-- [ ] Tests: unit (every Canva link shape, snippets, rejects other HTML), e2e (pick Canva → paste embed code → preview → insert)
+- [x] `embeds.ts`: parse pasted HTML snippets (only the `src` / `href` of the first iframe / link, never the HTML itself) **with their shape**, `*.my.canva.site` (recognized, not framable: Canva refuses frames); unit tests per link shape. The edit-link hint was dropped: edit links play once shared (checked with real designs)
+- [x] `InsertEmbedDialog`: service tiles + steps, then paste; es / en texts; guide page section
+- [x] Worker `POST /links/canva` (added): Canva's oEmbed says whether a design is shared, its size and title → "todavía no está compartido" warning and the real shape (portrait posters, A4)
+- [x] Real check: public Canva designs play from `/view?embed` (also edit links converted), in the app's sandbox; `/view` and `/watch` alone stay blank; Canva sites refuse frames
+- [ ] **Your turn:** `npm run worker:deploy` · `npm run update:web` · acceptance test with a real Canva account ([report](reports/loop-15-m17.md))
+- [x] Tests: unit (every Canva link shape, snippets, rejects other HTML), Worker (shared / private / unknown / refused), e2e (pick Canva → paste embed code → portrait preview → insert; not shared; Canva site; without the Worker)
 
 **Risks:** Canva changes its embed URLs from time to time (the unit tests list every known shape; the "¿No carga?" fallback stays).
 
@@ -1567,7 +1570,7 @@ Full review of the plan for consistency, free-tier limits and security, done bef
 
 ## Decisions (all answered ✅)
 
-D12–D17 (class participation, M10) are **proposed** (⏳): confirm or change them before Loop 8. **D55–D77 (M17–M21) are proposed (⏳)**: confirm or change them before Loop 15. D18–D54 confirmed 2026-10-31. D18–D24 (M11) and D25–D35 (M12, M13) confirmed 2026-10-31. D18–D24 (M11) confirmed 2026-10-31.
+D12–D17 (class participation, M10) are **proposed** (⏳): confirm or change them before Loop 8. **D55 confirmed 2026-10-31 (Loop 15). D56–D77 (M18–M21) are proposed (⏳)**: confirm or change them before Loop 16. D18–D54 confirmed 2026-10-31. D18–D24 (M11) and D25–D35 (M12, M13) confirmed 2026-10-31. D18–D24 (M11) confirmed 2026-10-31.
 
 | #   | Decision                | Answer                                                                                                                                                                                                                                                                                                                          |
 | --- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -1630,7 +1633,7 @@ D12–D17 (class participation, M10) are **proposed** (⏳): confirm or change t
 | D52 | Ready to present        | the student marks "lista"; filters Listos / Con diapositivas / Sin diapositivas; "Presentar listos" in the presenter                                                                                                                                                                                                            |
 | D53 | Break animations        | ~10 free LottieFiles animations (Lottie Simple License checked), self-hosted, random no-repeat every 20 s, still frame with "reduce motion"; you approve the set                                                                                                                                                                |
 | D54 | Order                   | run **Loop 14 (M16) next**, then Loop 8 (M10 class participation, which would add whole-class polls)                                                                                                                                                                                                                            |
-| D55 | Canva / embed options   | ⏳ service tiles in "Insertar contenido" (Canva first); accept Canva links, `canva.link`, the "Insertar" embed code and `*.my.canva.site`; an `/edit` link gets a hint                                                                                                                                                          |
+| D55 | Canva / embed options   | ✅ service tiles in "Insertar contenido" (Canva first); Canva links, `canva.link` and the "Insertar" embed code, in the design's real shape; "not shared yet" warning via Canva oEmbed (Worker); Canva websites explained (they refuse frames); no edit-link warning (edit links work once shared)                              |
 | D56 | Gamification style      | ⏳ encouraging messages + celebrations only; **no points, badges ranking or leaderboards** (students compare only with themselves)                                                                                                                                                                                              |
 | D57 | Moments                 | ⏳ first slide, every 5 slides, marked ready, stage change, photo added, first vote, first embed, teacher note / edit received                                                                                                                                                                                                  |
 | D58 | Animation library       | ⏳ GSAP (already in the app) for micro-interactions + `canvas-confetti` (ISC, ~5 KB, lazy) for milestone bursts; all off with "reduce motion"; a switch on `/me`                                                                                                                                                                |
