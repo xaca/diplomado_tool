@@ -33,6 +33,17 @@ export const paths = {
     `${COLLECTIONS.boards}/${boardId}/spaces/${studentId}/notes`,
   note: (boardId: string, studentId: string, noteId: string) =>
     `${COLLECTIONS.boards}/${boardId}/spaces/${studentId}/notes/${noteId}`,
+  /** M15: a slide's saved version ('student' = before the teacher's changes) */
+  version: (
+    boardId: string,
+    studentId: string,
+    slideId: string,
+    kind: VersionKind,
+  ) =>
+    `${COLLECTIONS.boards}/${boardId}/spaces/${studentId}/slides/${slideId}/versions/${kind}`,
+  /** M15: who is editing a slide right now */
+  lock: (boardId: string, studentId: string, slideId: string) =>
+    `${COLLECTIONS.boards}/${boardId}/spaces/${studentId}/locks/${slideId}`,
   joinCode: (code: string) => `${COLLECTIONS.joinCodes}/${code}`,
 }
 
@@ -188,6 +199,8 @@ export type SpaceDoc = {
   slideCount: number
   /** Card cover image (M4) */
   cover?: ImageRef | null
+  /** M15: the teacher changed the student's slides and the student hasn't looked yet */
+  teacherEditsUnseen?: boolean
   /** The student's group (e.g. "Equipo 1"), copied from the roster for the "Por grupo" layout (M12) */
   group?: string
   /** Where the student is in the process (M11): a StageDef id of this board; null = no ring */
@@ -279,7 +292,37 @@ export type SlideDoc = {
   bytes: number
   schemaVersion: 1
   updatedAt: unknown
+  /** M15: who saved last; 'teacher' shows "Editada por el docente" to the student */
+  lastEditedBy?: 'student' | 'teacher'
+  teacherEditedAt?: unknown
+  /** M15: images of the saved versions (they count as used, so a restore finds them) */
+  versionAssetIds?: string[]
 }
+
+// ---------- teacher edits (M15) ----------
+
+export type VersionKind = 'student' | 'teacher'
+export const VERSION_KINDS = ['student', 'teacher'] as const
+
+/**
+ * slides/{slideId}/versions/{kind}: 'student' = the slide as the student left it before the
+ * teacher's first change; 'teacher' = the teacher's version, kept when the student restores theirs.
+ */
+export type SlideVersionDoc = Pick<
+  SlideDoc,
+  'content' | 'files' | 'assetIds' | 'bytes'
+> & { kind: VersionKind; createdAt: unknown }
+
+/** spaces/{studentId}/locks/{slideId}: one editor per slide (heartbeat; stale after LOCK_STALE_MS) */
+export type SlideLockDoc = {
+  uid: string
+  name: string
+  role: 'student' | 'teacher'
+  at: unknown
+}
+export const LOCK_HEARTBEAT_MS = 20_000
+/** Keep in sync with the 60 s in firestore.rules (locks) */
+export const LOCK_STALE_MS = 60_000
 
 export const MAX_SLIDES = 50
 export const MAX_IMAGES_PER_SLIDE = 30

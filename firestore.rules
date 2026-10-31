@@ -293,7 +293,8 @@ service cloud.firestore {
       function validSpace(studentId) {
         let data = request.resource.data;
         return data.keys().hasOnly(['studentId', 'ownerName', 'ownerPhotoURL', 'title', 'summary', 'color',
-            'slideOrder', 'slideCount', 'cover', 'stage', 'stageUpdatedAt', 'stageSetBy', 'group', 'createdAt', 'updatedAt'])
+            'slideOrder', 'slideCount', 'cover', 'stage', 'stageUpdatedAt', 'stageSetBy', 'group', 'teacherEditsUnseen',
+            'createdAt', 'updatedAt'])
           && (!('cover' in data) || data.cover == null || validImageRef(data.cover, boardId, studentId))
           && data.studentId == studentId
           && isString(data.ownerName, 1, 120)
@@ -306,7 +307,8 @@ service cloud.firestore {
           // M11: a stage id (same pattern as STAGE_ID_PATTERN), or null for no ring
           && (!('stage' in data) || data.stage == null || (data.stage is string && data.stage.matches('[a-z0-9-]{1,40}')))
           && (!('stageSetBy' in data) || data.stageSetBy in ['student', 'teacher'])
-          && (!('group' in data) || isString(data.group, 0, 60));
+          && (!('group' in data) || isString(data.group, 0, 60))
+          && (!('teacherEditsUnseen' in data) || data.teacherEditsUnseen is bool);
       }
 
       // M11: whoever changes the stage signs it, with the server time
@@ -347,6 +349,18 @@ service cloud.firestore {
           // the teacher renames the student or changes their group → keep the card in sync (M12)
           || (isBoardTeacher(boardId)
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ownerName', 'group']))
+          // M15: the student has seen the teacher's changes (no "updated" bump)
+          || (isSpaceOwner(boardId, studentId)
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['teacherEditsUnseen'])
+            && request.resource.data.teacherEditsUnseen == false)
+          // M15: the teacher changed a slide (badge on the card), or appended a slide at the end
+          || (isBoardTeacher(boardId) && boardIsActive(boardId)
+            && request.resource.data.teacherEditsUnseen == true
+            && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['teacherEditsUnseen'])
+              || (request.resource.data.diff(resource.data).affectedKeys()
+                    .hasOnly(['slideOrder', 'slideCount', 'teacherEditsUnseen'])
+                && request.resource.data.slideOrder.size() == resource.data.slideOrder.size() + 1
+                && request.resource.data.slideOrder[0:resource.data.slideOrder.size()] == resource.data.slideOrder)))
           // the teacher sets a student's stage (M11), while the board is writable
           || (isBoardTeacher(boardId) && boardIsActive(boardId)
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stage', 'stageUpdatedAt', 'stageSetBy'])
@@ -361,14 +375,25 @@ service cloud.firestore {
 
         function validSlide() {
           let data = request.resource.data;
-          return data.keys().hasOnly(['engine', 'content', 'files', 'assetIds', 'bytes', 'schemaVersion', 'updatedAt'])
+          return data.keys().hasOnly(['engine', 'content', 'files', 'assetIds', 'bytes', 'schemaVersion', 'updatedAt',
+              'lastEditedBy', 'teacherEditedAt', 'versionAssetIds'])
             && data.engine == 'excalidraw'
             && data.content is string && data.content.size() <= 900000
             && data.files is map && data.files.size() <= 30
             && data.assetIds is list && data.assetIds.size() <= data.files.size()
             && data.bytes is int && data.bytes >= 0 && data.bytes <= 900000
             && data.schemaVersion == 1
-            && data.updatedAt == request.time;
+            && data.updatedAt == request.time
+            // M15: who saved last; the images of the kept versions
+            && (!('lastEditedBy' in data) || data.lastEditedBy in ['student', 'teacher'])
+            && (!('versionAssetIds' in data) || (data.versionAssetIds is list && data.versionAssetIds.size() <= 60));
+        }
+
+        // M15: a teacher's save is signed with the server time; a student's never claims to be the teacher's
+        function savedBy(who) {
+          return who == 'teacher'
+            ? request.resource.data.lastEditedBy == 'teacher' && request.resource.data.teacherEditedAt == request.time
+            : !('lastEditedBy' in request.resource.data) || request.resource.data.lastEditedBy == 'student';
         }
 
         match /slides/{slideId} {
@@ -379,9 +404,51 @@ service cloud.firestore {
               // the teacher restoring a backup into a new board (M7)
               || isBoardTeacher(boardId))
             && slideId in getAfter(/databases/$(database)/documents/boards/$(boardId)/spaces/$(studentId)).data.slideOrder;
-          allow update: if validSlide() && isSpaceOwner(boardId, studentId) && boardIsActive(boardId);
+          allow update: if validSlide() && boardIsActive(boardId)
+            && ((isSpaceOwner(boardId, studentId) && savedBy('student'))
+              // M15: the board's teacher improves a student's slide
+              || (isBoardTeacher(boardId) && savedBy('teacher')));
           allow delete: if isBoardTeacher(boardId)
             || (isSpaceOwner(boardId, studentId) && boardIsActive(boardId));
+        }
+
+        // ---------- M15: kept versions of a slide and who is editing it ----------
+
+        function validVersion(kind) {
+          let data = request.resource.data;
+          return data.keys().hasOnly(['content', 'files', 'assetIds', 'bytes', 'kind', 'createdAt'])
+            && data.kind == kind
+            && data.content is string && data.content.size() <= 900000
+            && data.files is map && data.files.size() <= 30
+            && data.assetIds is list && data.assetIds.size() <= 30
+            && data.bytes is int && data.bytes >= 0 && data.bytes <= 900000
+            && data.createdAt == request.time;
+        }
+
+        match /slides/{slideId}/versions/{kind} {
+          allow read: if isBoardTeacher(boardId) || isSpaceOwner(boardId, studentId);
+          // the teacher keeps the student's version; the student swaps versions when restoring
+          allow create, update: if kind in ['student', 'teacher'] && validVersion(kind) && boardIsActive(boardId)
+            && ((isBoardTeacher(boardId) && kind == 'student') || isSpaceOwner(boardId, studentId));
+          allow delete: if isBoardTeacher(boardId) || isSpaceOwner(boardId, studentId);
+        }
+
+        function freeOrMine() {
+          return resource == null || resource.data.uid == request.auth.uid
+            || resource.data.at < request.time - duration.value(60, 's');
+        }
+
+        match /locks/{slideId} {
+          allow read: if isBoardTeacher(boardId) || isSpaceOwner(boardId, studentId);
+          allow create, update: if boardIsActive(boardId) && freeOrMine()
+            && request.resource.data.keys().hasOnly(['uid', 'name', 'role', 'at'])
+            && request.resource.data.uid == request.auth.uid
+            && isString(request.resource.data.name, 1, 200)
+            && request.resource.data.at == request.time
+            && ((request.resource.data.role == 'teacher' && isBoardTeacher(boardId))
+              || (request.resource.data.role == 'student' && isSpaceOwner(boardId, studentId)));
+          // the teacher may always clear one (e.g. purge); the student their own or a stale one
+          allow delete: if isBoardTeacher(boardId) || (isSpaceOwner(boardId, studentId) && freeOrMine());
         }
 
         // ---------- notes/{noteId}: the teacher's annotations on a slide ----------
@@ -434,6 +501,9 @@ service cloud.firestore {
         allow create: if validNewAsset(boardId, assetId) && boardIsActive(boardId)
           && (
             (isSpaceOwner(boardId, request.resource.data.studentId) && request.resource.data.kind != 'logo')
+            // M15: an image the teacher adds to a student's slide (the student's folder)
+            || (isBoardTeacher(boardId) && request.resource.data.kind == 'slide'
+              && exists(/databases/$(database)/documents/boards/$(boardId)/spaces/$(request.resource.data.studentId)))
             // M12: the board logo, by the board's teacher, in the board's own folder
             || (isBoardTeacher(boardId) && request.resource.data.kind == 'logo'
               && request.resource.data.studentId == 'board')

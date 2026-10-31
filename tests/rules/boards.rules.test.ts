@@ -1473,3 +1473,221 @@ describe('board customization (M12)', () => {
     )
   })
 })
+
+describe("teacher edits students' slides (M15)", () => {
+  const SEB = { uid: 'seb', email: 'seb@gmail.com' }
+  const spaceRef = (db: Firestore) =>
+    doc(db, 'boards', BOARD, 'spaces', 'st_laura')
+  const slideRef = (db: Firestore, slideId = 's1') =>
+    doc(db, 'boards', BOARD, 'spaces', 'st_laura', 'slides', slideId)
+  const versionRef = (db: Firestore, kind: string, slideId = 's1') =>
+    doc(slideRef(db, slideId), 'versions', kind)
+  const lockRef = (db: Firestore, slideId = 's1') =>
+    doc(db, 'boards', BOARD, 'spaces', 'st_laura', 'locks', slideId)
+  const slide = (overrides: Record<string, unknown> = {}) => ({
+    engine: 'excalidraw',
+    content: '{"elements":[]}',
+    files: {},
+    assetIds: [],
+    bytes: 15,
+    schemaVersion: 1,
+    updatedAt: serverTimestamp(),
+    ...overrides,
+  })
+  const asTeacher = (overrides: Record<string, unknown> = {}) =>
+    slide({
+      content: '{"elements":[2]}',
+      lastEditedBy: 'teacher',
+      teacherEditedAt: serverTimestamp(),
+      ...overrides,
+    })
+  const version = (kind: string) => ({
+    content: '{"elements":[]}',
+    files: {},
+    assetIds: [],
+    bytes: 15,
+    kind,
+    createdAt: serverTimestamp(),
+  })
+  const lock = (uid: string, role: string) => ({
+    uid,
+    name: 'x',
+    role,
+    at: serverTimestamp(),
+  })
+
+  /** Laura joined with one slide s1 */
+  async function withSlide(boardOverrides: Record<string, unknown> = {}) {
+    await seed({ boardOverrides })
+    await autoJoin(as(LAURA), LAURA, 'st_laura')
+    await env.withSecurityRulesDisabled(async (context) => {
+      const db = context.firestore()
+      await updateDoc(doc(db, 'boards', BOARD, 'spaces', 'st_laura'), {
+        slideOrder: ['s1'],
+        slideCount: 1,
+      })
+      await setDoc(
+        doc(db, 'boards', BOARD, 'spaces', 'st_laura', 'slides', 's1'),
+        slide(),
+      )
+    })
+  }
+
+  it("the board teacher saves a student's slide, keeping the student's version", async () => {
+    await withSlide()
+    const db = as(TEACHER)
+    const batch = writeBatch(db)
+    batch.set(slideRef(db), asTeacher())
+    batch.set(versionRef(db, 'student'), version('student'))
+    batch.update(spaceRef(db), { teacherEditsUnseen: true })
+    await assertSucceeds(batch.commit())
+  })
+
+  it("the teacher's save must be signed as the teacher; the student's can't claim it", async () => {
+    await withSlide()
+    await assertFails(
+      setDoc(slideRef(as(TEACHER)), asTeacher({ lastEditedBy: 'student' })),
+    )
+    await assertFails(
+      setDoc(
+        slideRef(as(LAURA)),
+        asTeacher({ teacherEditedAt: serverTimestamp() }),
+      ),
+    )
+    await assertSucceeds(
+      setDoc(slideRef(as(LAURA)), slide({ lastEditedBy: 'student' })),
+    )
+  })
+
+  it('classmates and teachers of other boards cannot edit', async () => {
+    await withSlide()
+    await env.withSecurityRulesDisabled(async (context) => {
+      const db = context.firestore()
+      await setDoc(
+        doc(db, 'boards', BOARD, 'students', 'st_seb'),
+        student([SEB.email]),
+      )
+      await setDoc(doc(db, 'boards', BOARD, 'studentEmails', SEB.email), {
+        email: SEB.email,
+        studentId: 'st_seb',
+      })
+    })
+    await autoJoin(as(SEB), SEB, 'st_seb')
+    await assertFails(setDoc(slideRef(as(SEB)), slide()))
+    await assertFails(setDoc(slideRef(as(OTHER_TEACHER)), asTeacher()))
+    await assertFails(
+      setDoc(versionRef(as(SEB), 'student'), version('student')),
+    )
+  })
+
+  it('nobody edits on a locked board', async () => {
+    await withSlide({ status: 'locked' })
+    await assertFails(setDoc(slideRef(as(TEACHER)), asTeacher()))
+  })
+
+  it('the teacher appends a slide but cannot reorder or delete', async () => {
+    await withSlide()
+    const db = as(TEACHER)
+    const add = writeBatch(db)
+    add.set(slideRef(db, 's2'), asTeacher())
+    add.update(spaceRef(db), {
+      slideOrder: ['s1', 's2'],
+      slideCount: 2,
+      teacherEditsUnseen: true,
+    })
+    await assertSucceeds(add.commit())
+    await assertFails(
+      updateDoc(spaceRef(db), {
+        slideOrder: ['s2', 's1'],
+        slideCount: 2,
+        teacherEditsUnseen: true,
+      }),
+    )
+    // (deleting stays possible for the teacher: removing a student deletes their slides; the editor never offers it)
+  })
+
+  it('versions: the teacher keeps only the student one; the student swaps both; only they read them', async () => {
+    await withSlide()
+    await assertFails(
+      setDoc(versionRef(as(TEACHER), 'teacher'), version('teacher')),
+    )
+    await assertFails(
+      setDoc(versionRef(as(TEACHER), 'other'), version('other')),
+    )
+    await assertSucceeds(
+      setDoc(versionRef(as(TEACHER), 'student'), version('student')),
+    )
+    await assertSucceeds(
+      setDoc(versionRef(as(LAURA), 'teacher'), version('teacher')),
+    )
+    await assertSucceeds(getDoc(versionRef(as(LAURA), 'student')))
+    await assertFails(getDoc(versionRef(as(OTHER_TEACHER), 'student')))
+  })
+
+  it('the student clears the "✎ Docente" badge without bumping the card', async () => {
+    await withSlide()
+    await assertSucceeds(
+      updateDoc(spaceRef(as(TEACHER)), { teacherEditsUnseen: true }),
+    )
+    // only the student clears it
+    await assertFails(
+      updateDoc(spaceRef(as(TEACHER)), { teacherEditsUnseen: false }),
+    )
+    await assertSucceeds(
+      updateDoc(spaceRef(as(LAURA)), { teacherEditsUnseen: false }),
+    )
+  })
+
+  it('one editor at a time: a fresh lock blocks the other, a stale one is free', async () => {
+    await withSlide()
+    await assertSucceeds(setDoc(lockRef(as(LAURA)), lock(LAURA.uid, 'student')))
+    // the holder renews it
+    await assertSucceeds(setDoc(lockRef(as(LAURA)), lock(LAURA.uid, 'student')))
+    await assertFails(
+      setDoc(lockRef(as(TEACHER)), lock(TEACHER.uid, 'teacher')),
+    )
+    // can't pretend to be someone else or the teacher
+    await assertFails(setDoc(lockRef(as(LAURA)), lock(TEACHER.uid, 'student')))
+    await assertFails(setDoc(lockRef(as(LAURA)), lock(LAURA.uid, 'teacher')))
+    await env.withSecurityRulesDisabled(async (context) => {
+      await setDoc(
+        doc(
+          context.firestore(),
+          'boards',
+          BOARD,
+          'spaces',
+          'st_laura',
+          'locks',
+          's1',
+        ),
+        {
+          uid: LAURA.uid,
+          name: 'x',
+          role: 'student',
+          at: Timestamp.fromMillis(Date.now() - 120_000),
+        },
+      )
+    })
+    await assertSucceeds(
+      setDoc(lockRef(as(TEACHER)), lock(TEACHER.uid, 'teacher')),
+    )
+    await assertSucceeds(deleteDoc(lockRef(as(TEACHER))))
+  })
+
+  it('the teacher adds an image to the student slide (registry in the student folder)', async () => {
+    await withSlide()
+    await assertSucceeds(
+      setDoc(doc(as(TEACHER), 'boards', BOARD, 'assets', 'img1'), {
+        publicId: `pbl/prod/${BOARD}/st_laura/img1`,
+        studentId: 'st_laura',
+        kind: 'slide',
+        width: 10,
+        height: 10,
+        format: 'png',
+        bytes: 100,
+        status: 'active',
+        createdAt: serverTimestamp(),
+      }),
+    )
+  })
+})
