@@ -256,7 +256,8 @@ test.describe('M5 · slides', () => {
         embedElement('evil', 'https://evil.example/phishing', 320),
       ],
     ])
-    await page.route('https://www.youtube.com/**', (route) =>
+    // M14: YouTube plays in privacy mode (youtube-nocookie.com)
+    await page.route('https://www.youtube-nocookie.com/**', (route) =>
       route.fulfill({ body: '<html></html>', contentType: 'text/html' }),
     )
     await signIn(page, 'laura@gmail.com')
@@ -266,7 +267,7 @@ test.describe('M5 · slides', () => {
     await expect(frames).toHaveCount(1)
     await expect(frames).toHaveAttribute(
       'src',
-      /youtube\.com\/embed\/dQw4w9WgXcQ/,
+      /youtube-nocookie\.com\/embed\/dQw4w9WgXcQ/,
     )
     await expect(frames).toHaveAttribute('sandbox', /allow-scripts/)
   })
