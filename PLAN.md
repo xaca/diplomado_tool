@@ -18,14 +18,14 @@ Status legend: `[ ]` to do · `[x]` done
 
 **Your turn now:** `npm run release` (all tests, then Worker → rules → Hosting), `git push`, then the acceptance tests in the reports (loops 10, 12, 13, 14).
 
-**Planned 2026-10-31 (proposed ⏳, not started): [M17](#m17--canva-and-the-embed-options-f23--loop-15--code-done-2026-10-31)–[M21](#m21--status-profile-decorations-and-board-styles-f28f30--loop-17)**
+**Planned 2026-10-31 (proposed ⏳, not started): [M17](#m17--canva-and-the-embed-options-f23--loop-15--code-done-2026-10-31)–[M21](#m21--status-message-profile-decorations-and-board-styles-f28f30--loop-17)**
 
 - **Loop 15 · M17 Canva** ✅ code done ([report](reports/loop-15-m17.md)): "Insertar contenido" shows the services as tiles (Canva first) with their sharing steps; accepts Canva links, `canva.link`, Canva's **embed code** and Canva sites.
 - **Loop 16 · M18 Emails + attendance** ✅ code done ([report](reports/loop-16-m18.md)): copy / write (BCC) / CSV the emails of everyone or a filtered group; **attendance by date** (Presente · Tarde · Ausente · Excusa), history table with %, CSV; each student sees their own.
-- **Loop 17 · M21 Status, decorations and board styles:** a status ("🛠 Prototipando", "🙋 Necesito ayuda") with expiry for students and teachers; card banner, sticker and seasonal accessories; one-click board styles (Pizarra, Cuaderno, Neón…) and seasonal ones, **Navidad** first (snow, lights, Santa hats), with dates so it switches on and off by itself.
+- **Loop 17 · M21 Status message, decorations and board styles:** a short profile message ("¡Feliz Halloween! 🎃", "Never quit 💪") for students and teachers; card banner, sticker and seasonal accessories; one-click board styles (Pizarra, Cuaderno, Neón…) and seasonal ones: **Navidad** (snow, lights, Santa hats), Amigo secreto, Halloween, Verano, Feria de las Flores, with dates so they switch on and off by themselves.
 - **Loop 18 · M19 Novedades:** a modal announcing new features (and teacher announcements) + a 🔔 with summaries that stay until the student clears them.
 - **Loop 19 · M20 Feedback + animations:** encouraging messages and small celebrations at milestones, micro-animations on interactions, no rankings, off with "reduce motion".
-- **Next:** confirm or change **[D56–D62, D69–D77](#decisions-all-answered-)** (D70–D77 for Loop 17), then say "run loop 17".
+- **Next:** D70, D72, D74, D75 answered 2026-10-31; D71 (teacher can clear a message), D73, D76, D77 stay as proposed unless you change them. Say "run loop 17".
 
 **Session 2026-10-30 / 31: new computer + new milestone**
 
@@ -105,38 +105,38 @@ Checks at the end of the session: rules tests 68/68 · unit 71/71 · admin CLI �
 
 A Padlet-style board where **each student owns one space** and documents their project process as **slides**. The teacher can **present each student's space** in full screen.
 
-| #   | Feature                                                                                                                                                                    | Who                                                  |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| F1  | Sign in with Google, using **any** of the student's emails (personal Gmail or university)                                                                                  | everyone                                             |
-| F2  | Board dashboard: columns of cards, one card per student (like the reference image), live updates                                                                           | everyone in the board                                |
-| F3  | Space editor: **one Excalidraw canvas per slide** (text, images, links, embeds, shapes, drawing); add / reorder slides                                                     | the student who owns the space                       |
-| F4  | Space profile: title, summary, cover image, color                                                                                                                          | the student                                          |
-| F5  | Presentation mode: full screen, keyboard navigation, **next / previous student**                                                                                           | teacher (students: their own space)                  |
-| F6  | Boards: create a board, add students, invite link                                                                                                                          | teacher                                              |
-| F7  | Import / export with **JSON** (students, board backup)                                                                                                                     | teacher                                              |
-| F8  | **Storage & cleanup**: image usage, remove unused images, **"Archived projects"** for inactive boards, purge                                                               | teacher (dashboard) + you (admin CLI)                |
-| F9  | **Spanish (default) / English** interface                                                                                                                                  | everyone                                             |
-| F10 | **Profile** (`/me`): display name, photo on cards, language ✅                                                                                                             | everyone                                             |
-| F11 | **Teacher's notes** on each slide, private to the teacher and the student ✅ (M13: also while presenting)                                                                  | teacher writes · the student reads                   |
-| F12 | **Class participation**: per class, the teacher opens **1–5 participation slides**; students add, edit and delete their own contributions (text + picture)                 | teacher creates and moderates · students participate |
-| F13 | **Profile photo**: Google photo, **an uploaded photo** or initials                                                                                                         | everyone                                             |
-| F14 | **Design Thinking stage**: a ring around the student's photo with their current stage, or "Vitrineando"; stage summary + filter on the dashboard                           | the student sets it · the teacher sees and can set   |
-| F15 | **Board customization**: name, description, logo, background, layout, sticky header, with live preview; GSAP animations                                                    | teacher sets it · everyone sees it                   |
-| F16 | **Teacher distinction**: "#DOCENTE" ring + badge on the teacher's photo; the board's teachers shown in its header                                                          | everyone                                             |
-| F17 | **Embeds that work**: guided "Insertar contenido" (Google, YouTube, Figma, Canva, Notion, Miro…), automatic link fixes, loading state and fallback, how-to guide           | the student inserts · everyone views                 |
-| F18 | **Teacher edits students' slides**: edit text, layout, images; the student's version is kept and can be restored; "Editada por el docente"; one editor at a time           | teacher edits · the student reviews / restores       |
-| F19 | **Class timer / focus mode**: a shared countdown for timed activities, live for everyone, big focus view for the projector                                                 | teacher runs it · everyone sees it                   |
-| F20 | **Polls** in each student's space: question + options, one vote per student, live results, shown while presenting                                                          | student (own space) or teacher creates · class votes |
-| F21 | **Ready to present**: the student marks their slides ready; filters and "Presentar listos"                                                                                 | student marks · teacher filters / presents           |
-| F22 | **Break time**: break countdown with random Lottie animations                                                                                                              | teacher runs it · everyone sees it                   |
-| F23 | **Canva and the embed options**: service tiles in "Insertar contenido", Canva embed code, Canva sites, edit-link hint                                                      | the student inserts · everyone views                 |
-| F24 | **Students' emails**: copy, write (BCC) or download the emails of everyone or a filtered group                                                                             | teacher                                              |
-| F25 | **Attendance by date**: Presente / Tarde / Ausente / Excusa per class date, history table with %, CSV; students see their own                                              | teacher takes it · the student sees their own        |
-| F26 | **"Novedades"**: a modal announcing new features (and teacher announcements) + a notifications bell with summaries until cleared                                           | you / teacher write · students and teachers read     |
-| F27 | **Feedback messages and interaction animations**: encouraging messages at milestones, celebrations, micro-animations; no rankings                                          | everyone                                             |
-| F28 | **Status**: emoji + short text with expiry, on cards, space page and the board header; "Necesito ayuda" counter for the teacher                                            | everyone sets their own · teacher can clear          |
-| F29 | **Profile decorations**: card banner, sticker, seasonal accessories (never over the stage / #DOCENTE rings)                                                                | everyone, for their own profile                      |
-| F30 | **Board styles**: one-click styles (Pizarra, Cuaderno, Neón…) and seasonal ones (**Navidad**, Halloween, Año nuevo, Amor y amistad) with ambient animations and scheduling | teacher sets it · everyone sees it                   |
+| #   | Feature                                                                                                                                                                                          | Who                                                  |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------- |
+| F1  | Sign in with Google, using **any** of the student's emails (personal Gmail or university)                                                                                                        | everyone                                             |
+| F2  | Board dashboard: columns of cards, one card per student (like the reference image), live updates                                                                                                 | everyone in the board                                |
+| F3  | Space editor: **one Excalidraw canvas per slide** (text, images, links, embeds, shapes, drawing); add / reorder slides                                                                           | the student who owns the space                       |
+| F4  | Space profile: title, summary, cover image, color                                                                                                                                                | the student                                          |
+| F5  | Presentation mode: full screen, keyboard navigation, **next / previous student**                                                                                                                 | teacher (students: their own space)                  |
+| F6  | Boards: create a board, add students, invite link                                                                                                                                                | teacher                                              |
+| F7  | Import / export with **JSON** (students, board backup)                                                                                                                                           | teacher                                              |
+| F8  | **Storage & cleanup**: image usage, remove unused images, **"Archived projects"** for inactive boards, purge                                                                                     | teacher (dashboard) + you (admin CLI)                |
+| F9  | **Spanish (default) / English** interface                                                                                                                                                        | everyone                                             |
+| F10 | **Profile** (`/me`): display name, photo on cards, language ✅                                                                                                                                   | everyone                                             |
+| F11 | **Teacher's notes** on each slide, private to the teacher and the student ✅ (M13: also while presenting)                                                                                        | teacher writes · the student reads                   |
+| F12 | **Class participation**: per class, the teacher opens **1–5 participation slides**; students add, edit and delete their own contributions (text + picture)                                       | teacher creates and moderates · students participate |
+| F13 | **Profile photo**: Google photo, **an uploaded photo** or initials                                                                                                                               | everyone                                             |
+| F14 | **Design Thinking stage**: a ring around the student's photo with their current stage, or "Vitrineando"; stage summary + filter on the dashboard                                                 | the student sets it · the teacher sees and can set   |
+| F15 | **Board customization**: name, description, logo, background, layout, sticky header, with live preview; GSAP animations                                                                          | teacher sets it · everyone sees it                   |
+| F16 | **Teacher distinction**: "#DOCENTE" ring + badge on the teacher's photo; the board's teachers shown in its header                                                                                | everyone                                             |
+| F17 | **Embeds that work**: guided "Insertar contenido" (Google, YouTube, Figma, Canva, Notion, Miro…), automatic link fixes, loading state and fallback, how-to guide                                 | the student inserts · everyone views                 |
+| F18 | **Teacher edits students' slides**: edit text, layout, images; the student's version is kept and can be restored; "Editada por el docente"; one editor at a time                                 | teacher edits · the student reviews / restores       |
+| F19 | **Class timer / focus mode**: a shared countdown for timed activities, live for everyone, big focus view for the projector                                                                       | teacher runs it · everyone sees it                   |
+| F20 | **Polls** in each student's space: question + options, one vote per student, live results, shown while presenting                                                                                | student (own space) or teacher creates · class votes |
+| F21 | **Ready to present**: the student marks their slides ready; filters and "Presentar listos"                                                                                                       | student marks · teacher filters / presents           |
+| F22 | **Break time**: break countdown with random Lottie animations                                                                                                                                    | teacher runs it · everyone sees it                   |
+| F23 | **Canva and the embed options**: service tiles in "Insertar contenido", Canva embed code, Canva sites, edit-link hint                                                                            | the student inserts · everyone views                 |
+| F24 | **Students' emails**: copy, write (BCC) or download the emails of everyone or a filtered group                                                                                                   | teacher                                              |
+| F25 | **Attendance by date**: Presente / Tarde / Ausente / Excusa per class date, history table with %, CSV; students see their own                                                                    | teacher takes it · the student sees their own        |
+| F26 | **"Novedades"**: a modal announcing new features (and teacher announcements) + a notifications bell with summaries until cleared                                                                 | you / teacher write · students and teachers read     |
+| F27 | **Feedback messages and interaction animations**: encouraging messages at milestones, celebrations, micro-animations; no rankings                                                                | everyone                                             |
+| F28 | **Status message**: a short message on the profile ("¡Feliz Halloween!", "Never quit"), on cards, space page and the board header                                                                | everyone sets their own · teacher can clear          |
+| F29 | **Profile decorations**: card banner, sticker, seasonal accessories (never over the stage / #DOCENTE rings)                                                                                      | everyone, for their own profile                      |
+| F30 | **Board styles**: one-click nice styles (Pizarra, Cuaderno, Neón…) and seasonal ones (**Navidad**, Amigo secreto, Halloween, Verano, Feria de las Flores) with ambient animations and scheduling | teacher sets it · everyone sees it                   |
 
 Students can see their classmates' spaces **read-only**. **Class participation** (F12) is the one place where everybody writes together, on **separate slides** that never touch the students' own spaces.
 
@@ -1314,49 +1314,50 @@ Encouraging feedback when students make progress, and small animations that make
 
 **Risks:** too much celebration feels childish in a diplomado (subtle tone, cooldown, switch); performance on old laptops (lazy confetti, CSS transforms only).
 
-### M21 — Status, profile decorations and board styles (F28–F30) — Loop 17
+### M21 — Status message, profile decorations and board styles (F28–F30) — Loop 17
 
-Personality for people and boards: a status like WhatsApp / Slack, decorations on the profile, and more board styles, including seasonal ones like **Navidad**.
+Personality for people and boards: a short status message on the profile, decorations, and more board styles, including seasonal ones like **Navidad**. Updated 2026-10-31 with your answers (status = just a message, no "Necesito ayuda", your list of seasons, Santa hats on).
 
-**1. Status (F28)** — students and teachers
+**1. Status message (F28)** — students and teachers
 
-- On `/me` and from the user menu: **"Estado"** = an emoji + a short text (≤ 60 characters, no links), e.g. "🛠 Prototipando", "🙋 Necesito ayuda", "🎧 Concentrado", "🤒 Incapacitado", or anything custom; **expires** after 1 h · today · this week · never.
-- **Where it shows:** next to the name on the student's card, their space page and the user menu; the teacher's status next to "Docente: Andrés Bedoya" in the board header ("🏖 De vacaciones hasta el lunes").
-- **"Necesito ayuda"** (D72): the teacher sees "🙋 3 piden ayuda" in the board header and can filter those cards.
-- The teacher can clear a student's status on their board (moderation, D71).
+- A **short message** on your profile, like WhatsApp's "info": "¡Feliz Halloween! 🎃", "Never quit 💪", "Prototipando a full 🛠", "Modo café ☕". Up to 60 characters, an optional emoji, no links.
+- Set it on `/me` or from the user menu ("Mi estado"); a few fun suggestions to pick from, or write your own. It stays until you change or clear it.
+- **Where it shows:** under the name on the student's card and space page, in the user menu; the teacher's next to "Docente: Andrés Bedoya" in the board header.
+- The teacher can clear a student's message on their board (D71, it's visible to the whole class).
 
 **2. Profile decorations (F29)**
 
 - **Card banner:** a color, gradient or pattern strip at the top of the student's card and space page (a set of ~12, like the board backgrounds).
 - **Sticker:** one emoji or small illustrated sticker next to the name (🚀 🎨 🌱 ☕ 🐱 …).
-- **Seasonal accessories** (only while the board uses a seasonal style): e.g. a Santa hat or a scarf on the photo in Navidad, a witch hat in Halloween; each person can turn theirs off.
+- **Seasonal accessories** (only while the board uses a seasonal style): a **Santa hat in Navidad (on by default, D75)**, a witch hat in Halloween, sunglasses in Verano, a flower crown in Feria de las Flores, a heart in Amigo secreto; each person can turn theirs off.
 - **Rule (D73):** decorations never cover or replace the **stage ring** (M11) or the **#DOCENTE ring** (M12); they sit around them (banner, sticker beside the name, hat on top).
 - Saved once per person, shown on every board (like the photo).
 
 **3. Board styles (F30)** — "Personalizar tablero" gets a **Estilos** tab
 
 - A **style** is a full look in one click: background + pattern + card shape and shadow + fonts + header treatment, plus an optional **ambient animation**. The teacher can still change any detail afterwards (today's options stay).
-- **Everyday styles:** Pizarra (chalkboard), Cuaderno (lined paper), Papel kraft, Neón, Minimal, Retro, Acuarela, Blueprint.
-- **Seasonal styles:**
-  - **Navidad:** red / green / gold, snow falling slowly over the board, a string of lights along the header that twinkles, a pine-and-ornaments pattern, optional Santa hats on the photos, "¡Feliz Navidad!" next to the title.
-  - **Halloween:** night purple / orange, bats and moon, pumpkin pattern.
-  - **Año nuevo:** dark with gold, fireworks once when the board opens.
-  - **Amor y amistad** (September in Colombia): hearts and pastel tones.
+- **Nice everyday styles:** Pizarra (chalkboard), Cuaderno (lined paper), Papel kraft, Neón, Minimal, Retro, Acuarela, Blueprint.
+- **Seasonal styles (Colombia):**
+  - **Navidad** (December): red / green / gold, snow falling slowly, a string of lights along the header that twinkles, a pine-and-ornaments pattern, **Santa hats on the photos**, "¡Feliz Navidad!" next to the title.
+  - **Amigo secreto · Amor y amistad** (September): pinks and reds, floating hearts and little gift boxes, "¿Quién será tu amigo secreto?" next to the title.
+  - **Halloween** (October): night purple / orange, bats and a moon, pumpkin pattern, a few bats flying by.
+  - **Verano / vacaciones** (mid-year break): sand and sea blues, sun and palm pattern, soft floating bubbles.
+  - **Feria de las Flores** (August, Medellín): bright silleta flower colors, petals drifting down, a flower garland along the header.
 - **Scheduling:** "usar desde … hasta …" so a seasonal style switches on and back to the usual style by itself (e.g. Dec 1 → Jan 6).
-- **Animations:** canvas particles (snow, hearts, fireworks) on a lazy chunk, paused when the tab is hidden, capped particles, off with "reduce motion", and an "animación de fondo" switch for the teacher; cards stay readable (contrast checked per style).
+- **Animations:** canvas particles (snow, hearts, petals, bubbles, bats) on a lazy chunk, paused when the tab is hidden, capped particles, off with "reduce motion", and an "animación de fondo" switch for the teacher; cards stay readable (contrast checked per style).
 
 **How it's built**
 
-- [ ] Model: `users/{uid}.status = { emoji, text, expiresAt | null, updatedAt }`, `users/{uid}.decor = { banner, sticker, seasonalAccessories }`; mirrored to the cards as `space.ownerStatus` / `ownerDecor` (like `ownerName` today) and to `board.teacherProfiles`; `BoardDoc.look.style?`, `look.ambient?`, `look.schedule? = { style, from, to }`
-- [ ] Styles as data (`src/features/boards/styles.ts`): tokens per style (colors, pattern, card, fonts, header), checked by a unit test for text contrast
-- [ ] Ambient layer: `AmbientEffects` (snow, hearts, fireworks, lights garland), lazy, one canvas, `requestAnimationFrame` paused when hidden
+- [ ] Model: `users/{uid}.status = { emoji, text, updatedAt } | null`, `users/{uid}.decor = { banner, sticker, seasonalAccessories }`; mirrored to the cards as `space.ownerStatus` / `ownerDecor` (like `ownerName` today) and to `board.teacherProfiles`; `BoardDoc.look.style?`, `look.ambient?`, `look.schedule? = { style, from, to }`
+- [ ] Styles as data (`src/features/boards/styles.ts`): tokens per style (colors, pattern, card, fonts, header, accessory), checked by a unit test for text contrast
+- [ ] Ambient layer: `AmbientEffects` (snow, hearts, petals, bubbles, bats, lights / flower garland), lazy, one canvas, `requestAnimationFrame` paused when hidden
 - [ ] Rules: status text ≤ 60, no `http`; decor ids from the allowed lists; the board teacher can clear `ownerStatus` on their board's spaces; look fields validated
-- [ ] UI: status editor (presets + custom + expiry) in `/me` and the user menu; decor picker in `/me`; status and decor on cards, space page, header; "Estilos" tab with previews; schedule fields; "piden ayuda" counter + filter
+- [ ] UI: status editor (suggestions + custom) in `/me` and the user menu; decor picker in `/me`; status and decor on cards, space page, header; "Estilos" tab with previews; schedule fields
 - [ ] Backup: board style included; personal status / decor not (they belong to the person)
 - [ ] es / en
-- [ ] Tests: unit (expiry, schedule → active style by date, contrast), rules (≈ 8), e2e (set a status → classmates see it on the card; it expires; the teacher clears one; pick Navidad → snow and lights, hats on photos, "reduce motion" → none; schedule switches back)
+- [ ] Tests: unit (schedule → active style by date, contrast, status validation), rules (≈ 8), e2e (set a message → classmates see it on the card; the teacher clears one; pick Navidad → snow, lights and Santa hats, "reduce motion" → none; schedule switches back)
 
-**Free-tier budget:** status / decor = 1 write per change + the mirror writes to that person's cards (one per board); styles are code and CSS; seasonal art self-hosted SVG (≈ 100 KB total).
+**Free-tier budget:** status / decor = 1 write per change + the mirror writes to that person's cards (one per board); styles are code and CSS; seasonal art self-hosted SVG (≈ 150 KB total).
 
 **Risks:** status text visible to the whole class (≤ 60 characters, no links, teacher can clear); heavy animations on old laptops (particle cap, lazy, switch); a style unreadable with some content (contrast test, cards keep a solid background).
 
@@ -1573,7 +1574,7 @@ Full review of the plan for consistency, free-tier limits and security, done bef
 
 ## Decisions (all answered ✅)
 
-D12–D17 (class participation, M10) are **proposed** (⏳): confirm or change them before Loop 8. **D55 confirmed 2026-10-31 (Loop 15); D63–D68 taken as proposed in Loop 16 ("next"). D56–D62 and D69–D77 are proposed (⏳)**: confirm or change them before Loop 17. D18–D54 confirmed 2026-10-31. D18–D24 (M11) and D25–D35 (M12, M13) confirmed 2026-10-31. D18–D24 (M11) confirmed 2026-10-31.
+D12–D17 (class participation, M10) are **proposed** (⏳): confirm or change them before Loop 8. **D55 confirmed 2026-10-31 (Loop 15); D63–D68 taken as proposed in Loop 16 ("next"). D70, D72, D74, D75 answered 2026-10-31. D56–D62, D69, D71, D73, D76, D77 are proposed (⏳)**. D18–D54 confirmed 2026-10-31. D18–D24 (M11) and D25–D35 (M12, M13) confirmed 2026-10-31. D18–D24 (M11) confirmed 2026-10-31.
 
 | #   | Decision                | Answer                                                                                                                                                                                                                                                                                                                          |
 | --- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -1651,12 +1652,12 @@ D12–D17 (class participation, M10) are **proposed** (⏳): confirm or change t
 | D67 | Students see            | ✅ only their own attendance (dates and states) on their space page; never classmates'                                                                                                                                                                                                                                          |
 | D68 | Attendance records      | ✅ one doc per class date; history list + students × dates table with %; past dates editable; CSV export; included in the board backup                                                                                                                                                                                          |
 | D69 | Order                   | ⏳ Loop 15 (M17 Canva) → Loop 16 (M18 emails + attendance) → **Loop 17 (M21 status, decorations, styles: Navidad ready before December 1)** → Loop 18 (M19 Novedades, which can announce M17–M21) → Loop 19 (M20 feedback + animations, last because it touches every screen); Loop 8 (M10) after, unless you prefer it earlier |
-| D70 | Status                  | ⏳ emoji + text ≤ 60 (no links), presets + custom, expiry 1 h / today / this week / never; for students and teachers; shown on cards, space page, user menu and (teacher) the board header                                                                                                                                      |
+| D70 | Status                  | ✅ just a short message on the profile ("¡Feliz Halloween! 🎃", "Never quit 💪"): optional emoji + text ≤ 60, no links, suggestions or your own; stays until changed; students and teachers; on cards, space page, user menu and (teacher) the board header                                                                     |
 | D71 | Status moderation       | ⏳ the board's teacher can clear a student's status on their board                                                                                                                                                                                                                                                              |
-| D72 | "Necesito ayuda"        | ⏳ a preset status that the teacher sees as a counter + card filter in the board header                                                                                                                                                                                                                                         |
+| D72 | "Necesito ayuda"        | ❌ dropped (2026-10-31): a status is only a message                                                                                                                                                                                                                                                                             |
 | D73 | Decorations             | ⏳ card banner + sticker by the name + seasonal accessories (hat / scarf) only while the board has a seasonal style; never over the stage ring or the #DOCENTE ring; each person can turn accessories off                                                                                                                       |
-| D74 | Board styles            | ⏳ one-click styles that set background, pattern, cards, fonts and header; every detail still editable; 8 everyday + 4 seasonal (Navidad, Halloween, Año nuevo, Amor y amistad)                                                                                                                                                 |
-| D75 | Navidad                 | ⏳ red / green / gold, slow snow, twinkling lights on the header, pine pattern, optional Santa hats, "¡Feliz Navidad!" by the title                                                                                                                                                                                             |
+| D74 | Board styles            | ✅ one-click styles that set background, pattern, cards, fonts and header, every detail still editable; 8 nice everyday styles + seasonal: **Navidad, Amigo secreto · Amor y amistad, Halloween, Verano / vacaciones, Feria de las Flores**                                                                                     |
+| D75 | Navidad                 | ✅ red / green / gold, slow snow, twinkling lights on the header, pine pattern, **Santa hats on the photos by default** (each person can turn theirs off), "¡Feliz Navidad!" by the title                                                                                                                                       |
 | D76 | Ambient animations      | ⏳ canvas particles, lazy, capped and paused when the tab is hidden; off with "reduce motion"; teacher switch per board                                                                                                                                                                                                         |
 | D77 | Scheduling              | ⏳ a seasonal style can have dates (e.g. Dec 1 → Jan 6) and switches back to the usual style by itself                                                                                                                                                                                                                          |
 
