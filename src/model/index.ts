@@ -69,6 +69,23 @@ export const paths = {
     `${COLLECTIONS.boards}/${boardId}/announcementState`,
   announcementState: (boardId: string, uid: string) =>
     `${COLLECTIONS.boards}/${boardId}/announcementState/${uid}`,
+  /** M10: class participation — classes, their wall slides and the sticky notes on each */
+  classes: (boardId: string) => `${COLLECTIONS.boards}/${boardId}/classes`,
+  class: (boardId: string, classId: string) =>
+    `${COLLECTIONS.boards}/${boardId}/classes/${classId}`,
+  classSlides: (boardId: string, classId: string) =>
+    `${COLLECTIONS.boards}/${boardId}/classes/${classId}/slides`,
+  classSlide: (boardId: string, classId: string, slideId: string) =>
+    `${COLLECTIONS.boards}/${boardId}/classes/${classId}/slides/${slideId}`,
+  stickyNotes: (boardId: string, classId: string, slideId: string) =>
+    `${COLLECTIONS.boards}/${boardId}/classes/${classId}/slides/${slideId}/notes`,
+  stickyNote: (
+    boardId: string,
+    classId: string,
+    slideId: string,
+    noteId: string,
+  ) =>
+    `${COLLECTIONS.boards}/${boardId}/classes/${classId}/slides/${slideId}/notes/${noteId}`,
   joinCode: (code: string) => `${COLLECTIONS.joinCodes}/${code}`,
 }
 
@@ -170,6 +187,90 @@ export const clockInputSchema = z.object({
   instructions: z.string().trim().max(300),
   minutes: z.number().min(1).max(180),
 })
+
+// ---------- class participation (M10): sticky-note walls ----------
+// Keep the lists and limits in sync with the classes rules in firestore.rules
+
+export const CLASS_LAYOUTS = ['free', 'columns2', 'columns3', 'matrix'] as const
+export type ClassLayout = (typeof CLASS_LAYOUTS)[number]
+export const NOTE_COLORS = [
+  'yellow',
+  'pink',
+  'green',
+  'blue',
+  'orange',
+  'purple',
+] as const
+export type NoteColor = (typeof NOTE_COLORS)[number]
+export const REACTIONS = ['👍', '❤️', '💡', '😂', '🎉', '❓'] as const
+export type Reaction = (typeof REACTIONS)[number]
+
+export const MAX_CLASS_SLIDES = 5
+/** Notes per person per slide (D13); the note id `{uid}_{1..20}` enforces it */
+export const MAX_NOTES_PER_PERSON = 20
+export const MAX_STICKY_TEXT = 200
+
+/** classes/{classId}: one class session; the board's teacher writes it */
+export type ClassDoc = {
+  title: string
+  /** YYYY-MM-DD */
+  date: string
+  status: 'open' | 'closed'
+  slideOrder: string[]
+  /** "Seguir al docente": students see the teacher's slide */
+  follow: boolean
+  liveSlideId: string | null
+  createdAt: unknown
+  updatedAt: unknown
+}
+
+/** classes/{c}/slides/{slideId}: the prompt and the wall's layout */
+export type ClassSlideDoc = {
+  title: string
+  instructions: string
+  layout: ClassLayout
+  /** Column / quadrant titles (as many as the layout has zones) */
+  zones: string[]
+  locked: boolean
+  createdAt: unknown
+  updatedAt: unknown
+}
+
+/** Who reacted with what: { [uid]: { name, emojis } } — each person writes only their own key */
+export type NoteReactions = Record<string, { name: string; emojis: Reaction[] }>
+
+/** …/slides/{s}/notes/{uid}_{n}: one sticky note; its author or the teacher changes it */
+export type StickyNoteDoc = {
+  text: string
+  color: NoteColor
+  /** Top-left corner as a share of the wall (0–1), the same on every screen */
+  x: number
+  y: number
+  authorUid: string
+  authorStudentId: string | null
+  authorName: string
+  authorRole: 'student' | 'teacher'
+  reactions: NoteReactions
+  editedByTeacher: boolean
+  createdAt: unknown
+  updatedAt: unknown
+}
+
+export const classInputSchema = z.object({
+  title: z.string().trim().min(1).max(80),
+  date: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/),
+})
+export type ClassInput = z.infer<typeof classInputSchema>
+
+export const classSlideInputSchema = z.object({
+  title: z.string().trim().min(1).max(120),
+  instructions: z.string().trim().max(500),
+  layout: z.enum(CLASS_LAYOUTS),
+  zones: z.array(z.string().trim().max(40)).max(4),
+})
+export type ClassSlideInput = z.infer<typeof classSlideInputSchema>
+
+export const stickyTextSchema = z.string().trim().min(1).max(MAX_STICKY_TEXT)
 
 // ---------- announcements (M19) ----------
 

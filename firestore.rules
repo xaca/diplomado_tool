@@ -676,6 +676,138 @@ service cloud.firestore {
         allow delete: if isBoardTeacher(boardId) || (signedIn() && request.auth.uid == uid);
       }
 
+      // ---------- class participation (M10): sticky-note walls ----------
+      // Keep the lists and limits in sync with src/model/index.ts (CLASS_LAYOUTS, NOTE_COLORS,
+      // REACTIONS, MAX_CLASS_SLIDES, MAX_NOTES_PER_PERSON, MAX_STICKY_TEXT)
+
+      function classDoc(classId) {
+        return get(/databases/$(database)/documents/boards/$(boardId)/classes/$(classId)).data;
+      }
+
+      function classSlideDoc(classId, slideId) {
+        return get(/databases/$(database)/documents/boards/$(boardId)/classes/$(classId)/slides/$(slideId)).data;
+      }
+
+      function validClass() {
+        let data = request.resource.data;
+        return data.keys().hasOnly(['title', 'date', 'status', 'slideOrder', 'follow', 'liveSlideId',
+            'createdAt', 'updatedAt'])
+          && isString(data.title, 1, 80)
+          && data.date is string && data.date.matches('[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])')
+          && data.status in ['open', 'closed']
+          && data.slideOrder is list && data.slideOrder.size() <= 5
+          && data.follow is bool
+          && (data.liveSlideId == null || isString(data.liveSlideId, 1, 128))
+          && data.updatedAt == request.time;
+      }
+
+      function validClassSlide() {
+        let data = request.resource.data;
+        return data.keys().hasOnly(['title', 'instructions', 'layout', 'zones', 'locked', 'createdAt', 'updatedAt'])
+          && isString(data.title, 1, 120)
+          && isString(data.instructions, 0, 500)
+          && data.layout in ['free', 'columns2', 'columns3', 'matrix']
+          && data.zones is list && data.zones.size() <= 4
+          && data.locked is bool
+          && data.updatedAt == request.time;
+      }
+
+      function validNote() {
+        let data = request.resource.data;
+        return data.keys().hasOnly(['text', 'color', 'x', 'y', 'authorUid', 'authorStudentId', 'authorName',
+            'authorRole', 'reactions', 'editedByTeacher', 'createdAt', 'updatedAt'])
+          && isString(data.text, 1, 200)
+          && data.color in ['yellow', 'pink', 'green', 'blue', 'orange', 'purple']
+          && data.x is number && data.x >= 0 && data.x <= 1
+          && data.y is number && data.y >= 0 && data.y <= 1
+          && isString(data.authorName, 1, 120)
+          && data.authorRole in ['student', 'teacher']
+          && (data.authorStudentId == null || isString(data.authorStudentId, 1, 128))
+          && data.reactions is map && data.reactions.size() <= 300
+          && data.editedByTeacher is bool;
+      }
+
+      // Students write while the class is open, the slide unlocked and the board active
+      function classWritable(classId, slideId) {
+        return classDoc(classId).status == 'open'
+          && classSlideDoc(classId, slideId).locked == false
+          && boardIsActive(boardId);
+      }
+
+      match /classes/{classId} {
+        allow read: if isBoardTeacher(boardId) || isMember(boardId);
+        allow create: if isBoardTeacher(boardId) && validClass()
+          && request.resource.data.createdAt == request.time;
+        allow update: if isBoardTeacher(boardId) && validClass()
+          && request.resource.data.createdAt == resource.data.createdAt;
+        allow delete: if isBoardTeacher(boardId);
+
+        match /slides/{slideId} {
+          allow read: if isBoardTeacher(boardId) || isMember(boardId);
+          allow create: if isBoardTeacher(boardId) && validClassSlide()
+            && request.resource.data.createdAt == request.time;
+          allow update: if isBoardTeacher(boardId) && validClassSlide()
+            && request.resource.data.createdAt == resource.data.createdAt;
+          allow delete: if isBoardTeacher(boardId);
+
+          match /notes/{noteId} {
+            function mine() {
+              return request.resource.data.authorUid == request.auth.uid;
+            }
+
+            function sameAuthor() {
+              return request.resource.data.diff(resource.data).affectedKeys()
+                .hasAny(['authorUid', 'authorStudentId', 'authorName', 'authorRole', 'createdAt']) == false;
+            }
+
+            // Only my own key in `reactions`, with known emojis (several, no repeats)
+            function onlyMyReaction() {
+              let uid = request.auth.uid;
+              let after = request.resource.data.reactions;
+              return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions'])
+                && after.diff(resource.data.reactions).affectedKeys().hasOnly([uid])
+                && (!(uid in after) || (after[uid] is map
+                  && after[uid].keys().hasOnly(['name', 'emojis'])
+                  && isString(after[uid].name, 1, 120)
+                  && after[uid].emojis is list
+                  && after[uid].emojis.size() >= 1 && after[uid].emojis.size() <= 6
+                  && after[uid].emojis.hasOnly(['👍', '❤️', '💡', '😂', '🎉', '❓'])));
+            }
+
+            allow read: if isBoardTeacher(boardId) || isMember(boardId);
+            // My note: my id ({uid}_{1..20} caps it at 20 per slide), my name, no reactions yet
+            allow create: if validNote() && mine()
+              && noteId.matches(request.auth.uid + '_([1-9]|1[0-9]|20)')
+              && request.resource.data.reactions.size() == 0
+              && request.resource.data.editedByTeacher == false
+              && request.resource.data.createdAt == request.time
+              && request.resource.data.updatedAt == request.time
+              && (
+                (isBoardTeacher(boardId) && request.resource.data.authorRole == 'teacher'
+                  && request.resource.data.authorStudentId == null)
+                || (isMember(boardId) && request.resource.data.authorRole == 'student'
+                  && request.resource.data.authorStudentId == get(memberPath(boardId, request.auth.uid)).data.studentId
+                  && classWritable(classId, slideId))
+              );
+            allow update: if validNote() && sameAuthor() && (
+              // the teacher: text, color, place, "editado por el docente", reactions too
+              isBoardTeacher(boardId)
+              // the author: text, color and place of their own note
+              || (isMember(boardId) && resource.data.authorUid == request.auth.uid
+                && classWritable(classId, slideId)
+                && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text', 'color', 'x', 'y', 'updatedAt'])
+                && request.resource.data.updatedAt == request.time)
+              // anyone in the class: their own reaction, on someone else's note (D81)
+              || (isMember(boardId) && resource.data.authorUid != request.auth.uid
+                && classWritable(classId, slideId) && onlyMyReaction())
+            );
+            allow delete: if isBoardTeacher(boardId)
+              || (isMember(boardId) && resource.data.authorUid == request.auth.uid
+                && classWritable(classId, slideId));
+          }
+        }
+      }
+
       // ---------- attendance (M18): one record per class date, teacher only ----------
 
       // Keep the date pattern in sync with ATTENDANCE_DATE in src/model/index.ts

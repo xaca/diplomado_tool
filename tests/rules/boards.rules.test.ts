@@ -11,6 +11,7 @@ import {
   collection,
   collectionGroup,
   deleteDoc,
+  deleteField,
   doc,
   FieldPath,
   getDoc,
@@ -2227,5 +2228,326 @@ describe('announcements (M19)', () => {
     await assertFails(
       getDocs(collection(as(LAURA), 'boards', BOARD, 'announcementState')),
     )
+  })
+})
+
+describe('class participation (M10)', () => {
+  const SEB = { uid: 'seb', email: 'seb@gmail.com' }
+  const klass = (db: Firestore, id = 'c1') =>
+    doc(db, 'boards', BOARD, 'classes', id)
+  const slide = (db: Firestore, id = 's1', classId = 'c1') =>
+    doc(db, 'boards', BOARD, 'classes', classId, 'slides', id)
+  const note = (db: Firestore, id: string) =>
+    doc(db, 'boards', BOARD, 'classes', 'c1', 'slides', 's1', 'notes', id)
+  const classData = (overrides: Record<string, unknown> = {}) => ({
+    title: 'Clase 3: entrevistas',
+    date: '2026-11-12',
+    status: 'open',
+    slideOrder: ['s1'],
+    follow: false,
+    liveSlideId: null,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    ...overrides,
+  })
+  const slideData = (overrides: Record<string, unknown> = {}) => ({
+    title: '¿Qué aprendiste?',
+    instructions: 'Una idea por nota',
+    layout: 'columns2',
+    zones: ['Funcionó', 'Mejorar'],
+    locked: false,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    ...overrides,
+  })
+  const noteData = (
+    user: { uid: string },
+    overrides: Record<string, unknown> = {},
+  ) => ({
+    text: 'Entendían el menú',
+    color: 'yellow',
+    x: 0.1,
+    y: 0.2,
+    authorUid: user.uid,
+    authorStudentId: user.uid === TEACHER.uid ? null : 'st_laura',
+    authorName: 'Laura Nataly',
+    authorRole: user.uid === TEACHER.uid ? 'teacher' : 'student',
+    reactions: {},
+    editedByTeacher: false,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    ...overrides,
+  })
+
+  /** Laura and Seb joined; the teacher has class c1 (open) with slide s1 */
+  async function withClass(
+    classOverrides: Record<string, unknown> = {},
+    slideOverrides: Record<string, unknown> = {},
+  ) {
+    await seed()
+    await autoJoin(as(LAURA), LAURA, 'st_laura')
+    await env.withSecurityRulesDisabled(async (context) => {
+      const db = context.firestore() as unknown as Firestore
+      await setDoc(
+        doc(db, 'boards', BOARD, 'students', 'st_seb'),
+        student([SEB.email]),
+      )
+      await setDoc(doc(db, 'boards', BOARD, 'studentEmails', SEB.email), {
+        email: SEB.email,
+        studentId: 'st_seb',
+      })
+      const now = Timestamp.now()
+      await setDoc(
+        klass(db),
+        classData({ createdAt: now, updatedAt: now, ...classOverrides }),
+      )
+      await setDoc(
+        slide(db),
+        slideData({ createdAt: now, updatedAt: now, ...slideOverrides }),
+      )
+    })
+    await autoJoin(as(SEB), SEB, 'st_seb')
+  }
+
+  async function lauraNote(overrides: Record<string, unknown> = {}) {
+    await env.withSecurityRulesDisabled(async (context) => {
+      const db = context.firestore() as unknown as Firestore
+      const now = Timestamp.now()
+      await setDoc(
+        note(db, `${LAURA.uid}_1`),
+        noteData(LAURA, { createdAt: now, updatedAt: now, ...overrides }),
+      )
+    })
+  }
+
+  it('the board teacher creates classes and wall slides; the content is checked; students only read', async () => {
+    await seed()
+    await autoJoin(as(LAURA), LAURA, 'st_laura')
+    const db = as(TEACHER)
+    await assertSucceeds(setDoc(klass(db), classData()))
+    await assertSucceeds(setDoc(slide(db), slideData()))
+    await assertSucceeds(
+      updateDoc(klass(db), {
+        status: 'closed',
+        follow: true,
+        liveSlideId: 's1',
+        updatedAt: serverTimestamp(),
+      }),
+    )
+    await assertSucceeds(
+      updateDoc(slide(db), { locked: true, updatedAt: serverTimestamp() }),
+    )
+    for (const bad of [
+      { title: '' },
+      { date: '12/11/2026' },
+      { status: 'draft' },
+      { slideOrder: ['a', 'b', 'c', 'd', 'e', 'f'] },
+    ])
+      await assertFails(setDoc(klass(db, 'c2'), classData(bad)))
+    for (const bad of [
+      { layout: 'circle' },
+      { zones: ['1', '2', '3', '4', '5'] },
+    ])
+      await assertFails(setDoc(slide(db, 's2'), slideData(bad)))
+
+    await assertSucceeds(getDoc(klass(as(LAURA))))
+    await assertSucceeds(getDocs(collection(klass(as(LAURA)), 'slides')))
+    await assertFails(setDoc(klass(as(LAURA), 'c3'), classData()))
+    await assertFails(
+      updateDoc(slide(as(LAURA)), {
+        locked: false,
+        updatedAt: serverTimestamp(),
+      }),
+    )
+    await assertFails(getDoc(klass(as(STRANGER))))
+    await assertFails(getDoc(klass(as(OTHER_TEACHER))))
+  })
+
+  it('a student adds notes with their own id, name and student id, up to 20 per slide', async () => {
+    await withClass()
+    const db = as(LAURA)
+    await assertSucceeds(setDoc(note(db, `${LAURA.uid}_1`), noteData(LAURA)))
+    await assertSucceeds(setDoc(note(db, `${LAURA.uid}_20`), noteData(LAURA)))
+    // the 21st, someone else's id, a fake student id, a teacher badge, pre-filled reactions
+    await assertFails(setDoc(note(db, `${LAURA.uid}_21`), noteData(LAURA)))
+    await assertFails(setDoc(note(db, `${SEB.uid}_1`), noteData(LAURA)))
+    await assertFails(
+      setDoc(
+        note(db, `${LAURA.uid}_2`),
+        noteData(LAURA, { authorStudentId: 'st_seb' }),
+      ),
+    )
+    await assertFails(
+      setDoc(
+        note(db, `${LAURA.uid}_3`),
+        noteData(LAURA, { authorRole: 'teacher', authorStudentId: null }),
+      ),
+    )
+    await assertFails(
+      setDoc(
+        note(db, `${LAURA.uid}_4`),
+        noteData(LAURA, {
+          reactions: { [LAURA.uid]: { name: 'L', emojis: ['👍'] } },
+        }),
+      ),
+    )
+    for (const bad of [
+      { text: '' },
+      { text: 'x'.repeat(201) },
+      { color: 'black' },
+      { x: 1.5 },
+      { y: -0.1 },
+    ])
+      await assertFails(
+        setDoc(note(db, `${LAURA.uid}_5`), noteData(LAURA, bad)),
+      )
+    // Not a member: nothing
+    await assertFails(
+      setDoc(note(as(STRANGER), `${STRANGER.uid}_1`), noteData(STRANGER)),
+    )
+  })
+
+  it('the author edits, moves and deletes their own note; a classmate can only react to it', async () => {
+    await withClass()
+    await lauraNote()
+    const mineRef = note(as(LAURA), `${LAURA.uid}_1`)
+    await assertSucceeds(
+      updateDoc(mineRef, {
+        text: 'Editada',
+        x: 0.5,
+        y: 0.5,
+        color: 'pink',
+        updatedAt: serverTimestamp(),
+      }),
+    )
+    await assertFails(
+      updateDoc(mineRef, { authorName: 'Otra', updatedAt: serverTimestamp() }),
+    )
+    await assertFails(
+      updateDoc(mineRef, {
+        editedByTeacher: true,
+        updatedAt: serverTimestamp(),
+      }),
+    )
+    // No reactions on my own note (D81)
+    await assertFails(
+      updateDoc(mineRef, new FieldPath('reactions', LAURA.uid), {
+        name: 'Laura',
+        emojis: ['👍'],
+      }),
+    )
+
+    const sebRef = note(as(SEB), `${LAURA.uid}_1`)
+    await assertFails(
+      updateDoc(sebRef, { text: 'Hackeada', updatedAt: serverTimestamp() }),
+    )
+    await assertFails(
+      updateDoc(sebRef, { x: 0.9, updatedAt: serverTimestamp() }),
+    )
+    await assertFails(deleteDoc(sebRef))
+    await assertSucceeds(
+      updateDoc(sebRef, new FieldPath('reactions', SEB.uid), {
+        name: 'Seb',
+        emojis: ['👍', '💡'],
+      }),
+    )
+    // only my key, known emojis
+    await assertFails(
+      updateDoc(sebRef, new FieldPath('reactions', LAURA.uid), {
+        name: 'Laura',
+        emojis: ['👍'],
+      }),
+    )
+    await assertFails(
+      updateDoc(sebRef, new FieldPath('reactions', SEB.uid), {
+        name: 'Seb',
+        emojis: ['🤬'],
+      }),
+    )
+    // remove my reaction (my key only; wiping the whole map is refused)
+    await assertSucceeds(
+      updateDoc(sebRef, new FieldPath('reactions', SEB.uid), deleteField()),
+    )
+    await assertSucceeds(
+      updateDoc(sebRef, new FieldPath('reactions', SEB.uid), {
+        name: 'Seb',
+        emojis: ['❤️'],
+      }),
+    )
+    // someone else reacted too: wiping the whole map would remove theirs
+    await updateDoc(
+      note(as(TEACHER), `${LAURA.uid}_1`),
+      new FieldPath('reactions', TEACHER.uid),
+      {
+        name: 'Docente',
+        emojis: ['🎉'],
+      },
+    )
+    await assertFails(updateDoc(sebRef, { reactions: {} }))
+
+    await assertSucceeds(deleteDoc(mineRef))
+  })
+
+  it('the teacher adds their own notes and edits, moves or deletes anyone’s', async () => {
+    await withClass({ status: 'closed' }, { locked: true })
+    await lauraNote()
+    const db = as(TEACHER)
+    await assertSucceeds(
+      setDoc(
+        note(db, `${TEACHER.uid}_1`),
+        noteData(TEACHER, { authorName: 'Docente' }),
+      ),
+    )
+    const lauras = note(db, `${LAURA.uid}_1`)
+    await assertSucceeds(
+      updateDoc(lauras, {
+        text: 'Corregida',
+        editedByTeacher: true,
+        x: 0.7,
+        updatedAt: serverTimestamp(),
+      }),
+    )
+    // but never under someone else's name
+    await assertFails(
+      updateDoc(lauras, { authorName: 'Otro', updatedAt: serverTimestamp() }),
+    )
+    await assertSucceeds(deleteDoc(lauras))
+  })
+
+  it('closed class, locked slide or archived board: students only read', async () => {
+    for (const [classOverrides, slideOverrides, boardOverrides] of [
+      [{ status: 'closed' }, {}, {}],
+      [{}, { locked: true }, {}],
+      [{}, {}, { status: 'archived' }],
+    ] as Record<string, unknown>[][]) {
+      await env.clearFirestore()
+      await withClass(classOverrides, slideOverrides)
+      if (Object.keys(boardOverrides).length)
+        await env.withSecurityRulesDisabled(async (context) => {
+          await updateDoc(
+            doc(context.firestore() as unknown as Firestore, 'boards', BOARD),
+            boardOverrides,
+          )
+        })
+      await lauraNote()
+      await assertSucceeds(getDoc(note(as(LAURA), `${LAURA.uid}_1`)))
+      await assertFails(
+        setDoc(note(as(LAURA), `${LAURA.uid}_2`), noteData(LAURA)),
+      )
+      await assertFails(
+        updateDoc(note(as(LAURA), `${LAURA.uid}_1`), {
+          text: 'Tarde',
+          updatedAt: serverTimestamp(),
+        }),
+      )
+      await assertFails(deleteDoc(note(as(LAURA), `${LAURA.uid}_1`)))
+      await assertFails(
+        updateDoc(
+          note(as(SEB), `${LAURA.uid}_1`),
+          new FieldPath('reactions', SEB.uid),
+          { name: 'Seb', emojis: ['👍'] },
+        ),
+      )
+    }
   })
 })
