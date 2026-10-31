@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useParams } from 'react-router'
+import { Link, useParams, useSearchParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import {
   ArrowLeft,
@@ -11,6 +11,7 @@ import {
   List,
   Lock,
   LockOpen,
+  Paintbrush,
   Pencil,
   Plus,
   Presentation,
@@ -43,6 +44,7 @@ import {
   editStickyNote,
   moveClassSlide,
   moveStickyNote,
+  reactToClassSlide,
   reactToNote,
   tidyStickyNotes,
   TooManyNotesError,
@@ -50,6 +52,7 @@ import {
   updateClassSlide,
 } from '@/features/classes/api'
 import { BoardSections } from '@/features/classes/components/BoardSections'
+import { ReactionBar } from '@/features/classes/components/ReactionBar'
 import {
   NoteDialog,
   type NoteDraft,
@@ -64,6 +67,7 @@ import {
 } from '@/features/classes/hooks'
 import { useClassAccess } from '@/features/classes/use-class-access'
 import {
+  drawingOf,
   freeSpot,
   tidy,
   visibleSlide,
@@ -96,6 +100,9 @@ export function ClassPage() {
   const { t, i18n } = useTranslation()
   const locale = i18n.resolvedLanguage ?? 'es'
   const { boardId = '', classId = '' } = useParams()
+  // Back from the presenter or the design page on a given slide (?slide=N)
+  const [searchParams] = useSearchParams()
+  const slideParam = Number(searchParams.get('slide') ?? 0)
   const access = useClassAccess(boardId)
   const klass = useClass(access.allowed ? boardId : undefined, classId)
   const slides = useClassSlides(
@@ -114,15 +121,16 @@ export function ClassPage() {
   const [confirm, setConfirm] = useState<'clear' | 'deleteSlide' | null>(null)
 
   const order = klass.data?.slideOrder ?? []
+  const picked = chosen ?? order[slideParam - 1] ?? null
   const following =
     !access.teacher && !!klass.data?.follow && !!klass.data.liveSlideId
   const currentId = access.teacher
-    ? chosen && order.includes(chosen)
-      ? chosen
+    ? picked && order.includes(picked)
+      ? picked
       : (order[0] ?? null)
     : visibleSlide({
         order,
-        chosen,
+        chosen: picked,
         follow: !!klass.data?.follow,
         liveSlideId: klass.data?.liveSlideId ?? null,
         leftLive,
@@ -350,19 +358,45 @@ export function ClassPage() {
 
       {slide && (
         <>
-          {/* Prompt */}
-          <div className="flex flex-col gap-1">
-            <h2
-              className="font-heading text-2xl font-semibold sm:text-3xl"
-              data-testid="prompt"
-            >
-              {slide.title}
-            </h2>
-            {slide.instructions && (
-              <p className="whitespace-pre-line text-muted-foreground">
-                {slide.instructions}
-              </p>
-            )}
+          {/* Prompt (optional with a drawing, D91) and the slide's reactions */}
+          <div className="flex flex-wrap items-end gap-x-4 gap-y-2">
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
+              {slide.title && (
+                <h2
+                  className="font-heading text-2xl font-semibold sm:text-3xl"
+                  data-testid="prompt"
+                >
+                  {slide.title}
+                </h2>
+              )}
+              {slide.instructions && (
+                <p className="whitespace-pre-line text-muted-foreground">
+                  {slide.instructions}
+                </p>
+              )}
+            </div>
+            <div className="text-xl" data-testid="slide-reactions">
+              <ReactionBar
+                reactions={slide.reactions}
+                uid={access.uid}
+                authorName=""
+                label={t('classes.reactSlide')}
+                size="list"
+                onReact={
+                  studentWrites && access.uid
+                    ? (emoji) =>
+                        reactToClassSlide(
+                          boardId,
+                          classId,
+                          slide.id,
+                          slide.reactions,
+                          { uid: access.uid!, name: access.name },
+                          emoji,
+                        ).catch(fail)
+                    : undefined
+                }
+              />
+            </div>
           </div>
 
           {/* Teacher controls */}
@@ -371,6 +405,19 @@ export function ClassPage() {
               className="flex flex-wrap items-center gap-2 rounded-xl border bg-muted/40 p-2"
               data-testid="teacher-bar"
             >
+              <Button
+                size="sm"
+                nativeButton={false}
+                title={t('classes.designHint')}
+                render={
+                  <Link
+                    to={`/b/${boardId}/class/${classId}/s/${slide.id}/design`}
+                  />
+                }
+              >
+                <Paintbrush />
+                {t('classes.design')}
+              </Button>
               <Button
                 variant="ghost"
                 size="sm"
@@ -457,22 +504,24 @@ export function ClassPage() {
                   </Button>
                 </span>
               )}
-              <Label
-                className="ml-auto flex items-center gap-2 font-normal"
-                title={t('classes.followHint')}
-              >
-                <Switch
-                  checked={data.follow}
-                  data-testid="follow-switch"
-                  onCheckedChange={(follow) =>
-                    updateClass(boardId, classId, {
-                      follow,
-                      liveSlideId: follow ? slide.id : null,
-                    }).catch(fail)
-                  }
-                />
-                {t('classes.follow')}
-              </Label>
+              <div className="ml-auto flex max-w-xs flex-col items-end gap-0.5 text-right">
+                <Label className="flex items-center gap-2 font-normal">
+                  <Switch
+                    checked={data.follow}
+                    data-testid="follow-switch"
+                    onCheckedChange={(follow) =>
+                      updateClass(boardId, classId, {
+                        follow,
+                        liveSlideId: follow ? slide.id : null,
+                      }).catch(fail)
+                    }
+                  />
+                  {t('classes.follow')}
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  {t('classes.followHint')}
+                </p>
+              </div>
             </div>
           )}
 
@@ -542,6 +591,7 @@ export function ClassPage() {
           {view === 'wall' ? (
             <Wall
               slide={slide}
+              drawing={drawingOf(slide)}
               notes={notes.data}
               uid={access.uid}
               can={can}

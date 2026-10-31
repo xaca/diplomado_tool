@@ -2,6 +2,7 @@ import {
   MAX_NOTES_PER_PERSON,
   REACTIONS,
   type ClassLayout,
+  type ImageRef,
   type NoteReactions,
   type Reaction,
 } from '@/model'
@@ -222,4 +223,14 @@ export function visibleSlide({
   if (live && leftLive !== liveSlideId) return liveSlideId
   if (chosen && order.includes(chosen)) return chosen
   return order[0] ?? null
+}
+
+/** M10b: the teacher's drawing of a class slide, if it has one */
+export function drawingOf(slide: {
+  content?: string
+  files?: Record<string, ImageRef>
+}) {
+  return slide.content
+    ? { content: slide.content, files: slide.files ?? {} }
+    : null
 }

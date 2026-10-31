@@ -3,7 +3,9 @@ import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { ReactionBar } from '@/features/classes/components/ReactionBar'
 import { Wall } from '@/features/classes/components/Wall'
+import { drawingOf } from '@/features/classes/wall'
 import { updateClass } from '@/features/classes/api'
 import {
   useClass,
@@ -82,9 +84,11 @@ export function ClassPresentPage() {
             {klass.data?.title} · {t('classes.slideN', { number: current + 1 })}{' '}
             / {order.length}
           </p>
-          <h1 className="font-heading text-3xl font-bold sm:text-5xl">
-            {slide?.title}
-          </h1>
+          {slide?.title && (
+            <h1 className="font-heading text-3xl font-bold sm:text-5xl">
+              {slide.title}
+            </h1>
+          )}
           {slide?.instructions && (
             <p className="mt-1 text-lg text-white/70">{slide.instructions}</p>
           )}
@@ -101,6 +105,7 @@ export function ClassPresentPage() {
       {slide && (
         <Wall
           slide={slide}
+          drawing={drawingOf(slide)}
           notes={notes.data}
           uid={access.uid}
           can={READ_ONLY}
@@ -121,6 +126,16 @@ export function ClassPresentPage() {
           <ChevronLeft />
         </Button>
         {t('classes.presentHint')}
+        {slide && (
+          <span className="text-lg">
+            <ReactionBar
+              reactions={slide.reactions}
+              uid={access.uid}
+              authorName=""
+              size="list"
+            />
+          </span>
+        )}
         <Button
           variant="secondary"
           size="icon"

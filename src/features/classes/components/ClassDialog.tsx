@@ -33,9 +33,7 @@ export function ClassDialog({
   const [date, setDate] = useState(initial?.date ?? localDate())
   const [prompt, setPrompt] = useState('')
   const [busy, setBusy] = useState(false)
-  const valid =
-    classInputSchema.safeParse({ title, date }).success &&
-    (!creating || prompt.trim().length > 0)
+  const valid = classInputSchema.safeParse({ title, date }).success
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>

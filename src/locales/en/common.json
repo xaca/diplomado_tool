@@ -982,7 +982,7 @@
     "create": "Create class",
     "titleLabel": "Class title",
     "dateLabel": "Date",
-    "firstPrompt": "Prompt of the first slide",
+    "firstPrompt": "Question of the first slide (optional)",
     "firstPromptPlaceholder": "What did you learn today?",
     "created": "Class created: open it when the class starts",
     "open": "Open",
@@ -1001,8 +1001,8 @@
     "lock": "Lock",
     "unlock": "Unlock",
     "lockHint": "Nobody else can write on this slide",
-    "follow": "Follow the teacher",
-    "followHint": "Students' screens show your slide",
+    "follow": "Take everyone to my slide",
+    "followHint": "Students' screens jump to the slide you have open (they can look at another and come back).",
     "following": "Following the teacher",
     "leave": "See another",
     "rejoin": "Back with the teacher",
@@ -1077,6 +1077,11 @@
     "noteBy": "Note by {{name}}: {{text}}",
     "hintAdd": "Double-click an empty spot to put a note there, or drag yours.",
     "hintTeacher": "You can move, edit or delete any note.",
-    "notFound": "This class doesn't exist or was deleted."
+    "notFound": "This class doesn't exist or was deleted.",
+    "design": "Design",
+    "designHint": "Draw the slide with Excalidraw: text, shapes, images",
+    "designTitle": "Design slide {{number}}",
+    "designDone": "Done",
+    "reactSlide": "React to the slide"
   }
 }

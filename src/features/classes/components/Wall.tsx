@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StickyNote } from '@/features/classes/components/StickyNote'
+import { SlidePreview } from '@/features/slides/components/SlidePreview'
 import {
   clampPosition,
   NOTE_H,
@@ -11,7 +12,7 @@ import {
 import type { WithId } from '@/lib/firestore-hooks'
 import { toDate } from '@/lib/time'
 import { cn } from '@/lib/utils'
-import type { ClassSlideDoc, Reaction, StickyNoteDoc } from '@/model'
+import type { ClassSlideDoc, Reaction, SlideDoc, StickyNoteDoc } from '@/model'
 
 export type WallPermissions = {
   /** Can add notes here */
@@ -27,6 +28,7 @@ export type WallPermissions = {
  */
 export function Wall({
   slide,
+  drawing,
   notes,
   uid,
   can,
@@ -37,6 +39,8 @@ export function Wall({
   className,
 }: {
   slide: Pick<ClassSlideDoc, 'layout' | 'zones'>
+  /** M10b: the teacher's drawing, shown as the wall's background */
+  drawing?: Pick<SlideDoc, 'content' | 'files'> | null
   notes: WithId<StickyNoteDoc>[]
   uid: string | undefined
   can: WallPermissions
@@ -76,6 +80,13 @@ export function Wall({
         data-testid="wall"
         data-layout={slide.layout}
       >
+        {drawing && (
+          <SlidePreview
+            slide={drawing}
+            large
+            className="pointer-events-none absolute inset-0 size-full"
+          />
+        )}
         {zones.length > 1 &&
           zones.map((zone, index) => (
             <div
@@ -120,7 +131,7 @@ export function Wall({
             onReact={(emoji) => onReact(note, emoji)}
           />
         ))}
-        {notes.length === 0 && (
+        {notes.length === 0 && !drawing && (
           <p className="pointer-events-none absolute inset-0 flex items-center justify-center p-4 text-center text-[clamp(12px,1.4cqw,20px)] text-neutral-400">
             {can.add ? t('classes.empty') : t('classes.emptyRead')}
           </p>

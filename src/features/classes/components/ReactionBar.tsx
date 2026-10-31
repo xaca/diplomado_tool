@@ -20,12 +20,15 @@ export function ReactionBar({
   authorName,
   onReact,
   size = 'wall',
+  label,
 }: {
   reactions: NoteReactions | undefined
   uid: string | undefined
   authorName: string
   onReact?: (emoji: Reaction) => void
   size?: 'wall' | 'list'
+  /** The picker's accessible name (default: "react to {author}'s note") */
+  label?: string
 }) {
   const { t } = useTranslation()
   const counts = reactionCounts(reactions, uid)
@@ -71,7 +74,7 @@ export function ReactionBar({
               'inline-flex items-center justify-center rounded-full text-black/50 hover:bg-white/70 hover:text-black/80',
               chip,
             )}
-            aria-label={t('classes.react', { name: authorName })}
+            aria-label={label ?? t('classes.react', { name: authorName })}
             data-testid="react"
           >
             <SmilePlus className="size-[1.1em]" />

@@ -982,7 +982,7 @@
     "create": "Crear clase",
     "titleLabel": "Título de la clase",
     "dateLabel": "Fecha",
-    "firstPrompt": "Consigna de la primera diapositiva",
+    "firstPrompt": "Pregunta de la primera diapositiva (opcional)",
     "firstPromptPlaceholder": "¿Qué aprendiste hoy?",
     "created": "Clase creada: ábrela cuando empiece la clase",
     "open": "Abierta",
@@ -1001,8 +1001,8 @@
     "lock": "Bloquear",
     "unlock": "Desbloquear",
     "lockHint": "Nadie más puede escribir en esta diapositiva",
-    "follow": "Seguir al docente",
-    "followHint": "Las pantallas de los estudiantes muestran tu diapositiva",
+    "follow": "Llevar a todos a mi diapositiva",
+    "followHint": "Las pantallas de los estudiantes saltan a la diapositiva que tienes abierta (pueden mirar otra y volver).",
     "following": "Siguiendo al docente",
     "leave": "Ver otra",
     "rejoin": "Volver con el docente",
@@ -1077,6 +1077,11 @@
     "noteBy": "Nota de {{name}}: {{text}}",
     "hintAdd": "Doble clic en un espacio vacío para poner una nota ahí, o arrastra las tuyas.",
     "hintTeacher": "Puedes mover, editar o eliminar cualquier nota.",
-    "notFound": "Esta clase no existe o fue eliminada."
+    "notFound": "Esta clase no existe o fue eliminada.",
+    "design": "Diseñar",
+    "designHint": "Dibuja la diapositiva con Excalidraw: texto, formas, imágenes",
+    "designTitle": "Diseñar la diapositiva {{number}}",
+    "designDone": "Listo",
+    "reactSlide": "Reaccionar a la diapositiva"
   }
 }
