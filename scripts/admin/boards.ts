@@ -114,6 +114,14 @@ export async function loadBoard(boardId: string) {
   })
   const refs: DocumentReference[] = [
     ...[...slides, ...notes].flatMap((s) => s.docs.map((doc) => doc.ref)),
+    // kept versions and edit locks (M15), whether they exist or not
+    ...slides.flatMap((s, index) =>
+      s.docs.flatMap((slide) => [
+        slide.ref.collection('versions').doc('student'),
+        slide.ref.collection('versions').doc('teacher'),
+        spaces.docs[index].ref.collection('locks').doc(slide.id),
+      ]),
+    ),
     ...[spaces, members, emails, students, assets].flatMap((s) =>
       s.docs.map((doc) => doc.ref),
     ),
@@ -129,8 +137,12 @@ export async function loadBoard(boardId: string) {
         ...spaces.docs.map((doc) => (doc.data() as SpaceDoc).cover),
         board.logo,
       ],
+      // images of the kept versions (M15) count too
       slideAssetIds: slides.flatMap((s) =>
-        s.docs.map((doc) => (doc.data() as SlideDoc).assetIds ?? []),
+        s.docs.map((doc) => {
+          const data = doc.data() as SlideDoc
+          return [...(data.assetIds ?? []), ...(data.versionAssetIds ?? [])]
+        }),
       ),
     }),
     refs,
