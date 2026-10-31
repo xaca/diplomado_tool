@@ -15,10 +15,11 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { recordBoardActivity } from '@/features/boards/api'
+import { useCheer } from '@/features/fun/use-cheer'
 import { updateSpaceProfile, type Space } from '@/features/spaces/api'
 import { CoverPicker } from '@/features/spaces/components/CoverPicker'
 import { StagePicker } from '@/features/stages/components/StagePicker'
-import { findStage } from '@/features/stages/stages'
+import { findStage, stageLabel } from '@/features/stages/stages'
 import { cn } from '@/lib/utils'
 import {
   SPACE_COLOR_NAMES,
@@ -56,6 +57,7 @@ export function SpaceProfileDialog({
   const initialStage = findStage(stages, space.stage)?.id ?? null
   const [stage, setStage] = useState<string | null>(initialStage)
   const [saving, setSaving] = useState(false)
+  const cheer = useCheer()
 
   const valid = spaceProfileSchema.safeParse({ title, summary, color }).success
 
@@ -71,7 +73,11 @@ export function SpaceProfileDialog({
         stage === initialStage ? undefined : stage,
       )
       void recordBoardActivity(boardId)
-      toast.success(t('space.saved'))
+      // M20: a new Design Thinking stage is a milestone ("Vitrineando" isn't)
+      const next = stage === initialStage ? undefined : findStage(stages, stage)
+      const cheered =
+        next?.kind === 'stage' && cheer('stage', { stage: stageLabel(next, t) })
+      if (!cheered) toast.success(t('space.saved'))
       onOpenChange(false)
     } catch {
       toast.error(t('errors.generic'))

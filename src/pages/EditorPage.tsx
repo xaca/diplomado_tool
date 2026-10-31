@@ -1,7 +1,6 @@
 import {
   lazy,
   Suspense,
-  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -43,7 +42,6 @@ import {
   addSlide,
   addSlideAsTeacher,
   deleteSlide,
-  markTeacherEditsSeen,
   reorderSlides,
   shouldTouchSpace,
   touchSpace,
@@ -51,6 +49,9 @@ import {
   type Slide,
 } from '@/features/slides/api'
 import { SaveIndicator } from '@/features/slides/components/SaveIndicator'
+import { slideEvent } from '@/features/fun/cheer'
+import { useCheer } from '@/features/fun/use-cheer'
+import { useTeacherEditCheer } from '@/features/fun/use-teacher-edit-cheer'
 import { InsertEmbedDialog } from '@/features/slides/components/InsertEmbedDialog'
 import { SlidePreview } from '@/features/slides/components/SlidePreview'
 import { ClockBanner } from '@/features/clock/components/ClockBanner'
@@ -91,6 +92,7 @@ export function EditorPage() {
     isTeacherRole(role) &&
     !!board.data?.teacherEmails.includes(normalizeEmail(user?.email ?? ''))
   const asTeacher = isBoardTeacher && !isMine
+  const cheer = useCheer()
   const ref =
     boardId && studentId ? doc(db, paths.space(boardId, studentId)) : null
   const space = useLiveDoc<SpaceDoc>(ref, `space:${boardId}:${studentId}`)
@@ -149,10 +151,7 @@ export function EditorPage() {
 
   // The student opened their slides: the card's "✎ Docente" badge goes away
   const unseen = isMine && !!space.data?.teacherEditsUnseen
-  useEffect(() => {
-    if (unseen && boardId && studentId)
-      void markTeacherEditsSeen(boardId, studentId).catch(() => undefined)
-  }, [unseen, boardId, studentId])
+  useTeacherEditCheer(boardId, studentId, unseen)
 
   if (space.loading || board.loading || me.loading) {
     return (
@@ -221,6 +220,9 @@ export function EditorPage() {
       setSelectedId(
         await addSlide(boardId, studentId, order, index, copy ?? source),
       )
+      // M20: the first slide, then every 5
+      const moment = isMine ? slideEvent(order.length + 1) : null
+      if (moment) cheer(moment, { count: order.length + 1 })
     })
 
   const select = (id: string) =>
@@ -480,7 +482,8 @@ export function EditorPage() {
           onClose={() => setInserting(false)}
           onInsert={(link, aspect) => {
             canvas.current?.insertEmbed(link, aspect)
-            toast.success(t('embeds.inserted'))
+            if (!(isMine && cheer('firstEmbed')))
+              toast.success(t('embeds.inserted'))
           }}
         />
       )}

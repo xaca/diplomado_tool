@@ -10,6 +10,7 @@ import {
   setPollStatus,
   type Poll,
 } from '@/features/polls/api'
+import { useCheer } from '@/features/fun/use-cheer'
 import { useMyVote, useVoters } from '@/features/polls/hooks'
 import { results } from '@/features/polls/tally'
 import { cn } from '@/lib/utils'
@@ -40,6 +41,7 @@ export function PollCard({
   names,
 }: Props) {
   const { t } = useTranslation()
+  const cheer = useCheer()
   const [busy, setBusy] = useState(false)
   const [showVoters, setShowVoters] = useState(false)
   const mine = useMyVote(boardId, studentId, poll.id, myStudentId)
@@ -58,11 +60,15 @@ export function PollCard({
   const showResults = !canVote || !!myOption || moderator
   const { total, options } = results(poll)
 
-  async function act(action: () => Promise<unknown>, done?: string) {
+  async function act(
+    action: () => Promise<unknown>,
+    done?: string | (() => void),
+  ) {
     setBusy(true)
     try {
       await action()
-      if (done) toast.success(done)
+      if (typeof done === 'function') done()
+      else if (done) toast.success(done)
     } catch {
       toast.error(t('errors.generic'))
     } finally {
@@ -112,7 +118,9 @@ export function PollCard({
                         option.id,
                         myOption,
                       ),
-                    t('polls.voted'),
+                    () => {
+                      if (!cheer('firstVote')) toast.success(t('polls.voted'))
+                    },
                   )
                 }
                 className={cn(

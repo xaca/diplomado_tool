@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, Pencil, PencilLine, Play, Presentation } from 'lucide-react'
@@ -8,9 +8,10 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useBoard } from '@/features/boards/hooks'
 import { SlideNotes } from '@/features/notes/components/SlideNotes'
+import { useTeacherEditCheer } from '@/features/fun/use-teacher-edit-cheer'
+import { useNoteCheer } from '@/features/fun/use-note-cheer'
 import { useNotes } from '@/features/notes/hooks'
 import { isWritable, lifecycleOf } from '@/features/boards/lifecycle'
-import { markTeacherEditsSeen } from '@/features/slides/api'
 import { SlidePreview } from '@/features/slides/components/SlidePreview'
 import { TeacherEditBadge } from '@/features/slides/components/TeacherEditBadge'
 import { useSlides } from '@/features/slides/hooks'
@@ -64,12 +65,11 @@ export function SpacePage() {
     !!board.data?.teacherEmails.includes(normalizeEmail(user?.email ?? ''))
   // The student looked at their slides: the card's "✎ Docente" badge goes away
   const unseen = isMine && !!space.data?.teacherEditsUnseen
-  useEffect(() => {
-    if (unseen && boardId && studentId)
-      void markTeacherEditsSeen(boardId, studentId).catch(() => undefined)
-  }, [unseen, boardId, studentId])
+  useTeacherEditCheer(boardId, studentId, unseen)
   // The teacher's annotations: private to the teacher and the owner
   const notes = useNotes(boardId, studentId, teacher || isMine)
+  // M20: "Tu docente te dejó una nota" when there are new ones since my last visit
+  useNoteCheer(boardId, studentId, notes, isMine)
   // M16: polls need my name, and (teacher / author) classmates' names to show who voted
   const profile = useProfile()
   const classmates = useSpaces(

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { CircleCheck, Circle } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { useCheer } from '@/features/fun/use-cheer'
 import { setReadyToPresent } from '@/features/spaces/api'
 
 /** "Mis diapositivas están listas" (M16, D52): the student's own switch; the teacher filters by it. */
@@ -19,6 +20,7 @@ export function ReadyToggle({
 }) {
   const { t } = useTranslation()
   const [busy, setBusy] = useState(false)
+  const cheer = useCheer()
   return (
     <Button
       size={size}
@@ -32,9 +34,11 @@ export function ReadyToggle({
       onClick={() => {
         setBusy(true)
         setReadyToPresent(boardId, studentId, !ready)
-          .then(() =>
-            toast.success(ready ? t('ready.unmarked') : t('ready.marked')),
-          )
+          .then(() => {
+            // M20: marking them ready is a milestone (confetti), unmarking just says so
+            if (ready || !cheer('ready'))
+              toast.success(ready ? t('ready.unmarked') : t('ready.marked'))
+          })
           .catch(() => toast.error(t('errors.generic')))
           .finally(() => setBusy(false))
       }}

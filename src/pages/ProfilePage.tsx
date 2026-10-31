@@ -26,6 +26,7 @@ import {
 import { removeAvatar, uploadAvatar } from '@/features/profile/avatar'
 import { AvatarCropDialog } from '@/features/profile/components/AvatarCropDialog'
 import { CheerSwitch } from '@/features/fun/components/CheerSwitch'
+import { useCheer } from '@/features/fun/use-cheer'
 import { DecorPicker } from '@/features/profile/components/DecorPicker'
 import { StatusEditor } from '@/features/profile/components/StatusEditor'
 import { useProfile } from '@/features/profile/hooks'
@@ -102,6 +103,7 @@ function ProfileForm({ profile }: { profile: UserDoc | null }) {
   const [cropping, setCropping] = useState<ImageBitmap | null>(null)
   const [uploading, setUploading] = useState<number | null>(null)
   const fileInput = useRef<HTMLInputElement>(null)
+  const cheer = useCheer()
 
   if (!user) return null
   const avatar = profile?.avatar ?? null
@@ -147,7 +149,7 @@ function ProfileForm({ profile }: { profile: UserDoc | null }) {
     try {
       await uploadAvatar(user, photo, isTeacherRole(role), setUploading)
       setPhotoSource('upload')
-      toast.success(t('profile.uploaded'))
+      if (!cheer('photo')) toast.success(t('profile.uploaded'))
       closeCrop()
     } catch (error) {
       logUploadFailure(error)
