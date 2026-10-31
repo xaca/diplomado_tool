@@ -79,10 +79,29 @@ service cloud.firestore {
           && avatar.version is int);
     }
 
+    // M21: a short profile message (no links) and card decorations; keep in sync with
+    // statusSchema / decorSchema in src/model/index.ts
+    function validStatus(status) {
+      return status == null
+        || (status is map
+          && status.keys().hasOnly(['emoji', 'text'])
+          && isString(status.emoji, 0, 16)
+          && isString(status.text, 1, 60)
+          && !status.text.lower().matches('.*(https?://|www[.]).*'));
+    }
+
+    function validDecor(decor) {
+      return decor == null
+        || (decor is map
+          && decor.keys().hasOnly(['banner', 'sticker'])
+          && (decor.banner == null || (decor.banner is string && decor.banner.matches('[a-z-]{1,30}')))
+          && (decor.sticker == null || isString(decor.sticker, 1, 16)));
+    }
+
     function validUser(uid) {
       let data = request.resource.data;
       return data.keys().hasOnly(['displayName', 'email', 'photoURL', 'locale', 'profileName', 'showPhoto',
-          'photoSource', 'avatar', 'createdAt', 'lastLoginAt'])
+          'photoSource', 'avatar', 'status', 'decor', 'createdAt', 'lastLoginAt'])
         && data.email == myEmail()
         && (!('displayName' in data) || data.displayName == null || isString(data.displayName, 0, 200))
         && (!('profileName' in data) || data.profileName == null || isString(data.profileName, 1, 120))
@@ -90,7 +109,9 @@ service cloud.firestore {
         && (!('photoSource' in data) || data.photoSource in ['google', 'upload', 'initials'])
         && (!('avatar' in data) || validAvatar(data.avatar, uid))
         && (!('photoURL' in data) || data.photoURL == null || isHttpsUrl(data.photoURL))
-        && (!('locale' in data) || data.locale in ['es', 'en']);
+        && (!('locale' in data) || data.locale in ['es', 'en'])
+        && (!('status' in data) || validStatus(data.status))
+        && (!('decor' in data) || validDecor(data.decor));
     }
 
     match /users/{uid} {
@@ -149,11 +170,31 @@ service cloud.firestore {
           && clock.startedAt is timestamp);
     }
 
+    // M21: keep in sync with BOARD_STYLES in src/model/index.ts
+    function boardStyles() {
+      return ['pizarra', 'cuaderno', 'kraft', 'neon', 'minimal', 'retro', 'acuarela', 'blueprint',
+        'navidad', 'amigo-secreto', 'halloween', 'verano', 'flores', 'graduacion'];
+    }
+
+    function lookDate(value) {
+      return value is string && value.matches('[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])');
+    }
+
+    function validSchedule(schedule) {
+      return schedule == null
+        || (schedule is map
+          && schedule.keys().hasOnly(['style', 'from', 'to'])
+          && schedule.style in boardStyles()
+          && lookDate(schedule.from) && lookDate(schedule.to)
+          && schedule.from <= schedule.to);
+    }
+
     function validBoard(boardId) {
       let data = request.resource.data;
       return data.keys().hasOnly(['title', 'description', 'teacherEmails', 'joinCode', 'joinCodeEnabled', 'status',
           'archiveAfterDays', 'background', 'createdAt', 'updatedAt', 'lastActivityAt', 'archivedAt', 'stages',
-          'pattern', 'layout', 'sortBy', 'stickyHeader', 'logo', 'teacherProfiles', 'clock'])
+          'pattern', 'layout', 'sortBy', 'stickyHeader', 'logo', 'teacherProfiles', 'clock',
+          'style', 'ambient', 'accessories', 'tagline', 'schedule'])
         && isString(data.title, 1, 120)
         && isString(data.description, 0, 500)
         && data.teacherEmails is list && myEmail() in data.teacherEmails
@@ -171,7 +212,13 @@ service cloud.firestore {
         && (!('stickyHeader' in data) || data.stickyHeader is bool)
         && (!('logo' in data) || validBoardLogo(data.logo, boardId))
         && (!('teacherProfiles' in data) || (data.teacherProfiles is map && data.teacherProfiles.size() <= 10))
-        && (!('clock' in data) || validClock(data.clock));
+        && (!('clock' in data) || validClock(data.clock))
+        // M21: board style
+        && (!('style' in data) || data.style == null || data.style in boardStyles())
+        && (!('ambient' in data) || data.ambient is bool)
+        && (!('accessories' in data) || data.accessories is bool)
+        && (!('tagline' in data) || isString(data.tagline, 0, 60))
+        && (!('schedule' in data) || validSchedule(data.schedule));
     }
 
     match /boards/{boardId} {
@@ -308,7 +355,7 @@ service cloud.firestore {
         let data = request.resource.data;
         return data.keys().hasOnly(['studentId', 'ownerName', 'ownerPhotoURL', 'title', 'summary', 'color',
             'slideOrder', 'slideCount', 'cover', 'stage', 'stageUpdatedAt', 'stageSetBy', 'group', 'teacherEditsUnseen',
-            'readyToPresent', 'readyAt', 'createdAt', 'updatedAt'])
+            'readyToPresent', 'readyAt', 'ownerStatus', 'ownerDecor', 'createdAt', 'updatedAt'])
           && (!('cover' in data) || data.cover == null || validImageRef(data.cover, boardId, studentId))
           && data.studentId == studentId
           && isString(data.ownerName, 1, 120)
@@ -323,7 +370,9 @@ service cloud.firestore {
           && (!('stageSetBy' in data) || data.stageSetBy in ['student', 'teacher'])
           && (!('group' in data) || isString(data.group, 0, 60))
           && (!('teacherEditsUnseen' in data) || data.teacherEditsUnseen is bool)
-          && (!('readyToPresent' in data) || data.readyToPresent is bool);
+          && (!('readyToPresent' in data) || data.readyToPresent is bool)
+          && (!('ownerStatus' in data) || validStatus(data.ownerStatus))
+          && (!('ownerDecor' in data) || validDecor(data.ownerDecor));
       }
 
       // M11: whoever changes the stage signs it, with the server time
@@ -359,11 +408,16 @@ service cloud.firestore {
             && request.resource.data.updatedAt == request.time
             && request.resource.data.diff(resource.data).affectedKeys()
                  .hasOnly(['title', 'summary', 'color', 'ownerName', 'ownerPhotoURL', 'cover', 'slideOrder',
-                   'slideCount', 'stage', 'stageUpdatedAt', 'stageSetBy', 'readyToPresent', 'readyAt', 'updatedAt'])
+                   'slideCount', 'stage', 'stageUpdatedAt', 'stageSetBy', 'readyToPresent', 'readyAt',
+                   'ownerStatus', 'ownerDecor', 'updatedAt'])
             && stageSignedBy('student'))
           // the teacher renames the student or changes their group → keep the card in sync (M12)
           || (isBoardTeacher(boardId)
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ownerName', 'group']))
+          // M21: the teacher clears a student's profile message on their board (moderation)
+          || (isBoardTeacher(boardId)
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ownerStatus'])
+            && request.resource.data.ownerStatus == null)
           // M15: the student has seen the teacher's changes (no "updated" bump)
           || (isSpaceOwner(boardId, studentId)
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['teacherEditsUnseen'])

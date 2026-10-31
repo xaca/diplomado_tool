@@ -79,6 +79,10 @@ export type UserDoc = {
   photoSource?: PhotoSource
   /** My uploaded photo: one per person, overwritten on change (M11) */
   avatar?: AvatarRef | null
+  /** M21: my short profile message ("¡Feliz Halloween! 🎃"), shown on my cards */
+  status?: StatusMessage | null
+  /** M21: my card banner and sticker */
+  decor?: Decor | null
   createdAt: unknown
   lastLoginAt: unknown
 }
@@ -112,6 +116,12 @@ export type BoardDoc = {
   layout?: BoardLayout
   sortBy?: BoardSort
   stickyHeader?: boolean
+  /** M21: board style and its options (see boardLookSchema) */
+  style?: BoardStyleId | null
+  ambient?: boolean
+  accessories?: boolean
+  tagline?: string
+  schedule?: StyleSchedule | null
   /** Board logo, uploaded by the teacher (M12) */
   logo?: ImageRef | null
   /** Name and photo of each teacher, by email, for the #DOCENTE ring in the header (M12) */
@@ -212,7 +222,96 @@ export const pollInputSchema = z.object({
 })
 export type PollInput = z.infer<typeof pollInputSchema>
 
-export type TeacherProfile = { name: string; photoURL: string | null }
+export type TeacherProfile = {
+  name: string
+  photoURL: string | null
+  /** M21: the teacher's profile message, next to their name in the board header */
+  status?: StatusMessage | null
+}
+
+// ---------- status message and decorations (M21) ----------
+
+/** A short message on the profile: an optional emoji and up to 60 characters, no links. */
+export const statusSchema = z.object({
+  emoji: z.string().trim().max(16),
+  text: z
+    .string()
+    .trim()
+    .min(1)
+    .max(60)
+    .refine((text) => !/(https?:\/\/|www\.)/i.test(text), 'no links'),
+})
+export type StatusMessage = z.infer<typeof statusSchema>
+
+/** Card banners (colors, gradients, patterns): CSS in features/profile/decor.ts */
+export const CARD_BANNERS = [
+  'sunrise',
+  'lagoon',
+  'mint',
+  'grape',
+  'coral',
+  'gold',
+  'sky',
+  'rose',
+  'forest',
+  'night',
+  'confetti',
+  'waves',
+] as const
+export type CardBanner = (typeof CARD_BANNERS)[number]
+export const STICKERS = [
+  '🚀',
+  '🎨',
+  '🌱',
+  '☕',
+  '🐱',
+  '🐶',
+  '⭐',
+  '🔥',
+  '💡',
+  '🎧',
+  '📚',
+  '🧠',
+  '🌈',
+  '⚽',
+  '🎮',
+  '🌻',
+] as const
+export const decorSchema = z.object({
+  banner: z.enum(CARD_BANNERS).nullable(),
+  sticker: z.enum(STICKERS).nullable(),
+})
+export type Decor = z.infer<typeof decorSchema>
+
+// ---------- board styles (M21) ----------
+
+/** Keep in sync with boardStyles() in firestore.rules and features/boards/styles.ts */
+export const BOARD_STYLES = [
+  'pizarra',
+  'cuaderno',
+  'kraft',
+  'neon',
+  'minimal',
+  'retro',
+  'acuarela',
+  'blueprint',
+  'navidad',
+  'amigo-secreto',
+  'halloween',
+  'verano',
+  'flores',
+  'graduacion',
+] as const
+export type BoardStyleId = (typeof BOARD_STYLES)[number]
+const LOOK_DATE = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/
+export const styleScheduleSchema = z
+  .object({
+    style: z.enum(BOARD_STYLES),
+    from: z.string().regex(LOOK_DATE),
+    to: z.string().regex(LOOK_DATE),
+  })
+  .refine((schedule) => schedule.from <= schedule.to, 'from after to')
+export type StyleSchedule = z.infer<typeof styleScheduleSchema>
 
 // ---------- board look (M12) ----------
 
@@ -263,6 +362,16 @@ export const boardLookSchema = z.object({
   layout: z.enum(BOARD_LAYOUTS),
   sortBy: z.enum(BOARD_SORTS),
   stickyHeader: z.boolean(),
+  /** M21: the teacher's style (null: background + pattern as chosen); defaults keep old boards */
+  style: z.enum(BOARD_STYLES).nullable().default(null),
+  /** M21: the style's background animation (snow, petals…) */
+  ambient: z.boolean().default(true),
+  /** M21: seasonal accessories on the photos (Santa hats…), switched by the teacher */
+  accessories: z.boolean().default(true),
+  /** M21: a line next to the title ("¡Lo lograron! · Clase de 2026"); empty = the style's own */
+  tagline: z.string().trim().max(60).default(''),
+  /** M21: optional dates for a style; outside them the board shows `style` */
+  schedule: styleScheduleSchema.nullable().default(null),
 })
 export type BoardLook = z.infer<typeof boardLookSchema>
 
@@ -272,6 +381,11 @@ export const DEFAULT_LOOK: BoardLook = {
   layout: 'masonry',
   sortBy: 'joined',
   stickyHeader: true,
+  style: null,
+  ambient: true,
+  accessories: true,
+  tagline: '',
+  schedule: null,
 }
 
 export type StudentSource = 'import' | 'manual' | 'invite'
@@ -302,6 +416,9 @@ export type SpaceDoc = {
   studentId: string
   ownerName: string
   ownerPhotoURL: string | null
+  /** M21: the owner's profile message and decorations (copied from their profile) */
+  ownerStatus?: StatusMessage | null
+  ownerDecor?: Decor | null
   title: string
   summary: string
   color: string

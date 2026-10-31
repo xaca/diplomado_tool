@@ -1978,3 +1978,123 @@ describe('attendance (M18)', () => {
     await assertFails(getDoc(summary(as(OTHER_TEACHER), 'st_laura')))
   })
 })
+
+describe('status message, decorations and board styles (M21)', () => {
+  const SEB = { uid: 'seb', email: 'seb@gmail.com' }
+  const lauraCard = (db: Firestore) =>
+    doc(db, 'boards', BOARD, 'spaces', 'st_laura')
+  const hello = { emoji: '🎃', text: '¡Feliz Halloween!' }
+  const decor = { banner: 'sunrise', sticker: '🚀' }
+
+  async function withLaura() {
+    await seed()
+    await autoJoin(as(LAURA), LAURA, 'st_laura')
+  }
+
+  it('a person saves a short message and decorations on their profile; links and long texts are refused', async () => {
+    await seed()
+    const ref = doc(as(LAURA), 'users', LAURA.uid)
+    const profile = { displayName: 'Laura', email: LAURA.email, photoURL: null }
+    await assertSucceeds(setDoc(ref, { ...profile, status: hello, decor }))
+    await assertSucceeds(setDoc(ref, { ...profile, status: null, decor: null }))
+    for (const status of [
+      { emoji: '', text: 'mira https://spam.example' },
+      { emoji: '', text: 'www.spam.co' },
+      { emoji: '', text: 'x'.repeat(61) },
+      { emoji: '', text: '' },
+      { emoji: '🎃', text: 'hola', extra: 1 },
+    ])
+      await assertFails(setDoc(ref, { ...profile, status }))
+    await assertFails(
+      setDoc(ref, {
+        ...profile,
+        decor: { banner: 'Not valid!', sticker: null },
+      }),
+    )
+  })
+
+  it('the owner copies them to their card; a classmate cannot', async () => {
+    await withLaura()
+    await assertSucceeds(
+      updateDoc(lauraCard(as(LAURA)), {
+        ownerStatus: hello,
+        ownerDecor: decor,
+        updatedAt: serverTimestamp(),
+      }),
+    )
+    await assertFails(
+      updateDoc(lauraCard(as(LAURA)), {
+        ownerStatus: { emoji: '', text: 'http://x.co' },
+        updatedAt: serverTimestamp(),
+      }),
+    )
+    await env.withSecurityRulesDisabled(async (context) => {
+      const db = context.firestore()
+      await setDoc(
+        doc(db, 'boards', BOARD, 'students', 'st_seb'),
+        student([SEB.email]),
+      )
+      await setDoc(doc(db, 'boards', BOARD, 'studentEmails', SEB.email), {
+        email: SEB.email,
+        studentId: 'st_seb',
+      })
+    })
+    await autoJoin(as(SEB), SEB, 'st_seb')
+    await assertFails(
+      updateDoc(lauraCard(as(SEB)), {
+        ownerStatus: { emoji: '', text: 'jaja' },
+        updatedAt: serverTimestamp(),
+      }),
+    )
+  })
+
+  it("the board's teacher may clear a message, never write one; other teachers can't", async () => {
+    await withLaura()
+    await updateDoc(lauraCard(as(LAURA)), {
+      ownerStatus: hello,
+      updatedAt: serverTimestamp(),
+    })
+    await assertFails(
+      updateDoc(lauraCard(as(TEACHER)), {
+        ownerStatus: { emoji: '', text: 'otro' },
+      }),
+    )
+    await assertFails(
+      updateDoc(lauraCard(as(OTHER_TEACHER)), { ownerStatus: null }),
+    )
+    await assertSucceeds(
+      updateDoc(lauraCard(as(TEACHER)), { ownerStatus: null }),
+    )
+  })
+
+  it('board styles: the teacher picks one, with optional dates and a title line; bad values are refused', async () => {
+    await seed()
+    const ref = doc(as(TEACHER), 'boards', BOARD)
+    await assertSucceeds(
+      updateDoc(ref, {
+        style: 'navidad',
+        ambient: true,
+        accessories: false,
+        tagline: '¡Lo lograron! · Clase de 2026',
+        schedule: { style: 'navidad', from: '2026-12-01', to: '2027-01-06' },
+      }),
+    )
+    await assertSucceeds(updateDoc(ref, { style: null, schedule: null }))
+    await assertFails(updateDoc(ref, { style: 'disco' }))
+    await assertFails(updateDoc(ref, { tagline: 'x'.repeat(61) }))
+    await assertFails(updateDoc(ref, { ambient: 'yes' }))
+    await assertFails(
+      updateDoc(ref, {
+        schedule: { style: 'navidad', from: '2027-01-06', to: '2026-12-01' },
+      }),
+    )
+    await assertFails(
+      updateDoc(ref, {
+        schedule: { style: 'navidad', from: 'diciembre', to: '2027-01-06' },
+      }),
+    )
+    await assertFails(
+      updateDoc(doc(as(LAURA), 'boards', BOARD), { style: 'halloween' }),
+    )
+  })
+})

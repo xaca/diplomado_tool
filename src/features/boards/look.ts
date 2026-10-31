@@ -20,9 +20,10 @@ export function resolveLook(
 ): BoardLook {
   const merged = { ...DEFAULT_LOOK }
   for (const key of Object.keys(DEFAULT_LOOK) as (keyof BoardLook)[]) {
-    const candidate = { ...merged, [key]: board?.[key] }
-    if (boardLookSchema.safeParse(candidate).success)
-      Object.assign(merged, candidate)
+    if (board?.[key] === undefined) continue
+    // The parsed value: optional fields get their defaults, never `undefined`
+    const parsed = boardLookSchema.safeParse({ ...merged, [key]: board[key] })
+    if (parsed.success) Object.assign(merged, parsed.data)
   }
   return merged
 }
