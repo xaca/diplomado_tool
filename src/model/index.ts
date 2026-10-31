@@ -92,6 +92,10 @@ export type UserDoc = {
   status?: StatusMessage | null
   /** M21: my card banner and sticker */
   decor?: Decor | null
+  /** M20: once-only moments already celebrated ("first slide"…), so they never repeat */
+  milestones?: Partial<Record<Milestone, true>>
+  /** M20: "Mensajes de ánimo" on /me (missing = on) */
+  cheer?: boolean
   createdAt: unknown
   lastLoginAt: unknown
 }
@@ -332,6 +336,17 @@ export const decorSchema = z.object({
   sticker: z.enum(STICKERS).nullable(),
 })
 export type Decor = z.infer<typeof decorSchema>
+
+// ---------- encouragement (M20) ----------
+
+/** Once-only moments; keep in sync with validUser() in firestore.rules */
+export const MILESTONES = [
+  'firstSlide',
+  'photo',
+  'firstVote',
+  'firstEmbed',
+] as const
+export type Milestone = (typeof MILESTONES)[number]
 
 // ---------- board styles (M21) ----------
 

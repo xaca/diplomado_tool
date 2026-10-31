@@ -175,6 +175,23 @@ describe('users/{uid}', () => {
     )
   })
 
+  it('encouragement (M20): the switch is a boolean; milestones are known names only', async () => {
+    const ref = doc(as(STUDENT), 'users', STUDENT.uid)
+    await assertSucceeds(setDoc(ref, profile(STUDENT.email)))
+    await assertSucceeds(setDoc(ref, { cheer: false }, { merge: true }))
+    await assertFails(setDoc(ref, { cheer: 'off' }, { merge: true }))
+    await assertSucceeds(
+      setDoc(ref, { milestones: { firstSlide: true } }, { merge: true }),
+    )
+    await assertSucceeds(
+      setDoc(ref, { milestones: { firstVote: true } }, { merge: true }),
+    )
+    await assertFails(
+      setDoc(ref, { milestones: { points: 100 } }, { merge: true }),
+    )
+    await assertFails(setDoc(ref, { milestones: 'all' }, { merge: true }))
+  })
+
   it('signed-out visitors read nothing', async () => {
     await assertFails(
       getDoc(
