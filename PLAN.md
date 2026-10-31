@@ -23,9 +23,9 @@ Status legend: `[ ]` to do · `[x]` done
 - **Loop 15 · M17 Canva** ✅ code done ([report](reports/loop-15-m17.md)): "Insertar contenido" shows the services as tiles (Canva first) with their sharing steps; accepts Canva links, `canva.link`, Canva's **embed code** and Canva sites.
 - **Loop 16 · M18 Emails + attendance** ✅ code done ([report](reports/loop-16-m18.md)): copy / write (BCC) / CSV the emails of everyone or a filtered group; **attendance by date** (Presente · Tarde · Ausente · Excusa), history table with %, CSV; each student sees their own.
 - **Loop 17 · M21 Status message, decorations and board styles** ✅ code done ([report](reports/loop-17-m21.md)): a short profile message ("¡Feliz Halloween! 🎃", "Never quit 💪") for students and teachers; card banner and sticker; board styles **chosen by the teacher** (nothing seasonal by default): nice everyday ones (Pizarra, Cuaderno, Neón…) and seasonal ones: Navidad (snow, lights, Santa hats), Amigo secreto, Halloween, Verano, Feria de las Flores and **Graduación / fin de curso** (caps tossed, birretes), with optional dates.
-- **Loop 18 · M19 Novedades:** the teacher writes announcements per board ("Importante" opens a window); students hear a chime, see them in a 🔔 as "Nuevo" until opened ("Leído"), and remove them; the teacher edits, reminds or deletes them from an "Anuncios" panel and sees who read them.
+- **Loop 18 · M19 Novedades** ✅ code done ([report](reports/loop-18-m19.md)): the teacher writes announcements per board ("Importante" opens a window); students hear a chime, see them in a 🔔 as "Nuevo" until opened ("Leído"), and remove them; the teacher edits, reminds or deletes them from an "Anuncios" panel and sees who read them.
 - **Loop 19 · M20 Feedback + animations:** encouraging messages and small celebrations at milestones, micro-animations on interactions, no rankings, off with "reduce motion".
-- **Next:** D59–D62, D79, D80 answered 2026-10-31. Say "next" to run Loop 18.
+- **Next:** Loop 19 · M20 Feedback + animations: confirm or change **[D56–D58](#decisions-all-answered-)**, then say "next".
 
 **Session 2026-10-30 / 31: new computer + new milestone**
 
@@ -780,6 +780,7 @@ Saved as `reports/loop-NN-<milestone>.md` (committed) and summarized in the chat
 | 15 ✅ | **M17** Canva and the embed options                  | service tiles (Canva first), embed codes with their shape, Worker `/links/canva` (oEmbed: shared? size, title), Canva sites explained, guide, e2e                                                                                 | `npm run worker:deploy` · `npm run update:web` · acceptance test with a real Canva design              |
 | 16 ✅ | **M18** Students' emails and attendance              | Correos dialog (filters, copy, BCC batches, CSV), attendance by date (take, history, table with %, CSV), the student's own view, backup / merge / purge, rules + tests                                                            | `npm run deploy:rules` · `npm run update:web` · acceptance test in class                               |
 | 17 ✅ | **M21** Status message, decorations and board styles | Mi estado (menu + /me), card banner and sticker, teacher clears a message; 14 board styles (8 everyday + 6 seasonal) with garlands, canvas animations, photo accessories, title line and optional dates; rules + tests            | `npm run deploy:rules` · `npm run update:web` · acceptance test                                        |
+| 18 ✅ | **M19** Novedades: the teacher's announcements       | Anuncios panel (publish, edit, remind, delete, read count), students' 🔔 (Nuevo / Leído until removed), window for important ones, chime with mute, backup / purge, rules + tests                                                 | `npm run deploy:rules` · `npm run update:web` · acceptance test in class                               |
 | —     | **M9** More teachers                                 | when you need it                                                                                                                                                                                                                  | —                                                                                                      |
 
 **Starting a loop:** say **"run loop N"** (e.g. "run loop 1"). I'll work through it and come back with the report.
@@ -1272,7 +1273,7 @@ Two teacher tools on the roster the app already has (`boards/{id}/students`, eac
 
 - [ ] **Your turn:** `npm run deploy:rules` · `npm run update:web` · acceptance test in class ([report](reports/loop-16-m18.md))
 
-### M19 — "Novedades": the teacher's announcements and notifications (F26) — Loop 18
+### M19 — "Novedades": the teacher's announcements and notifications (F26) — Loop 18 ✅ code done 2026-10-31
 
 The teacher announces things to the class ("Mañana traigan su prototipo", "Ya pueden insertar diseños de Canva", "Entrega final el viernes"). Students get them as a window and in a 🔔 that keeps them until they remove them. Updated 2026-10-31 with your answers: **announcements are written by the teacher** (no app release notes), per board, with a sound when one arrives.
 
@@ -1289,15 +1290,17 @@ The teacher announces things to the class ("Mañana traigan su prototipo", "Ya p
 
 **How it's built**
 
-- [ ] Model: `boards/{id}/announcements/{announcementId}` (`title`, `body`, `link?`, `important`, `authorEmail`, `authorName`, `createdAt`, `updatedAt`, `remindedAt`); each member's state `boards/{id}/announcementState/{uid}` (`read: { [id]: time }`, `removed: { [id]: time }`), so "new" = never read, or reminded after it was read / removed
-- [ ] Rules: the board's teacher creates / edits / reminds / deletes announcements (sizes, link https or an app path); members read them; each member reads and writes only their own state; the teacher reads all states (for "12 de 17 leyeron")
-- [ ] Pure logic (unit-tested): new / read / removed per announcement, badge count, which ones open the window, chime throttling
-- [ ] UI: teacher's "Anuncios" panel (create, edit, remind, delete, read count); `NotificationBell` in the board header (and the app header on the space / editor pages), `AnnouncementWindow`, browser chime (Web Audio) + "Silenciar"
-- [ ] Backup: announcements included (not the students' read state); purge and student removal clean them up
-- [ ] es / en
-- [ ] Tests: unit, rules (≈ 8), e2e (the teacher announces an important one → a student gets the window and the badge; opening marks it read; the student removes it; the teacher reminds it → new again; the teacher deletes it → gone for everyone; read count)
+- [x] Model: `boards/{id}/announcements/{announcementId}` (`title`, `body`, `link?`, `important`, `authorEmail`, `authorName`, `createdAt`, `updatedAt`, `remindedAt`); each member's state `boards/{id}/announcementState/{uid}` (`read: { [id]: time }`, `removed: { [id]: time }`), so "new" = never read, or reminded after it was read / removed
+- [x] Rules: the board's teacher creates / edits / reminds / deletes announcements (sizes, link https or an app path); members read them; each member reads and writes only their own state; the teacher reads all states (for "12 de 17 leyeron")
+- [x] Pure logic (unit-tested): new / read / removed per announcement, badge count, which ones open the window, chime throttling
+- [x] UI: teacher's "Anuncios" panel (create, edit, remind, delete, read count); `NotificationBell` in the board header (and the app header on the space / editor pages), `AnnouncementWindow`, browser chime (Web Audio) + "Silenciar"
+- [x] Backup: announcements included (not the students' read state); purge and student removal clean them up
+- [x] es / en
+- [x] Tests: unit, rules (≈ 8), e2e (the teacher announces an important one → a student gets the window and the badge; opening marks it read; the student removes it; the teacher reminds it → new again; the teacher deletes it → gone for everyone; read count)
 
 **Free-tier budget:** one listener per board page on the announcements (a handful of docs) and one on my own state; 1 write per "read" / "remove"; a class of 17 reading one announcement = 17 small writes.
+
+- [ ] **Your turn:** `npm run deploy:rules` · `npm run update:web` · acceptance test in class ([report](reports/loop-18-m19.md))
 
 ### M20 — Feedback messages and interaction animations (F27) — Loop 19
 
