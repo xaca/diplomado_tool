@@ -33,6 +33,10 @@ test.describe("Teacher's notes", () => {
     await expect(firstSlide.getByTestId('note')).toContainText(
       'de dónde sale la cifra',
     )
+    // The note shows from the local cache before the save is confirmed: wait for the form to close
+    await expect(
+      firstSlide.getByRole('textbox', { name: 'Anotación' }),
+    ).toHaveCount(0)
 
     // Edit it
     await firstSlide.getByRole('button', { name: 'Editar anotación' }).click()

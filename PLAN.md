@@ -21,11 +21,11 @@ Status legend: `[ ]` to do · `[x]` done
 **Planned 2026-10-31 (proposed ⏳, not started): [M17](#m17--canva-and-the-embed-options-f23--loop-15--code-done-2026-10-31)–[M21](#m21--status-profile-decorations-and-board-styles-f28f30--loop-17)**
 
 - **Loop 15 · M17 Canva** ✅ code done ([report](reports/loop-15-m17.md)): "Insertar contenido" shows the services as tiles (Canva first) with their sharing steps; accepts Canva links, `canva.link`, Canva's **embed code** and Canva sites.
-- **Loop 16 · M18 Emails + attendance:** copy / write (BCC) / CSV the emails of everyone or a filtered group; **attendance by date** (Presente · Tarde · Ausente · Excusa), history table with %, CSV; each student sees their own.
+- **Loop 16 · M18 Emails + attendance** ✅ code done ([report](reports/loop-16-m18.md)): copy / write (BCC) / CSV the emails of everyone or a filtered group; **attendance by date** (Presente · Tarde · Ausente · Excusa), history table with %, CSV; each student sees their own.
 - **Loop 17 · M21 Status, decorations and board styles:** a status ("🛠 Prototipando", "🙋 Necesito ayuda") with expiry for students and teachers; card banner, sticker and seasonal accessories; one-click board styles (Pizarra, Cuaderno, Neón…) and seasonal ones, **Navidad** first (snow, lights, Santa hats), with dates so it switches on and off by itself.
 - **Loop 18 · M19 Novedades:** a modal announcing new features (and teacher announcements) + a 🔔 with summaries that stay until the student clears them.
 - **Loop 19 · M20 Feedback + animations:** encouraging messages and small celebrations at milestones, micro-animations on interactions, no rankings, off with "reduce motion".
-- **Next:** confirm or change **[D56–D77](#decisions-all-answered-)** (D63–D68 for Loop 16), then say "run loop 16".
+- **Next:** confirm or change **[D56–D62, D69–D77](#decisions-all-answered-)** (D70–D77 for Loop 17), then say "run loop 17".
 
 **Session 2026-10-30 / 31: new computer + new milestone**
 
@@ -778,6 +778,7 @@ Saved as `reports/loop-NN-<milestone>.md` (committed) and summarized in the chat
 | 13 ✅ | **M15** Teacher edits students' slides    | teacher opens the editor on any slide, version kept before the first change, "Editada por el docente" + compare / restore, edit lock, Worker + rules for teacher uploads, e2e                                                     | answer D42–D47 · `npm run worker:deploy` · `npm run deploy:rules` · `npm run deploy` · acceptance test |
 | 14 ✅ | **M16** Teacher's class tools             | shared class clock (activity / break) on the board doc, focus view, student banners, polls in spaces (+ presenter results), "Lista para presentar" + filters + "Presentar listos", break screen with random Lottie, rules + tests | answer D48–D54 · approve the animation set · `npm run deploy:all` · acceptance test in class           |
 | 15 ✅ | **M17** Canva and the embed options       | service tiles (Canva first), embed codes with their shape, Worker `/links/canva` (oEmbed: shared? size, title), Canva sites explained, guide, e2e                                                                                 | `npm run worker:deploy` · `npm run update:web` · acceptance test with a real Canva design              |
+| 16 ✅ | **M18** Students' emails and attendance   | Correos dialog (filters, copy, BCC batches, CSV), attendance by date (take, history, table with %, CSV), the student's own view, backup / merge / purge, rules + tests                                                            | `npm run deploy:rules` · `npm run update:web` · acceptance test in class                               |
 | —     | **M9** More teachers                      | when you need it                                                                                                                                                                                                                  | —                                                                                                      |
 
 **Starting a loop:** say **"run loop N"** (e.g. "run loop 1"). I'll work through it and come back with the report.
@@ -1233,7 +1234,7 @@ Canva links already work when pasted (M14), but nothing in the dialog says so: "
 
 **Risks:** Canva changes its embed URLs from time to time (the unit tests list every known shape; the "¿No carga?" fallback stays).
 
-### M18 — Student emails and attendance (F24, F25) — Loop 16
+### M18 — Student emails and attendance (F24, F25) — Loop 16 ✅ code done 2026-10-31
 
 Two teacher tools on the roster the app already has (`boards/{id}/students`, each with its emails and group).
 
@@ -1256,17 +1257,19 @@ Two teacher tools on the roster the app already has (`boards/{id}/students`, eac
 
 **How it's built**
 
-- [ ] Model: `boards/{id}/attendance/{yyyy-mm-dd}` (`date`, `topic`, `marks: { [studentId]: { status, note? } }`, `takenBy`, `updatedAt`) — one doc per class date; `boards/{id}/attendanceByStudent/{studentId}` (`dates: { [date]: status }`) for the student's own view, written in the same batch
-- [ ] Rules: attendance docs board teacher only (status enum, note ≤ 200, date format); `attendanceByStudent/{studentId}` readable by that student (member doc check), writable by the teacher only
-- [ ] Pure logic (unit-tested): email list from the filters (dedupe, one per person), `mailto:` batching, CSV escaping, attendance % and counts
-- [ ] UI: `EmailsDialog`, `AttendancePage` (`/teacher/boards/:id/attendance`, date list + take / edit + table), student's own attendance on the space page
-- [ ] Backup / restore: attendance included; student removal / purge deletes their marks
-- [ ] es / en; privacy page: attendance is stored and who sees it
-- [ ] Tests: unit, rules (≈ 10: teacher only, student reads only their own summary, other board's teacher refused), e2e (copy emails of a group; take attendance, "Todos presentes", mark one late, see it in the table and as that student; CSV)
+- [x] Model: `boards/{id}/attendance/{yyyy-mm-dd}` (`date`, `topic`, `marks: { [studentId]: { status, note? } }`, `takenBy`, `updatedAt`) — one doc per class date; `boards/{id}/attendanceByStudent/{studentId}` (`dates: { [date]: status }`) for the student's own view, written in the same batch
+- [x] Rules: attendance docs board teacher only (date id format, topic ≤ 120, ≤ 500 marks, signed by the teacher, server time; each mark's state and note ≤ 200 are checked by the app, since rules can't loop over a map); `attendanceByStudent/{studentId}` readable by that student (member doc check) and the teacher, writable by the teacher only
+- [x] Pure logic (unit-tested): email list from the filters (dedupe, one per person), `mailto:` batching, CSV escaping, attendance % and counts
+- [x] UI: `EmailsDialog`, `AttendancePage` (`/teacher/boards/:id/attendance`, date list + take / edit + table), student's own attendance on the space page
+- [x] Backup / restore: attendance included; student removal / purge deletes their marks
+- [x] es / en; privacy page: attendance is stored and who sees it
+- [x] Tests: unit, rules (≈ 10: teacher only, student reads only their own summary, other board's teacher refused), e2e (copy emails of a group; take attendance, "Todos presentes", mark one late, see it in the table and as that student; CSV)
 
 **Free-tier budget:** one class = 1 + N writes (≈ 20 for 17 students); the table reads one doc per date (≈ 30 per term); emails are local (no reads beyond the roster).
 
 **Risks:** `mailto:` length limits differ per mail app (batches of ~40 addresses; "Copiar" always works); emails are personal data (Ley 1581): only the board's teachers see them, as today.
+
+- [ ] **Your turn:** `npm run deploy:rules` · `npm run update:web` · acceptance test in class ([report](reports/loop-16-m18.md))
 
 ### M19 — "Novedades": announcements and notifications (F26) — Loop 18
 
@@ -1570,7 +1573,7 @@ Full review of the plan for consistency, free-tier limits and security, done bef
 
 ## Decisions (all answered ✅)
 
-D12–D17 (class participation, M10) are **proposed** (⏳): confirm or change them before Loop 8. **D55 confirmed 2026-10-31 (Loop 15). D56–D77 (M18–M21) are proposed (⏳)**: confirm or change them before Loop 16. D18–D54 confirmed 2026-10-31. D18–D24 (M11) and D25–D35 (M12, M13) confirmed 2026-10-31. D18–D24 (M11) confirmed 2026-10-31.
+D12–D17 (class participation, M10) are **proposed** (⏳): confirm or change them before Loop 8. **D55 confirmed 2026-10-31 (Loop 15); D63–D68 taken as proposed in Loop 16 ("next"). D56–D62 and D69–D77 are proposed (⏳)**: confirm or change them before Loop 17. D18–D54 confirmed 2026-10-31. D18–D24 (M11) and D25–D35 (M12, M13) confirmed 2026-10-31. D18–D24 (M11) confirmed 2026-10-31.
 
 | #   | Decision                | Answer                                                                                                                                                                                                                                                                                                                          |
 | --- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -1641,12 +1644,12 @@ D12–D17 (class participation, M10) are **proposed** (⏳): confirm or change t
 | D60 | Teacher announcements   | ⏳ yes: the teacher writes short messages to their board; "importante" ones open the modal, all go to the bell                                                                                                                                                                                                                  |
 | D61 | Modal                   | ⏳ once per news item, at most one window per visit (several items as pages), "Probar" button to the feature, "Ver más tarde" keeps it in the bell                                                                                                                                                                              |
 | D62 | Notifications           | ⏳ bell with unread count in the header; summaries stay until the user clears them (per item / all); reading only removes the badge                                                                                                                                                                                             |
-| D63 | Which email             | ⏳ one per student: the one they signed in with last, else the first on the roster; option "todos sus correos"                                                                                                                                                                                                                  |
-| D64 | Sending email           | ⏳ the app never sends email: copy, `mailto:` with BCC in batches, CSV; recipients filtered by group / stage / ready / absent on a date / by hand                                                                                                                                                                               |
-| D65 | Attendance states       | ⏳ Presente · Tarde · Ausente · Excusa (+ optional note), "Todos presentes" to start, optional class topic                                                                                                                                                                                                                      |
-| D66 | Who takes attendance    | ⏳ the board's teachers in v1; student self check-in with a code on the projector → Later                                                                                                                                                                                                                                       |
-| D67 | Students see            | ⏳ only their own attendance (dates and states) on their space page; never classmates'                                                                                                                                                                                                                                          |
-| D68 | Attendance records      | ⏳ one doc per class date; history list + students × dates table with %; past dates editable; CSV export; included in the board backup                                                                                                                                                                                          |
+| D63 | Which email             | ✅ one per student: the one they signed in with last, else the first on the roster; option "todos sus correos"                                                                                                                                                                                                                  |
+| D64 | Sending email           | ✅ the app never sends email: copy, `mailto:` with BCC in batches, CSV; recipients filtered by group / stage / ready / absent on a date / by hand                                                                                                                                                                               |
+| D65 | Attendance states       | ✅ Presente · Tarde · Ausente · Excusa (+ optional note), "Todos presentes" to start, optional class topic                                                                                                                                                                                                                      |
+| D66 | Who takes attendance    | ✅ the board's teachers in v1; student self check-in with a code on the projector → Later                                                                                                                                                                                                                                       |
+| D67 | Students see            | ✅ only their own attendance (dates and states) on their space page; never classmates'                                                                                                                                                                                                                                          |
+| D68 | Attendance records      | ✅ one doc per class date; history list + students × dates table with %; past dates editable; CSV export; included in the board backup                                                                                                                                                                                          |
 | D69 | Order                   | ⏳ Loop 15 (M17 Canva) → Loop 16 (M18 emails + attendance) → **Loop 17 (M21 status, decorations, styles: Navidad ready before December 1)** → Loop 18 (M19 Novedades, which can announce M17–M21) → Loop 19 (M20 feedback + animations, last because it touches every screen); Loop 8 (M10) after, unless you prefer it earlier |
 | D70 | Status                  | ⏳ emoji + text ≤ 60 (no links), presets + custom, expiry 1 h / today / this week / never; for students and teachers; shown on cards, space page, user menu and (teacher) the board header                                                                                                                                      |
 | D71 | Status moderation       | ⏳ the board's teacher can clear a student's status on their board                                                                                                                                                                                                                                                              |
