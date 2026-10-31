@@ -10,13 +10,19 @@ Status legend: `[ ]` to do · `[x]` done
 
 - **Phase 1 — Template setup:** ✅ done (2026-10-26), commit `8f20758`
 - **Plan review (rev. 6, 2026-10-26):** ✅ consistency + free-tier review done, see [Review findings](#review-findings-rev-6)
-- **Phase 2 — "Padlet for PBL" app:** 🚧 in progress — Google sign-in enabled · M4 Steps 1–6 done (`/health` → `config: ok`) · service account key ready · **M1 ✅** · **Loop 1 (M2) ✅** ([report](reports/loop-01-m2.md)) · **Loop 2 (M3) ✅** ([report](reports/loop-02-m3.md)) · **Loop 3 (M4) ✅ code done** ([report](reports/loop-03-m4.md)) · **Loop 4 (M5) ✅ code done** ([report](reports/loop-04-m5.md)) · **Loop 5 (M6) ✅ code done** ([report](reports/loop-05-m6.md)) · **Loop 6 (M7) ✅ code done** ([report](reports/loop-06-m7.md)) · **Loop 7 (M8) ✅ code done** ([report](reports/loop-07-m8.md)) · **Extras ✅ code done** (2026-10-29): profile page `/me`, teacher's notes on slides · **Loop 8 (M10) Class participation: 📝 planned**, decisions [D12–D17](#decisions-all-answered-) waiting for you — **ready to launch**, waiting for you: `npm run worker:deploy` + `npm run deploy:rules` (covers M2–M5) + one real upload, **before 2026-11-25** (Worker live at `https://media-api.paradisserossa.workers.dev`)
+- **Phase 2 — "Padlet for PBL" app:** 🚧 in progress — Google sign-in enabled · M4 Steps 1–6 done (`/health` → `config: ok`) · service account key ready · **M1 ✅** · **Loop 1 (M2) ✅** ([report](reports/loop-01-m2.md)) · **Loop 2 (M3) ✅** ([report](reports/loop-02-m3.md)) · **Loop 3 (M4) ✅ code done** ([report](reports/loop-03-m4.md)) · **Loop 4 (M5) ✅ code done** ([report](reports/loop-04-m5.md)) · **Loop 5 (M6) ✅ code done** ([report](reports/loop-05-m6.md)) · **Loop 6 (M7) ✅ code done** ([report](reports/loop-06-m7.md)) · **Loop 7 (M8) ✅ code done** ([report](reports/loop-07-m8.md)) · **Extras ✅ code done** (2026-10-29): profile page `/me`, teacher's notes on slides · **Loop 8 (M10) Class participation: 📝 planned**, decisions [D12–D17](#decisions-all-answered-) waiting for you · **Loop 9 (M11) Profile photo & Design Thinking stage: 📝 planned** (2026-10-31), decisions [D18–D24](#decisions-all-answered-) waiting for you — **ready to launch**, waiting for you: `npm run worker:deploy` + `npm run deploy:rules` (covers M2–M5) + one real upload, **before 2026-11-25** (Worker live at `https://media-api.paradisserossa.workers.dev`)
 
-## ▶ Resume here (last session: 2026-10-29)
+## ▶ Resume here (last session: 2026-10-31)
 
-**Where we are:** M1–M8 code done and tested. Today two extras were built and one new milestone was planned. Nothing from today is deployed or pushed.
+**Where we are:** M1–M8 + extras code done and tested. Two milestones are planned and waiting for your decisions: **M10 Class participation** (D12–D17) and **M11 Profile photo & Design Thinking stage** (D18–D24).
 
-**Built today (on `main`, all tests green)**
+**Session 2026-10-30 / 31: new computer + new milestone**
+
+- New laptop set up: Java 21 (`brew install openjdk@21`, on `PATH` in `~/.zshrc`), `.env.local`, `services/media-api/.dev.vars`, `.env.admin.local`, `secrets/service-account.json`, `wrangler login`. Firebase CLI: `firebase login:add` + `firebase login:use paradisserossa@gmail.com` (the project owner). Gotchas: Cloudinary shows the API secret as `**********` until you click the eye (copying the mask gives a 401); never put the Cloudinary key / secret in `.env.local` (every `VITE_*` value ends up in the browser).
+- Checks on the new machine: unit 71/71 · rules 68/68 · Worker 34/34 · admin CLI ✅ · Worker integration ✅ · e2e 48/48 (one m5 test timed out in the full run, passed alone) · local and production `/health` → `config: ok` · `admin -- usage` reads production.
+- Profile `/me` tried in the app ✅. Planned **[M11](#m11--profile-photo--design-thinking-stage-f13-f14--loop-9)**: upload your own profile photo, and a **stage ring** around the photo (like LinkedIn's #OPENTOWORK) showing where each student is in the Design Thinking process, or **"Vitrineando"** (only here to learn, no project).
+
+**Built 2026-10-29 (on `main`, all tests green)**
 
 | Commit    | What                                                                                                                                                                                                                                                       |
 | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -41,6 +47,12 @@ Checks at the end of the session: rules tests 68/68 · unit 71/71 · admin CLI �
 - Stored in its own `classes` collection: **all existing features stay as they are** (see "What does NOT change" in M10).
 - **To start:** confirm or change decisions **[D12–D17](#decisions-all-answered-)** (format, limits, visibility, teacher powers, backup, location), then say **"run loop 8"**.
 
+**Also planned: Loop 9 = [M11 Profile photo & Design Thinking stage](#m11--profile-photo--design-thinking-stage-f13-f14--loop-9)** (not started)
+
+- **Photo:** on `/me`, choose Google photo, **an uploaded photo** (square crop, stored once per person in Cloudinary) or initials.
+- **Stage ring:** each student marks their stage **per board**: Empatizar · Definir · Idear · Prototipar · Evaluar, or **Vitrineando** (here to learn, no project). A colored ring with the stage name curved around the photo, like #OPENTOWORK, on cards, the space page, the presenter and class contributions. The teacher sees how many students are in each stage and can filter the dashboard.
+- **To start:** confirm or change **[D18–D24](#decisions-all-answered-)**, then say **"run loop 9"**. D24 proposes running it **before** Loop 8 (it's smaller, and class contributions would show the ring from day one).
+
 ---
 
 # Phase 2 — Product
@@ -61,6 +73,8 @@ A Padlet-style board where **each student owns one space** and documents their p
 | F10 | **Profile** (`/me`): display name, photo on cards, language ✅                                                                                             | everyone                                             |
 | F11 | **Teacher's notes** on each slide, private to the teacher and the student ✅                                                                               | teacher writes · the student reads                   |
 | F12 | **Class participation**: per class, the teacher opens **1–5 participation slides**; students add, edit and delete their own contributions (text + picture) | teacher creates and moderates · students participate |
+| F13 | **Profile photo**: Google photo, **an uploaded photo** or initials                                                                                         | everyone                                             |
+| F14 | **Design Thinking stage**: a ring around the student's photo with their current stage, or "Vitrineando"; stage summary + filter on the dashboard           | the student sets it · the teacher sees and can set   |
 
 Students can see their classmates' spaces **read-only**. **Class participation** (F12) is the one place where everybody writes together, on **separate slides** that never touch the students' own spaces.
 
@@ -159,7 +173,9 @@ joinCodes/{code}                                invite code → boardId
 ```ts
 users/{uid}
 { displayName, email, photoURL, locale: 'es' | 'en', createdAt, lastLoginAt,   // Google fields: refreshed on every login
-  profileName?, showPhoto? }                                                      // set on /me; follow the student to their cards
+  profileName?, showPhoto?,                                                       // set on /me; follow the student to their cards
+  photoSource?: 'google' | 'upload' | 'initials',  // M11, replaces showPhoto (showPhoto false → 'initials')
+  avatar?: { publicId, version } | null }          // M11: the uploaded photo, one per person (not per board)
 
 staffEmails/{email}                       // lowercased
 { email, displayName, role: 'admin' | 'teacher', addedAt }   // exists → this email is a teacher
@@ -171,7 +187,11 @@ boards/{boardId}
   status: 'active' | 'locked' | 'archived',
   lastActivityAt,                         // any edit in the board (throttled) → auto-archive
   archiveAfterDays: 90,                   // configurable per board
+  stages?: StageDef[] | null,             // M11: missing = Design Thinking defaults (D21)
   background, createdAt, updatedAt, archivedAt? }
+
+StageDef = { id, label?, color, kind: 'stage' | 'browsing' }   // default ids: empathize · define · ideate · prototype · test · browsing
+                                                               // default labels come from i18n; custom stages carry `label`
 
 boards/{boardId}/students/{studentId}
 { displayName, emails: string[], group?,
@@ -189,6 +209,8 @@ boards/{boardId}/spaces/{studentId}       // ← what the dashboard card shows
   title, summary, color,
   cover?: ImageRef,
   slideOrder: string[], slideCount,
+  stage?: string | null,                  // M11: a StageDef id of this board; null = no ring
+  stageUpdatedAt?, stageSetBy?: 'student' | 'teacher',
   updatedAt, createdAt }
 
 boards/{boardId}/spaces/{studentId}/slides/{slideId}
@@ -297,6 +319,8 @@ joinCodes/{code}
 
 **Class participation images (M10):** the app calls `POST /uploads/sign` with `{ boardId, scope: 'class' }`. The Worker allows **any member or board teacher** of a writable board and signs `public_id = pbl/{env}/{boardId}/class/{assetId}`. The registry entry has `kind: 'class'` and `ownerUid`. Same browser resize (max 2560 px, WebP) and same 10 MB limit as slides.
 
+**Profile photos (M11):** `POST /uploads/sign` with `{ scope: 'avatar' }` (no board). The Worker allows a signed-in user who is **staff or a member of at least one board** (checked with the caller's token), so a random Google account can't upload. It signs **one fixed** `public_id = pbl/{env}/users/{uid}/avatar` with `overwrite: true`: a new photo replaces the old one, so there are no orphans and no registry entry; the `version` in the URL busts the CDN cache. The browser crops a square and resizes to 512 px WebP (≤ 2 MB). `POST /avatar/delete` removes it ("Quitar foto").
+
 ### Folder structure in Cloudinary
 
 ```
@@ -306,18 +330,20 @@ pbl/
     {boardId}/
       {studentId}/{assetId}               ← public_id ↔ registry id (1:1)
       class/{assetId}                     ← class participation images (M10)
+    users/{uid}/avatar                    ← uploaded profile photo, one per person (M11)
 ```
 
 Tags: `board_{boardId}`, `student_{studentId}`, `env_prod`.
 
 ### Delivery (resize by URL)
 
-| Where                    | Transformation                     | Typical size |
-| ------------------------ | ---------------------------------- | ------------ |
-| Dashboard card cover     | `f_auto,q_auto,c_fill,w_400,h_225` | ~15 KB       |
-| Contribution card        | `f_auto,q_auto,c_limit,w_800`      | ~50 KB       |
-| Editor / viewer          | `f_auto,q_auto,c_limit,w_1280`     | ~100 KB      |
-| Full-screen presentation | `f_auto,q_auto,c_limit,w_1920`     | ~200 KB      |
+| Where                    | Transformation                               | Typical size |
+| ------------------------ | -------------------------------------------- | ------------ |
+| Dashboard card cover     | `f_auto,q_auto,c_fill,w_400,h_225`           | ~15 KB       |
+| Contribution card        | `f_auto,q_auto,c_limit,w_800`                | ~50 KB       |
+| Avatar (cards / large)   | `f_auto,q_auto,c_fill,g_face,w_96` / `w_256` | ~4 / ~15 KB  |
+| Editor / viewer          | `f_auto,q_auto,c_limit,w_1280`               | ~100 KB      |
+| Full-screen presentation | `f_auto,q_auto,c_limit,w_1920`               | ~200 KB      |
 
 `lib/cloudinary.ts` builds the URLs. No Cloudinary SDK is needed in the browser.
 
@@ -661,18 +687,19 @@ Saved as `reports/loop-NN-<milestone>.md` (committed) and summarized in the chat
 
 ### Loop roadmap
 
-| Loop | Milestone                                 | I build                                                                                                                                                                                              | You do at the end                                                                            |
-| ---- | ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| 0 ✅ | **M1 finish**                             | —                                                                                                                                                                                                    | `npm run admin -- setup --email paradisserossa@gmail.com` · log in as teacher and as student |
-| 1 ✅ | **Infra + M2** Boards, students & joining | emulator seed, Playwright setup, `npm test`; teacher dashboard, create board, students table, JSON import + quick add, auto-join, invite link, merge, rules + tests                                  | `npm run deploy:rules` (rules + indexes) · acceptance test                                   |
-| 2 ✅ | **M3** Dashboard                          | Padlet-like board view, live cards, space profile (no cover yet)                                                                                                                                     | `npm run deploy:rules` · acceptance test                                                     |
-| 3 ✅ | **M4** Uploads (Worker Steps 7–12)        | token check, permission check, signed uploads, cover image, asset registry, rules                                                                                                                    | `npx wrangler deploy` · upload a real image · `npm run deploy:rules`                         |
-| 4 ✅ | **M5** Excalidraw slides                  | editor, autosave (throttled), images via Cloudinary, viewer, self-hosted fonts                                                                                                                       | `npm run deploy:rules` · acceptance test                                                     |
-| 5 ✅ | **M6** Presentation                       | full screen, keyboard, next student, GSAP transitions                                                                                                                                                | acceptance test                                                                              |
-| 6 ✅ | **M7** Lifecycle & backups                | archived projects, cleanup, purge, JSON backup/restore, CLI commands, Worker delete/usage                                                                                                            | `npx wrangler deploy` · `npm run deploy:rules` · try cleanup on a test board                 |
-| 7 ✅ | **M8** Hardening & launch                 | App Check code, final rules review, privacy notice, metadata                                                                                                                                         | create a reCAPTCHA v3 key + register App Check (console) · `npm run deploy` (hosting)        |
-| 8 📝 | **M10** Class participation               | classes with 1–5 participation slides, contribution cards (text + picture), own edit / delete, teacher moderation, open / close, present, Worker `scope: 'class'`, orphans, backup v2, rules + tests | answer D12–D17 · `npm run worker:deploy` · `npm run deploy:rules` · acceptance test          |
-| —    | **M9** More teachers                      | when you need it                                                                                                                                                                                     | —                                                                                            |
+| Loop | Milestone                                 | I build                                                                                                                                                                                              | You do at the end                                                                                      |
+| ---- | ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| 0 ✅ | **M1 finish**                             | —                                                                                                                                                                                                    | `npm run admin -- setup --email paradisserossa@gmail.com` · log in as teacher and as student           |
+| 1 ✅ | **Infra + M2** Boards, students & joining | emulator seed, Playwright setup, `npm test`; teacher dashboard, create board, students table, JSON import + quick add, auto-join, invite link, merge, rules + tests                                  | `npm run deploy:rules` (rules + indexes) · acceptance test                                             |
+| 2 ✅ | **M3** Dashboard                          | Padlet-like board view, live cards, space profile (no cover yet)                                                                                                                                     | `npm run deploy:rules` · acceptance test                                                               |
+| 3 ✅ | **M4** Uploads (Worker Steps 7–12)        | token check, permission check, signed uploads, cover image, asset registry, rules                                                                                                                    | `npx wrangler deploy` · upload a real image · `npm run deploy:rules`                                   |
+| 4 ✅ | **M5** Excalidraw slides                  | editor, autosave (throttled), images via Cloudinary, viewer, self-hosted fonts                                                                                                                       | `npm run deploy:rules` · acceptance test                                                               |
+| 5 ✅ | **M6** Presentation                       | full screen, keyboard, next student, GSAP transitions                                                                                                                                                | acceptance test                                                                                        |
+| 6 ✅ | **M7** Lifecycle & backups                | archived projects, cleanup, purge, JSON backup/restore, CLI commands, Worker delete/usage                                                                                                            | `npx wrangler deploy` · `npm run deploy:rules` · try cleanup on a test board                           |
+| 7 ✅ | **M8** Hardening & launch                 | App Check code, final rules review, privacy notice, metadata                                                                                                                                         | create a reCAPTCHA v3 key + register App Check (console) · `npm run deploy` (hosting)                  |
+| 8 📝 | **M10** Class participation               | classes with 1–5 participation slides, contribution cards (text + picture), own edit / delete, teacher moderation, open / close, present, Worker `scope: 'class'`, orphans, backup v2, rules + tests | answer D12–D17 · `npm run worker:deploy` · `npm run deploy:rules` · acceptance test                    |
+| 9 📝 | **M11** Profile photo & DT stage          | uploaded profile photo (crop, Worker `scope: 'avatar'`), stage ring on every avatar, stage picker, board stage list (teacher), dashboard summary + filter, rules + tests                             | answer D18–D24 · `npm run worker:deploy` · `npm run deploy:rules` · `npm run deploy` · acceptance test |
+| —    | **M9** More teachers                      | when you need it                                                                                                                                                                                     | —                                                                                                      |
 
 **Starting a loop:** say **"run loop N"** (e.g. "run loop 1"). I'll work through it and come back with the report.
 
@@ -825,6 +852,49 @@ A shared board **per class session** where the teacher and the students interact
 Two big classes on the same day still fit; the usage meter (M7) shows Firestore and Cloudinary use.
 
 **Risks:** reads grow with "contributions × viewers" (mitigated by listening only to the slide on screen and the 3-per-slide cap); moderation is manual (the teacher closes the class or deletes cards).
+
+### M11 — Profile photo & Design Thinking stage (F13, F14) — Loop 9
+
+The diplomado is a **Design Thinking** course. Each student shows **where they are in the process** with a ring around their photo, like LinkedIn's #OPENTOWORK frame, and can use **their own photo** instead of the Google one.
+
+**What people see**
+
+- **`/me` → "Foto":** three options: **Google photo** · **Uploaded photo** ("Subir foto": pick a file, drag / zoom a square crop, save) · **Initials**. "Quitar foto" deletes the uploaded one. The preview shows the photo with the current ring.
+- **The stage ring:** a colored ring around the avatar. On large avatars (space page, `/me`, presenter, ≥ 72 px) the stage name is written **along the lower arc** of the ring, like #OPENTOWORK: **#EMPATIZANDO · #DEFINIENDO · #IDEANDO · #PROTOTIPANDO · #EVALUANDO**, and **#VITRINEANDO** for students who are only here to learn or don't have a project yet (dashed ring, eye icon, so it never looks like "behind"). On small avatars (cards, contributions, user menu) only the colored ring plus a tooltip. No stage = no ring, exactly as today.
+- **Choosing the stage (student):** a stage picker in the space profile ("¿En qué etapa vas?") and by clicking the ring on their own card. The stage is **per board** (per project), so the same person can be in different stages in different courses.
+- **Teacher:** sees a **stage summary** on the board header (e.g. "Empatizando 6 · Definiendo 9 · … · Vitrineando 2 · Sin etapa 4"); clicking a stage **filters the dashboard**. Can set a student's stage (marked "puesto por el docente"). In board settings, can **rename, recolor, reorder, add or hide stages** (up to 8, plus "Vitrineando"); a new board starts with the Design Thinking stages.
+- **Where the ring appears:** dashboard cards, space page, presenter (next to the student's name), user menu, `/me`, and class contributions (M10) when that loop exists.
+
+**What does NOT change**
+
+- Name, photo and language on `/me` work as today; students who never choose a stage see exactly the current cards. `showPhoto` keeps working (read as `photoSource`) so no data migration is needed.
+- Board images, the asset registry, orphan detection and purge are untouched: the avatar lives outside the boards, one fixed file per person.
+
+**How it's built**
+
+- [ ] Model + Zod: `photoSource`, `avatar`, `StageDef`, `DEFAULT_STAGES` (Design Thinking + browsing, colors), `space.stage` / `stageUpdatedAt` / `stageSetBy`; helper `cardPhoto(user)` covers the three sources
+- [ ] Worker: `scope: 'avatar'` in `POST /uploads/sign` (staff or member of ≥ 1 board) → `pbl/{env}/users/{uid}/avatar`, overwrite; `POST /avatar/delete`; Worker tests + integration test
+- [ ] Profile: photo source picker, square crop (canvas, no new library) + upload, remove; saving updates `ownerPhotoURL` on the person's writable boards (same path as the name today)
+- [ ] `StageAvatar` component: SVG ring, curved label (`textPath`) on large sizes, dashed style for browsing, tooltip + `aria-label` ("Etapa: Ideando"), respects reduced motion; used everywhere avatars appear
+- [ ] Stage picker (space profile + own card); teacher's per-student picker; board settings editor for the stage list (default DT)
+- [ ] Dashboard: stage summary chips with counts + filter (no extra reads: the counts come from the cards already loaded)
+- [ ] Rules: the space owner may change only `stage` / `stageUpdatedAt` / `stageSetBy == 'student'` (on writable boards); the board teacher may set them with `stageSetBy == 'teacher'`; `stage` must be null or a known id (≤ 40 chars); `users/{uid}` owner may set `photoSource` / `avatar` (publicId must be `pbl/*/users/{uid}/avatar`); `boards.stages` teacher only, ≤ 9 entries
+- [ ] Backup: `stage` fields go with the spaces (optional fields, so version 1 files still restore); `boards.stages` included; avatars are not part of a board backup (they belong to the person)
+- [ ] Admin CLI: `usage` counts avatars; `cleanup --avatars [--dry-run]` deletes avatars of users that no longer have `photoSource: 'upload'`
+- [ ] Privacy notice: uploaded photo and stage are visible to the board
+- [ ] es / en texts; mobile layout
+- [ ] Tests: unit (stage defaults, label / color lookup, `cardPhoto`, crop math), rules (≈ 12: own stage only, teacher sets any, unknown id refused, locked board refused, avatar publicId of another uid refused), Worker (avatar scope allowed / refused for a non-member, fixed public_id, delete), e2e (upload + crop + card shows it; switch to initials; student picks "Ideando" and the ring + curved label appear; "Vitrineando" style; teacher filter by stage; teacher renames a stage; locked board can't change stage) + the full existing suite
+- [ ] **Your turn:** `npm run worker:deploy` · `npm run deploy:rules` · `npm run deploy` · acceptance test (upload your photo, set a stage as a student, filter as the teacher)
+
+**Free-tier budget (40 students)**
+
+| What                                                                        | Estimate                         | Limit      |
+| --------------------------------------------------------------------------- | -------------------------------- | ---------- |
+| Cloudinary: 40 avatars × ~60 KB, ~4–15 KB per view                          | ~2.4 MB stored, < 0.2 GB / month | 25 credits |
+| Writes: a stage change = 1 write; a photo change = 1 + one per active board | a few dozen per week             | 20K / day  |
+| Reads: none extra (stage and photo URL travel on the card already loaded)   | 0                                | 50K / day  |
+
+**Risks:** students may forget to update their stage (the teacher can set it, and `stageUpdatedAt` shows "hace 3 semanas"); a stage list edited mid-course leaves students on a hidden stage (shown as "Sin etapa" until they pick again, the value is kept).
 
 ### M9 — More teachers (when needed)
 
@@ -1039,31 +1109,38 @@ Full review of the plan for consistency, free-tier limits and security, done bef
 
 ## Decisions (all answered ✅)
 
-D12–D17 (class participation, M10) are **proposed** (⏳): confirm or change them before Loop 8.
+D12–D17 (class participation, M10) and D18–D24 (profile photo & stage, M11) are **proposed** (⏳): confirm or change them before Loop 8 / Loop 9.
 
-| #   | Decision                | Answer                                                                                                                                                             |
-| --- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| D1  | Image storage           | **Cloudinary**, signed uploads via the media-api                                                                                                                   |
-| D2  | Slide editor            | **Excalidraw** canvas per slide (MIT, free, no key, no watermark)                                                                                                  |
-| D3  | Text                    | **Excalidraw's text tool** (font, size, color, align; no inline bold/italic)                                                                                       |
-| D4  | Teacher / admin roles   | **Recognized by email**: `staffEmails/{email}` (you = admin via CLI); everyone else signs in as a student                                                          |
-| D5  | Classmates' spaces      | **Visible read-only**                                                                                                                                              |
-| D6  | Joining a board         | **A: teacher adds students (auto-join) + B: invite link**                                                                                                          |
-| D7  | Language                | **Spanish (default) + English**                                                                                                                                    |
-| D8  | Import / export         | **JSON** + quick-add paste box                                                                                                                                     |
-| D9  | Students with 2 emails  | **Person + email index**                                                                                                                                           |
-| D10 | First admin             | **Your personal Gmail**, via `npm run admin -- setup` from this console                                                                                            |
-| D11 | Removing old data       | **Teacher dashboard (Storage page) + local CLI**, via the media-api                                                                                                |
-| Q1  | Free canvas             | **Excalidraw** (the whole project must be free, academic use)                                                                                                      |
-| Q2  | Cloudflare Worker       | **Yes**, built step by step (M4 walkthrough)                                                                                                                       |
-| Q3  | Old boards              | **Auto-move to "Proyectos archivados" after 90 days without use** (configurable); purge is manual, after a backup                                                  |
-| Q4  | Default language        | **Spanish**                                                                                                                                                        |
-| Q5  | Admin email             | **Your personal Gmail**                                                                                                                                            |
-| D12 | ⏳ Participation format | **Proposed:** each participation slide = the teacher's prompt + a grid of contribution cards (not a shared Excalidraw canvas, which would overwrite people's work) |
-| D13 | ⏳ Limits               | **Proposed:** 1–5 slides per class; up to 3 contributions per student per slide; text ≤ 1000 + 1 picture                                                           |
-| D14 | ⏳ Visibility           | **Proposed:** the whole class sees every contribution with the author's name (anonymous mode: Later)                                                               |
-| D15 | ⏳ Teacher powers       | **Proposed:** edit / delete any contribution (marked "editado por el docente"), open / close each class; a removed student's contributions stay                    |
-| D16 | ⏳ Backup               | **Proposed:** classes and contributions are part of the board backup (v2) and restored with it                                                                     |
-| D17 | ⏳ Where it lives       | **Proposed:** a "Clases" section in each board (not a separate board), so members and rules are reused                                                             |
+| #   | Decision                | Answer                                                                                                                                                                 |
+| --- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| D1  | Image storage           | **Cloudinary**, signed uploads via the media-api                                                                                                                       |
+| D2  | Slide editor            | **Excalidraw** canvas per slide (MIT, free, no key, no watermark)                                                                                                      |
+| D3  | Text                    | **Excalidraw's text tool** (font, size, color, align; no inline bold/italic)                                                                                           |
+| D4  | Teacher / admin roles   | **Recognized by email**: `staffEmails/{email}` (you = admin via CLI); everyone else signs in as a student                                                              |
+| D5  | Classmates' spaces      | **Visible read-only**                                                                                                                                                  |
+| D6  | Joining a board         | **A: teacher adds students (auto-join) + B: invite link**                                                                                                              |
+| D7  | Language                | **Spanish (default) + English**                                                                                                                                        |
+| D8  | Import / export         | **JSON** + quick-add paste box                                                                                                                                         |
+| D9  | Students with 2 emails  | **Person + email index**                                                                                                                                               |
+| D10 | First admin             | **Your personal Gmail**, via `npm run admin -- setup` from this console                                                                                                |
+| D11 | Removing old data       | **Teacher dashboard (Storage page) + local CLI**, via the media-api                                                                                                    |
+| Q1  | Free canvas             | **Excalidraw** (the whole project must be free, academic use)                                                                                                          |
+| Q2  | Cloudflare Worker       | **Yes**, built step by step (M4 walkthrough)                                                                                                                           |
+| Q3  | Old boards              | **Auto-move to "Proyectos archivados" after 90 days without use** (configurable); purge is manual, after a backup                                                      |
+| Q4  | Default language        | **Spanish**                                                                                                                                                            |
+| Q5  | Admin email             | **Your personal Gmail**                                                                                                                                                |
+| D12 | ⏳ Participation format | **Proposed:** each participation slide = the teacher's prompt + a grid of contribution cards (not a shared Excalidraw canvas, which would overwrite people's work)     |
+| D13 | ⏳ Limits               | **Proposed:** 1–5 slides per class; up to 3 contributions per student per slide; text ≤ 1000 + 1 picture                                                               |
+| D14 | ⏳ Visibility           | **Proposed:** the whole class sees every contribution with the author's name (anonymous mode: Later)                                                                   |
+| D15 | ⏳ Teacher powers       | **Proposed:** edit / delete any contribution (marked "editado por el docente"), open / close each class; a removed student's contributions stay                        |
+| D16 | ⏳ Backup               | **Proposed:** classes and contributions are part of the board backup (v2) and restored with it                                                                         |
+| D17 | ⏳ Where it lives       | **Proposed:** a "Clases" section in each board (not a separate board), so members and rules are reused                                                                 |
+| D18 | ⏳ Photo options        | **Proposed:** Google photo · uploaded photo · initials (on `/me`); the uploaded photo is cropped square in the browser                                                 |
+| D19 | ⏳ Photo storage        | **Proposed:** one fixed Cloudinary file per person (`users/{uid}/avatar`, overwritten on change), signed by the Worker only for staff or board members                 |
+| D20 | ⏳ Stage scope          | **Proposed:** the stage is **per board** (on the student's space), not per person, because each course is a different project                                          |
+| D21 | ⏳ Stage list           | **Proposed:** default = Design Thinking: Empatizar · Definir · Idear · Prototipar · Evaluar + **Vitrineando** (here to learn / no project); teacher can edit per board |
+| D22 | ⏳ Look                 | **Proposed:** colored ring; on large avatars the label curved along the ring like #OPENTOWORK (#EMPATIZANDO … #VITRINEANDO); Vitrineando = dashed ring + eye icon      |
+| D23 | ⏳ Who sets the stage   | **Proposed:** the student, and the teacher too (marked "puesto por el docente"); teacher gets a summary + filter on the dashboard                                      |
+| D24 | ⏳ Order                | **Proposed:** run **Loop 9 (M11) before Loop 8 (M10)**: smaller, and class contributions then show the photo + ring from the start                                     |
 
 **Next step:** see the Phase 2 status line at the top and the latest loop report.
