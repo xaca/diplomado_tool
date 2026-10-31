@@ -20,14 +20,14 @@ test.describe('Profile', () => {
     await expect(page).toHaveURL(/\/me$/)
 
     await page.getByLabel('Nombre').fill('Lau Gómez')
-    await page.getByRole('switch').click()
+    await page.getByRole('radio', { name: 'Iniciales' }).click()
     await page.getByRole('button', { name: 'Guardar' }).click()
     await expect(page.getByText('Perfil guardado')).toBeVisible()
 
     // Survives a reload (and a new login refreshing the Google fields)
     await page.reload()
     await expect(page.getByLabel('Nombre')).toHaveValue('Lau Gómez')
-    await expect(page.getByRole('switch')).not.toBeChecked()
+    await expect(page.getByRole('radio', { name: 'Iniciales' })).toBeChecked()
 
     await page.getByRole('button', { name: 'laura@gmail.com' }).click()
     await expect(page.getByRole('menu')).toContainText('Lau Gómez')

@@ -25,6 +25,7 @@ export async function fakeMediaServices(
     const body = request.postDataJSON() as {
       boardId: string
       studentId: string
+      scope?: string
     }
     fakes.signRequests.push({
       authorization: await request.headerValue('authorization'),
@@ -36,6 +37,23 @@ export async function fakeMediaServices(
         headers: cors(),
         json: { error: 'x' },
       })
+    if (body.scope === 'avatar') {
+      // Like the Worker: the caller's own folder (emulator tokens are unsigned JWTs)
+      const token = (await request.headerValue('authorization')) ?? ''
+      const { user_id: uid } = JSON.parse(
+        Buffer.from(token.split('.')[1] ?? '', 'base64url').toString() || '{}',
+      ) as { user_id?: string }
+      return route.fulfill({
+        headers: cors(),
+        json: {
+          assetId: 'avatar',
+          cloudName: 'syqkgwws',
+          apiKey: 'test-key',
+          signature: 'test-signature',
+          params: { public_id: `pbl/dev/users/${uid}/avatar`, timestamp: 1 },
+        },
+      })
+    }
     counter += 1
     const assetId = `asset${counter}`
     await route.fulfill({
@@ -73,6 +91,11 @@ export async function fakeMediaServices(
 
   await page.route('https://res.cloudinary.com/**', (route) =>
     route.fulfill({ body: PNG_1x1, contentType: 'image/png' }),
+  )
+  await page.route('http://localhost:8787/avatar/delete', (route) =>
+    route.request().method() === 'OPTIONS'
+      ? route.fulfill({ status: 204, headers: cors() })
+      : route.fulfill({ headers: cors(), json: { deleted: true } }),
   )
   return fakes
 }
