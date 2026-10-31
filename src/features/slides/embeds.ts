@@ -165,14 +165,12 @@ export const EMBED_PROVIDERS: EmbedProvider[] = [
     name: 'Canva',
     aspect: 16 / 9,
     needsSharing: true,
-    matches: (url) =>
-      host(url, 'www.canva.com', 'canva.com') &&
-      segments(url)[0] === 'design' &&
-      ID.test(segments(url)[1] ?? ''),
+    // Designs (view / edit / watch links all play as /view?embed once shared) and Canva websites,
+    // which refuse to be framed (x-frame-options: SAMEORIGIN, checked 2026-10-31)
+    matches: (url) => canvaDesign(url) !== null || isCanvaSite(url),
     toEmbed: (url) => {
-      const [, id, token] = segments(url)
-      const withToken = token && !['view', 'edit', 'watch'].includes(token)
-      return `https://www.canva.com/design/${id}/${withToken ? `${token}/` : ''}view?embed`
+      const design = canvaDesign(url)
+      return design ? `${canvaShareUrl(design)}?embed` : null
     },
   },
   {
@@ -277,6 +275,35 @@ function vimeo(url: URL) {
   return null
 }
 
+function canvaDesign(url: URL) {
+  if (!host(url, 'www.canva.com', 'canva.com')) return null
+  const [type, id, token] = segments(url)
+  if (type !== 'design' || !ID.test(id ?? '')) return null
+  return {
+    id,
+    token: token && !['view', 'edit', 'watch'].includes(token) ? token : null,
+  }
+}
+
+const canvaShareUrl = (design: { id: string; token: string | null }) =>
+  `https://www.canva.com/design/${design.id}/${design.token ? `${design.token}/` : ''}view`
+
+const isCanvaSite = (url: URL) =>
+  url.hostname.endsWith('.my.canva.site') || host(url, 'canva.site')
+
+/** A Canva design's view link (what Canva's oEmbed knows), or null for anything else. */
+export function canvaViewUrl(link: string) {
+  const url = parse(link)
+  const design = url && canvaDesign(url)
+  return design ? canvaShareUrl(design) : null
+}
+
+/** Canva website (my.canva.site): recognized, but it can't be shown in a slide. */
+export function isCanvaWebsite(link: string) {
+  const url = parse(link)
+  return !!url && isCanvaSite(url)
+}
+
 const FIGMA_TYPES: Record<string, string> = {
   file: 'design',
   design: 'design',
@@ -348,6 +375,50 @@ export const SHORT_LINK_HOSTS = [
 export function isShortLink(link: string) {
   const url = parse(link)
   return !!url && SHORT_LINK_HOSTS.includes(url.hostname) && !detectEmbed(link)
+}
+
+/** width / height, kept between very tall (1:3) and very wide (3:1); null if not a size. */
+export function aspectOf(width: number, height: number) {
+  if (!(width > 0 && height > 0)) return null
+  return Math.min(3, Math.max(1 / 3, width / height))
+}
+
+const decode = (value: string) =>
+  value
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex: string) =>
+      String.fromCodePoint(Number.parseInt(hex, 16)),
+    )
+    .replace(/&#(\d+);/g, (_, code: string) =>
+      String.fromCodePoint(Number(code)),
+    )
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, '&')
+
+/**
+ * What the student pasted: a link, or an embed code ("Insertar" in Canva, YouTube, Figma…).
+ * From a code only the first frame's address (else the first link) and its proportions are
+ * read: the HTML itself is never used. Null when a code has no address.
+ */
+export function readEmbedInput(
+  input: string,
+): { link: string; aspect: number | null } | null {
+  const text = input.trim()
+  if (!text.includes('<')) return { link: text, aspect: null }
+  const attribute = (tag: string, name: string) =>
+    new RegExp(`\\s${name}\\s*=\\s*["']([^"']*)["']`, 'i').exec(tag)?.[1]
+  const frame = /<iframe\b[^>]*>/i.exec(text)?.[0]
+  const src = frame && attribute(frame, 'src')
+  const anchor = /<a\b[^>]*>/i.exec(text)?.[0]
+  const link = src ?? (anchor && attribute(anchor, 'href'))
+  if (!link) return null
+  // Canva wraps the frame in a box with padding-top: <height / width>%; others give width / height
+  const padding = /padding-top:\s*([\d.]+)%/i.exec(text)?.[1]
+  const width = Number(frame && attribute(frame, 'width'))
+  const height = Number(frame && attribute(frame, 'height'))
+  return {
+    link: decode(link),
+    aspect: padding ? aspectOf(100, Number(padding)) : aspectOf(width, height),
+  }
 }
 
 /** The size of the box inserted in a 960 × 540 slide, centered (pure). */

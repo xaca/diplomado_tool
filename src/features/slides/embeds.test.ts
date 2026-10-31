@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import {
+  aspectOf,
+  canvaViewUrl,
   detectEmbed,
   embedBox,
   isAllowedEmbed,
+  isCanvaWebsite,
   isShortLink,
   linksInText,
+  readEmbedInput,
   sandboxFor,
   toEmbedUrl,
 } from '@/features/slides/embeds'
@@ -165,5 +169,118 @@ describe('embeds (M14)', () => {
       linksInText('Mira https://youtu.be/dQw4w9WgXcQ.\nMi proyecto'),
     ).toEqual(['https://youtu.be/dQw4w9WgXcQ'])
     expect(linksInText('sin enlaces')).toEqual([])
+  })
+})
+
+// Canva's "Compartir → Insertar → Código HTML" (shape as of 2026-10)
+const CANVA_CODE = `<div style="position: relative; width: 100%; height: 0; padding-top: 141.4286%;
+ padding-bottom: 0; box-shadow: 0 2px 8px 0 rgba(63,69,81,0.16); margin-top: 1.6em; margin-bottom: 0.9em; overflow: hidden;
+ border-radius: 8px; will-change: transform;">
+  <iframe loading="lazy" style="position: absolute; width: 100%; height: 100%; top: 0; left: 0; border: none; padding: 0;margin: 0;"
+    src="https://www.canva.com/design/DAFTFxhLLPw/ddljelrvwHm5zBTlNywJMQ/view?embed" allowfullscreen="allowfullscreen" allow="fullscreen">
+  </iframe>
+</div>
+<a href="https:&#x2F;&#x2F;www.canva.com&#x2F;design&#x2F;DAFTFxhLLPw&#x2F;ddljelrvwHm5zBTlNywJMQ&#x2F;view?utm_content=DAFTFxhLLPw&amp;utm_campaign=designshare" target="_blank" rel="noopener">Currículo</a> de Evander`
+
+describe('Canva and embed codes (M17)', () => {
+  it.each([
+    // view, edit, watch, with or without the share token and tracking parameters
+    [
+      'https://www.canva.com/design/DAFTFxhLLPw/ddljelrvwHm5zBTlNywJMQ/edit?utm_content=DAFTFxhLLPw&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton',
+      'https://www.canva.com/design/DAFTFxhLLPw/ddljelrvwHm5zBTlNywJMQ/view?embed',
+    ],
+    [
+      'https://www.canva.com/design/DAGeMaSxtSw/3VAmKI1ZgM91cBRC7YI3Ww/watch',
+      'https://www.canva.com/design/DAGeMaSxtSw/3VAmKI1ZgM91cBRC7YI3Ww/view?embed',
+    ],
+    [
+      'https://canva.com/design/DAGVpoxVEFI/Bxj2j5xOY8bbau0LTmNz3Q/view?embed',
+      'https://www.canva.com/design/DAGVpoxVEFI/Bxj2j5xOY8bbau0LTmNz3Q/view?embed',
+    ],
+  ])('%s → %s', (link, embed) => {
+    expect(detectEmbed(link)?.id).toBe('canva')
+    expect(toEmbedUrl(link)).toBe(embed)
+  })
+
+  it('the view link for Canva oEmbed, only for designs', () => {
+    expect(
+      canvaViewUrl(
+        'https://www.canva.com/design/DAFTFxhLLPw/ddljelrvwHm5zBTlNywJMQ/edit?utm_source=x',
+      ),
+    ).toBe(
+      'https://www.canva.com/design/DAFTFxhLLPw/ddljelrvwHm5zBTlNywJMQ/view',
+    )
+    expect(canvaViewUrl('https://www.canva.com/design/DAEv-7H1qU4/view')).toBe(
+      'https://www.canva.com/design/DAEv-7H1qU4/view',
+    )
+    expect(canvaViewUrl('https://www.canva.com/templates/')).toBeNull()
+    expect(canvaViewUrl('https://www.figma.com/design/abc123XYZ/x')).toBeNull()
+  })
+
+  it('Canva websites are recognized but never framed', () => {
+    for (const site of [
+      'https://michalgeyer.my.canva.site/',
+      'https://harinii2415.my.canva.site/sales-product-website',
+    ]) {
+      expect(detectEmbed(site)?.id).toBe('canva')
+      expect(isCanvaWebsite(site)).toBe(true)
+      expect(toEmbedUrl(site)).toBeNull()
+      expect(isAllowedEmbed(site)).toBe(false)
+    }
+    expect(
+      isCanvaWebsite('https://www.canva.com/design/DAEv-7H1qU4/view'),
+    ).toBe(false)
+  })
+
+  it("reads the address and the shape from Canva's embed code", () => {
+    const read = readEmbedInput(CANVA_CODE)!
+    expect(read.link).toBe(
+      'https://www.canva.com/design/DAFTFxhLLPw/ddljelrvwHm5zBTlNywJMQ/view?embed',
+    )
+    // A4 portrait: 1 / 1.414286
+    expect(read.aspect).toBeCloseTo(0.7071, 3)
+    expect(toEmbedUrl(read.link)).toBe(read.link)
+  })
+
+  it("reads other services' codes (width / height), and plain links as they are", () => {
+    const youtube = readEmbedInput(
+      '<iframe width="560" height="315" src="https://www.youtube.com/embed/dQw4w9WgXcQ?si=abc&amp;start=30" title="YouTube video player" frameborder="0" allowfullscreen></iframe>',
+    )!
+    expect(youtube.link).toBe(
+      'https://www.youtube.com/embed/dQw4w9WgXcQ?si=abc&start=30',
+    )
+    expect(youtube.aspect).toBeCloseTo(16 / 9, 3)
+    expect(
+      readEmbedInput(
+        "<iframe style='border: 1px solid rgba(0, 0, 0, 0.1);' width='800' height='450' src='https://embed.figma.com/design/abc123XYZ/Proto?embed-host=share' allowfullscreen></iframe>",
+      ),
+    ).toEqual({
+      link: 'https://embed.figma.com/design/abc123XYZ/Proto?embed-host=share',
+      aspect: 800 / 450,
+    })
+    expect(readEmbedInput('  https://youtu.be/dQw4w9WgXcQ ')).toEqual({
+      link: 'https://youtu.be/dQw4w9WgXcQ',
+      aspect: null,
+    })
+  })
+
+  it("only Canva's credit link (no frame): entities decoded", () => {
+    const anchor = CANVA_CODE.slice(CANVA_CODE.indexOf('<a '))
+    expect(readEmbedInput(anchor)?.link).toBe(
+      'https://www.canva.com/design/DAFTFxhLLPw/ddljelrvwHm5zBTlNywJMQ/view?utm_content=DAFTFxhLLPw&utm_campaign=designshare',
+    )
+    expect(toEmbedUrl(readEmbedInput(anchor)!.link)).toBe(
+      'https://www.canva.com/design/DAFTFxhLLPw/ddljelrvwHm5zBTlNywJMQ/view?embed',
+    )
+  })
+
+  it('a code without an address is not a link; odd sizes are clamped', () => {
+    expect(readEmbedInput('<div style="padding-top: 56%"></div>')).toBeNull()
+    expect(
+      readEmbedInput('<script src="https://evil.example/x.js"></script>'),
+    ).toBeNull()
+    expect(aspectOf(0, 10)).toBeNull()
+    expect(aspectOf(100, 1000)).toBeCloseTo(1 / 3)
+    expect(aspectOf(1000, 10)).toBe(3)
   })
 })
