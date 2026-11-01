@@ -76,6 +76,15 @@ export const paths = {
     `${COLLECTIONS.boards}/${boardId}/achievements/${uid}`,
   achievementCounts: (boardId: string) =>
     `${COLLECTIONS.boards}/${boardId}/achievementStats/counts`,
+  /** M23: recorded classes (YouTube playlists) and each member's progress (doc id = uid) */
+  recordings: (boardId: string) =>
+    `${COLLECTIONS.boards}/${boardId}/recordings`,
+  recording: (boardId: string, recordingId: string) =>
+    `${COLLECTIONS.boards}/${boardId}/recordings/${recordingId}`,
+  watchProgresses: (boardId: string) =>
+    `${COLLECTIONS.boards}/${boardId}/watchProgress`,
+  watchProgress: (boardId: string, uid: string) =>
+    `${COLLECTIONS.boards}/${boardId}/watchProgress/${uid}`,
   /** M10: class participation — classes, their wall slides and the sticky notes on each */
   classes: (boardId: string) => `${COLLECTIONS.boards}/${boardId}/classes`,
   class: (boardId: string, classId: string) =>
@@ -232,6 +241,58 @@ export type AchievementsDoc = {
 export type AchievementCountsDoc = Partial<Record<AchievementKey, number>> & {
   lastKey?: AchievementKey
 }
+
+// ---------- recorded classes (M23): YouTube playlists ----------
+// Keep the patterns and limits in sync with the recordings rules in firestore.rules
+
+export const YOUTUBE_LIST_ID = /^[A-Za-z0-9_-]{10,64}$/
+export const YOUTUBE_VIDEO_ID = /^[A-Za-z0-9_-]{11}$/
+export const MAX_RECORDING_VIDEOS = 300
+export const MAX_RECORDING_TITLE = 80
+export const MAX_VIDEO_TITLE = 150
+
+/** A video as YouTube lists it (read from the playlist; `seconds` 0 = not known yet) */
+export type RecordingVideo = {
+  id: string
+  title: string
+  seconds: number
+  /** false: private, deleted or embedding turned off (YouTube errors 100 / 101 / 150) */
+  playable: boolean
+}
+
+/**
+ * recordings/{id}: a playlist linked by the board's teacher. `videos` is the last list read from
+ * YouTube (in the playlist's order); the playlist is read again whenever someone opens it, so new
+ * uploads show up on their own (D95). The teacher's own titles and hidden videos are kept apart,
+ * so re-reading never undoes them.
+ */
+export type RecordingDoc = {
+  title: string
+  listId: string
+  position: number
+  videos: RecordingVideo[]
+  titles: Record<string, string>
+  hidden: string[]
+  syncedAt: unknown
+  createdAt: unknown
+  updatedAt: unknown
+}
+
+/** Where I am in one video (seconds) */
+export type VideoProgress = { at: number; seconds: number; watched: boolean }
+
+/** watchProgress/{uid}: my progress in every recorded class of the board */
+export type WatchProgressDoc = {
+  studentId: string
+  videos: Record<string, VideoProgress>
+  updatedAt: unknown
+}
+
+export const recordingInputSchema = z.object({
+  title: z.string().trim().min(1).max(MAX_RECORDING_TITLE),
+  listId: z.string().regex(YOUTUBE_LIST_ID),
+})
+export type RecordingInput = z.infer<typeof recordingInputSchema>
 
 // ---------- class participation (M10): sticky-note walls ----------
 // Keep the lists and limits in sync with the classes rules in firestore.rules

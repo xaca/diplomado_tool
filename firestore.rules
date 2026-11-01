@@ -901,6 +901,46 @@ service cloud.firestore {
         allow write: if isBoardTeacher(boardId);
       }
 
+      // ---------- recorded classes (M23): YouTube playlists ----------
+      // Keep the patterns and limits in sync with src/model/index.ts (YOUTUBE_LIST_ID,
+      // MAX_RECORDING_VIDEOS, MAX_RECORDING_TITLE)
+
+      function validRecording() {
+        let data = request.resource.data;
+        return data.keys().hasOnly(['title', 'listId', 'position', 'videos', 'titles', 'hidden',
+            'syncedAt', 'createdAt', 'updatedAt'])
+          && isString(data.title, 1, 80)
+          && data.listId is string && data.listId.matches('[A-Za-z0-9_-]{10,64}')
+          && data.position is int && data.position >= 0
+          && data.videos is list && data.videos.size() <= 300
+          && data.titles is map && data.titles.size() <= 300
+          && data.hidden is list && data.hidden.size() <= 300
+          && data.syncedAt is timestamp
+          && data.updatedAt == request.time;
+      }
+
+      match /recordings/{recordingId} {
+        allow read: if isBoardTeacher(boardId) || isMember(boardId);
+        allow create: if isBoardTeacher(boardId) && validRecording()
+          && request.resource.data.createdAt == request.time;
+        allow update: if isBoardTeacher(boardId) && validRecording()
+          && request.resource.data.createdAt == resource.data.createdAt;
+        allow delete: if isBoardTeacher(boardId);
+      }
+
+      // Each member's own progress (resume, watched); the teacher reads them all (who watched)
+      match /watchProgress/{uid} {
+        allow get: if isBoardTeacher(boardId) || (isMember(boardId) && request.auth.uid == uid);
+        allow list: if isBoardTeacher(boardId);
+        allow create, update: if isMember(boardId) && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['studentId', 'videos', 'updatedAt'])
+          && request.resource.data.studentId == get(memberPath(boardId, request.auth.uid)).data.studentId
+          && request.resource.data.videos is map && request.resource.data.videos.size() <= 1000
+          && request.resource.data.updatedAt == request.time;
+        // removing a student (and purge) takes their progress
+        allow delete: if isBoardTeacher(boardId) || (signedIn() && request.auth.uid == uid);
+      }
+
       // ---------- attendance (M18): one record per class date, teacher only ----------
 
       // Keep the date pattern in sync with ATTENDANCE_DATE in src/model/index.ts

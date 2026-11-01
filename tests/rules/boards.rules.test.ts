@@ -2757,3 +2757,121 @@ describe('achievements (M22)', () => {
     await assertFails(deleteDoc(mine(as(SEB), SEB.uid)))
   })
 })
+
+describe('recorded classes (M23)', () => {
+  const SEB = { uid: 'seb', email: 'seb@gmail.com' }
+  const playlist = (db: Firestore, id = 'r1') =>
+    doc(db, 'boards', BOARD, 'recordings', id)
+  const progress = (db: Firestore, uid: string) =>
+    doc(db, 'boards', BOARD, 'watchProgress', uid)
+  const recording = (overrides: Record<string, unknown> = {}) => ({
+    title: 'Grabaciones',
+    listId: 'PLO2HxDUbp3FU',
+    position: 0,
+    videos: [
+      {
+        id: 'VB-lKjtbZk8',
+        title: '23 Octubre',
+        seconds: 13693,
+        playable: true,
+      },
+    ],
+    titles: {},
+    hidden: [],
+    syncedAt: serverTimestamp(),
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    ...overrides,
+  })
+  const watched = (studentId: string, at = 120) => ({
+    studentId,
+    videos: { 'VB-lKjtbZk8': { at, seconds: 13693, watched: false } },
+    updatedAt: serverTimestamp(),
+  })
+
+  async function joined() {
+    await seed()
+    await autoJoin(as(LAURA), LAURA, 'st_laura')
+    await env.withSecurityRulesDisabled(async (context) => {
+      const db = context.firestore() as unknown as Firestore
+      await setDoc(
+        doc(db, 'boards', BOARD, 'students', 'st_seb'),
+        student([SEB.email]),
+      )
+      await setDoc(doc(db, 'boards', BOARD, 'studentEmails', SEB.email), {
+        email: SEB.email,
+        studentId: 'st_seb',
+      })
+    })
+    await autoJoin(as(SEB), SEB, 'st_seb')
+  }
+
+  it('the board teacher links, re-reads, edits and deletes playlists; members only read them', async () => {
+    await joined()
+    const teacher = as(TEACHER)
+    await assertSucceeds(setDoc(playlist(teacher), recording()))
+    await assertSucceeds(
+      updateDoc(playlist(teacher), {
+        titles: { 'VB-lKjtbZk8': 'Clase 7' },
+        hidden: ['VB-lKjtbZk8'],
+        syncedAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      }),
+    )
+    // a bad link, unknown fields, another teacher
+    await assertFails(
+      setDoc(playlist(teacher, 'r2'), recording({ listId: 'a b' })),
+    )
+    await assertFails(
+      setDoc(playlist(teacher, 'r2'), recording({ secret: true })),
+    )
+    await assertFails(setDoc(playlist(as(OTHER_TEACHER), 'r2'), recording()))
+
+    await assertSucceeds(getDoc(playlist(as(LAURA))))
+    await assertSucceeds(
+      getDocs(collection(as(SEB), 'boards', BOARD, 'recordings')),
+    )
+    await assertFails(getDoc(playlist(as(STRANGER))))
+    await assertFails(
+      updateDoc(playlist(as(LAURA)), {
+        videos: [],
+        syncedAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      }),
+    )
+    await assertFails(deleteDoc(playlist(as(LAURA))))
+    await assertSucceeds(deleteDoc(playlist(teacher)))
+  })
+
+  it("each student saves only their own progress; the teacher reads everybody's and removes it", async () => {
+    await joined()
+    await assertSucceeds(
+      setDoc(progress(as(LAURA), LAURA.uid), watched('st_laura')),
+    )
+    await assertSucceeds(
+      setDoc(progress(as(LAURA), LAURA.uid), watched('st_laura', 600), {
+        merge: true,
+      }),
+    )
+    // someone else's progress, a different card, extra fields
+    await assertFails(setDoc(progress(as(SEB), LAURA.uid), watched('st_seb')))
+    await assertFails(setDoc(progress(as(SEB), SEB.uid), watched('st_laura')))
+    await assertFails(
+      setDoc(progress(as(SEB), SEB.uid), { ...watched('st_seb'), points: 1 }),
+    )
+    await assertFails(
+      setDoc(progress(as(STRANGER), STRANGER.uid), watched('st_laura')),
+    )
+
+    await assertSucceeds(getDoc(progress(as(LAURA), LAURA.uid)))
+    await assertFails(getDoc(progress(as(SEB), LAURA.uid)))
+    await assertFails(
+      getDocs(collection(as(SEB), 'boards', BOARD, 'watchProgress')),
+    )
+    const teacher = as(TEACHER)
+    await assertSucceeds(
+      getDocs(collection(teacher, 'boards', BOARD, 'watchProgress')),
+    )
+    await assertSucceeds(deleteDoc(progress(teacher, LAURA.uid)))
+  })
+})
