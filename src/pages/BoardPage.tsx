@@ -18,6 +18,7 @@ import {
   Presentation,
   Settings,
   StickyNote,
+  Clapperboard,
   Timer,
   Trophy,
 } from 'lucide-react'
@@ -321,6 +322,18 @@ export function BoardPage() {
                 >
                   <StickyNote />
                   <HeaderActionLabel>{t('classes.tab')}</HeaderActionLabel>
+                </Button>
+              )}
+              {/* M23: recorded classes */}
+              {(teacher || mySpace) && (
+                <Button
+                  variant="secondary"
+                  nativeButton={false}
+                  title={t('recordings.tab')}
+                  render={<Link to={`/b/${boardId}/videos`} />}
+                >
+                  <Clapperboard />
+                  <HeaderActionLabel>{t('recordings.tab')}</HeaderActionLabel>
                 </Button>
               )}
               {/* M22: achievements */}
