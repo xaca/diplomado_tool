@@ -60,6 +60,7 @@ function StudyPlayer({
   startAt,
   prev,
   next,
+  upNext,
   onPick,
   onSave,
 }: {
@@ -67,6 +68,8 @@ function StudyPlayer({
   startAt: number
   prev: ShownVideo | null
   next: ShownVideo | null
+  /** Offered once this one is watched: the next class that plays here */
+  upNext: ShownVideo | null
   onPick: (videoId: string) => void
   onSave: (videoId: string, at: number, seconds: number) => void
 }) {
@@ -373,17 +376,17 @@ function StudyPlayer({
         </span>
       </div>
 
-      {done && next && (
+      {done && upNext && (
         <button
           type="button"
-          onClick={() => onPick(next.id)}
+          onClick={() => onPick(upNext.id)}
           className="flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 text-left text-sm text-emerald-900 hover:bg-emerald-100"
           data-testid="up-next"
         >
           <CircleCheck className="size-4 shrink-0" />
           <span>
             {t('recordings.upNext', {
-              title: next.title || t('recordings.untitled'),
+              title: upNext.title || t('recordings.untitled'),
             })}
           </span>
         </button>
@@ -442,6 +445,10 @@ export function RecordingPlayerPage() {
   const index = current ? videos.indexOf(current) : -1
   const prev = index > 0 ? videos[index - 1] : null
   const next = index >= 0 ? (videos[index + 1] ?? null) : null
+  const upNext =
+    index >= 0
+      ? (videos.slice(index + 1).find((video) => video.playable) ?? null)
+      : null
   // Where to start: decided once per class (not on every progress save)
   const [start, setStart] = useState<{ id: string; at: number } | null>(null)
   const progressReady = !access.member || !mine.loading
@@ -492,6 +499,7 @@ export function RecordingPlayerPage() {
                 startAt={start.at}
                 prev={prev}
                 next={next}
+                upNext={upNext}
                 onPick={pick}
                 onSave={onSave}
               />
