@@ -21,7 +21,7 @@ export type PlaylistLinkResult =
 export function parsePlaylistLink(input: string): PlaylistLinkResult {
   const text = input.trim()
   if (!text) return { ok: false, reason: 'empty' }
-  let listId: string | null = null
+  let listId: string | null
   if (YOUTUBE_LIST_ID.test(text) && !text.includes('.')) listId = text
   else {
     try {
@@ -177,8 +177,8 @@ export function shouldSave(
 }
 
 /** The first video I haven't watched (after `afterId`, if given), else null. */
-export function nextUnwatched(
-  videos: readonly { id: string; playable: boolean }[],
+export function nextUnwatched<T extends { id: string; playable: boolean }>(
+  videos: readonly T[],
   progress: Record<string, VideoProgress> | undefined,
   afterId?: string,
 ) {

@@ -16,6 +16,7 @@ import { InvitePanel } from '@/features/boards/components/InvitePanel'
 import { LifecyclePanel } from '@/features/boards/components/LifecyclePanel'
 import { useBoard } from '@/features/boards/hooks'
 import { useTeacherBoardSync } from '@/features/boards/sync'
+import { RecordingsPanel } from '@/features/recordings/components/RecordingsPanel'
 import { StagesPanel } from '@/features/stages/components/StagesPanel'
 import { EmailsDialog } from '@/features/students/components/EmailsDialog'
 import { AnnouncementsPanel } from '@/features/announcements/components/AnnouncementsPanel'
@@ -122,6 +123,8 @@ export function TeacherBoardPage() {
         key={JSON.stringify(board.data.stages ?? null)}
         board={board.data}
       />
+
+      <RecordingsPanel boardId={boardId} />
 
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-2">

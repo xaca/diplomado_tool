@@ -17,6 +17,8 @@ import { NotFoundPage } from '@/pages/NotFoundPage'
 import { PresenterPage } from '@/pages/PresenterPage'
 import { PrivacyPage } from '@/pages/PrivacyPage'
 import { ProfilePage } from '@/pages/ProfilePage'
+import { RecordingPlayerPage } from '@/pages/RecordingPlayerPage'
+import { RecordingsPage } from '@/pages/RecordingsPage'
 import { SpacePage } from '@/pages/SpacePage'
 import { StudentHomePage } from '@/pages/StudentHomePage'
 import {
@@ -66,6 +68,12 @@ export const router = createBrowserRouter([
           { path: 'b/:boardId/s/:studentId', element: <SpacePage /> },
           // M22: achievements
           { path: 'b/:boardId/logros', element: <AchievementsPage /> },
+          // M23: recorded classes (YouTube playlists) and the study player
+          { path: 'b/:boardId/videos', element: <RecordingsPage /> },
+          {
+            path: 'b/:boardId/videos/:recordingId',
+            element: <RecordingPlayerPage />,
+          },
           // M10: class participation (sticky-note walls)
           { path: 'b/:boardId/class', element: <ClassesPage /> },
           { path: 'b/:boardId/class/:classId', element: <ClassPage /> },
