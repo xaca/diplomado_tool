@@ -178,6 +178,19 @@ export async function restoreBoardFile(
         ])
     })
   }
+  // M23: playlists come back in their order (they're read from YouTube again on opening)
+  ;(file.recordings ?? []).forEach((recording, position) =>
+    writes.push([
+      doc(collection(db, paths.recordings(boardId))),
+      {
+        ...recording,
+        position,
+        syncedAt: serverTimestamp(),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      },
+    ]),
+  )
   for (let start = 0; start < writes.length; start += 450) {
     const batch = writeBatch(db)
     for (const [ref, data] of writes.slice(start, start + 450))

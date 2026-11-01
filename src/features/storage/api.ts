@@ -10,6 +10,7 @@ import {
 } from 'firebase/firestore'
 import {
   classBackupOf,
+  recordingBackupOf,
   type BoardSnapshot,
 } from '@/features/data-transfer/backup'
 import { chunk, type AssetRow } from '@/features/storage/analysis'
@@ -19,6 +20,7 @@ import { toDate } from '@/lib/time'
 import {
   paths,
   type AssetDoc,
+  type RecordingDoc,
   type BoardDoc,
   type SlideDoc,
   type AttendanceDoc,
@@ -68,6 +70,8 @@ export async function loadBoardData(boardId: string): Promise<BoardData> {
     announcementStates,
     classes,
     achievements,
+    recordings,
+    watchProgress,
   ] = await Promise.all([
     getDoc(doc(db, paths.board(boardId))),
     getDocs(collection(db, paths.students(boardId))),
@@ -85,6 +89,9 @@ export async function loadBoardData(boardId: string): Promise<BoardData> {
     getDocs(collection(db, paths.classes(boardId))),
     // M22: achievements and their counters (not in the backup: recomputed, D86)
     getDocs(collection(db, paths.achievements(boardId))),
+    // M23: playlists go into the backup; students' progress only goes with the board
+    getDocs(collection(db, paths.recordings(boardId))),
+    getDocs(collection(db, paths.watchProgresses(boardId))),
   ])
   if (!board.exists()) throw new Error('board not found')
   const classSlides = await Promise.all(
@@ -203,6 +210,10 @@ export async function loadBoardData(boardId: string): Promise<BoardData> {
           ),
         ),
       ),
+      recordings: recordings.docs
+        .map((item) => item.data() as RecordingDoc)
+        .sort((a, b) => a.position - b.position)
+        .map(recordingBackupOf),
     },
     assets: assets.docs.map((asset) => {
       const data = asset.data() as AssetDoc
@@ -269,6 +280,8 @@ export async function loadBoardData(boardId: string): Promise<BoardData> {
       ...classSlides.flatMap((snapshot) => snapshot.docs.map((d) => d.ref)),
       ...classes.docs.map((d) => d.ref),
       ...achievements.docs.map((d) => d.ref),
+      ...recordings.docs.map((d) => d.ref),
+      ...watchProgress.docs.map((d) => d.ref),
       doc(db, paths.achievementCounts(boardId)),
     ],
   }

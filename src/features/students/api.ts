@@ -193,6 +193,8 @@ export async function removeStudent(boardId: string, student: Student) {
         { merge: true },
       )
     batch.delete(doc(db, paths.achievement(boardId, uid)))
+    // M23: their progress in the recorded classes
+    batch.delete(doc(db, paths.watchProgress(boardId, uid)))
   }
   batch.delete(doc(db, paths.space(boardId, student.id)))
   await batch.commit()

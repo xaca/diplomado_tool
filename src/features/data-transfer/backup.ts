@@ -25,6 +25,12 @@ import {
   type ClassDoc,
   type ClassSlideDoc,
   type StickyNoteDoc,
+  MAX_RECORDING_TITLE,
+  MAX_RECORDING_VIDEOS,
+  MAX_VIDEO_TITLE,
+  YOUTUBE_LIST_ID,
+  YOUTUBE_VIDEO_ID,
+  type RecordingDoc,
 } from '@/model'
 
 // Board backup and template files (PLAN.md → Import / export). Pure: shared with the admin CLI.
@@ -110,6 +116,26 @@ const classBackupSchema = z.object({
 })
 export type ClassBackup = z.infer<typeof classBackupSchema>
 
+const recordingBackupSchema = z.object({
+  title: z.string().trim().min(1).max(MAX_RECORDING_TITLE),
+  listId: z.string().regex(YOUTUBE_LIST_ID),
+  videos: z
+    .array(
+      z.object({
+        id: z.string().regex(YOUTUBE_VIDEO_ID),
+        title: z.string().max(MAX_VIDEO_TITLE),
+        seconds: z.number().int().min(0),
+        playable: z.boolean(),
+      }),
+    )
+    .max(MAX_RECORDING_VIDEOS),
+  titles: z.record(
+    z.string().regex(YOUTUBE_VIDEO_ID),
+    z.string().max(MAX_VIDEO_TITLE),
+  ),
+  hidden: z.array(z.string().regex(YOUTUBE_VIDEO_ID)).max(MAX_RECORDING_VIDEOS),
+})
+
 export const boardBackupSchema = z.object({
   type: z.literal('pbl.boardBackup'),
   version: z.literal(1),
@@ -157,8 +183,26 @@ export const boardBackupSchema = z.object({
   announcements: z.array(announcementInputSchema).max(200).optional(),
   /** M10: class walls with their notes and reactions (optional: files from before keep restoring) */
   classes: z.array(classBackupSchema).max(500).optional(),
+  /** M23: the YouTube playlists, in the teacher's order (students' progress is not kept) */
+  recordings: z.array(recordingBackupSchema).max(50).optional(),
 })
 export type BoardBackup = z.infer<typeof boardBackupSchema>
+
+export type RecordingBackup = z.infer<typeof recordingBackupSchema>
+
+/** A playlist as it goes into the backup (from the app or the CLI) */
+export const recordingBackupOf = (
+  recording: Pick<
+    RecordingDoc,
+    'title' | 'listId' | 'videos' | 'titles' | 'hidden'
+  >,
+): RecordingBackup => ({
+  title: recording.title,
+  listId: recording.listId,
+  videos: recording.videos ?? [],
+  titles: recording.titles ?? {},
+  hidden: recording.hidden ?? [],
+})
 
 export const boardTemplateSchema = z.object({
   type: z.literal('pbl.boardTemplate'),
@@ -206,6 +250,8 @@ export type BoardSnapshot = {
   announcements?: AnnouncementInput[]
   /** M10: class walls, oldest date first */
   classes?: ClassBackup[]
+  /** M23: playlists in the teacher's order */
+  recordings?: RecordingBackup[]
 }
 
 /** A class as it goes into the backup: its slides in order, each with its notes (oldest first). */
@@ -308,6 +354,7 @@ export function buildBackup(
     classes: [...(snapshot.classes ?? [])].sort((a, b) =>
       a.date.localeCompare(b.date),
     ),
+    recordings: snapshot.recordings ?? [],
   })
 }
 

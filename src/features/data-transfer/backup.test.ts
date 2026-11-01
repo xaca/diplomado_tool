@@ -5,6 +5,7 @@ import {
   buildTemplate,
   classBackupOf,
   parseBoardFile,
+  recordingBackupOf,
   slideAssetIds,
   type BoardSnapshot,
 } from '@/features/data-transfer/backup'
@@ -358,6 +359,36 @@ describe('class walls in backups (M10)', () => {
       parseBoardFile(
         broken({ reactions: { u2: { name: 'E', emojis: ['🤬'] } } }),
       ),
+    ).toThrow()
+  })
+})
+
+describe('recorded classes in backups (M23)', () => {
+  it("keeps the playlists with the teacher's titles and hidden videos (not students' progress); bad ids are refused", () => {
+    const recording = recordingBackupOf({
+      title: 'Diplomado UX/UI',
+      listId: 'PLO2HxDUbp3FU',
+      videos: [
+        {
+          id: 'VB-lKjtbZk8',
+          title: '23 Octubre',
+          seconds: 10335,
+          playable: true,
+        },
+      ],
+      titles: { 'VB-lKjtbZk8': 'Clase 7: herramientas' },
+      hidden: [],
+    })
+    const backup = buildBackup({ ...snapshot, recordings: [recording] })
+    expect(backup.recordings).toEqual([recording])
+    expect(parseBoardFile(JSON.parse(JSON.stringify(backup))).kind).toBe(
+      'backup',
+    )
+    expect(() =>
+      parseBoardFile({
+        ...backup,
+        recordings: [{ ...recording, listId: '<script>' }],
+      }),
     ).toThrow()
   })
 })

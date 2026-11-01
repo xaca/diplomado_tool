@@ -5,6 +5,7 @@ import { isArchived, lifecycleOf } from '@/features/boards/lifecycle'
 import {
   buildBackup,
   classBackupOf,
+  recordingBackupOf,
   type BoardSnapshot,
 } from '@/features/data-transfer/backup'
 import { analyzeStorage, type AssetRow } from '@/features/storage/analysis'
@@ -17,6 +18,7 @@ import type {
   AttendanceDoc,
   AnnouncementDoc,
   ClassDoc,
+  RecordingDoc,
   ClassSlideDoc,
   SpaceDoc,
   StickyNoteDoc,
@@ -63,6 +65,8 @@ export async function loadBoard(boardId: string) {
     announcementStates,
     classes,
     achievements,
+    recordings,
+    watchProgress,
   ] = await Promise.all([
     ref.collection('students').get(),
     ref.collection('spaces').get(),
@@ -79,6 +83,9 @@ export async function loadBoard(boardId: string) {
     ref.collection('classes').get(),
     // M22: achievements (the counters doc is deleted with them)
     ref.collection('achievements').get(),
+    // M23: playlists (in the backup) and students' progress (only purged)
+    ref.collection('recordings').get(),
+    ref.collection('watchProgress').get(),
   ])
   const classSlides = await Promise.all(
     classes.docs.map((item) => item.ref.collection('slides').get()),
@@ -187,6 +194,10 @@ export async function loadBoard(boardId: string) {
         ),
       ),
     ),
+    recordings: recordings.docs
+      .map((doc) => doc.data() as RecordingDoc)
+      .sort((a, b) => a.position - b.position)
+      .map(recordingBackupOf),
   }
   const assetRows: AssetRow[] = assets.docs.map((doc) => {
     const data = doc.data() as AssetDoc
@@ -216,6 +227,8 @@ export async function loadBoard(boardId: string) {
     ...classSlides.flatMap((s) => s.docs.map((doc) => doc.ref)),
     ref.collection('achievementStats').doc('counts'),
     ...[
+      recordings,
+      watchProgress,
       achievements,
       classes,
       spaces,
