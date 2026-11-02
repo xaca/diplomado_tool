@@ -85,6 +85,13 @@ export const paths = {
     `${COLLECTIONS.boards}/${boardId}/watchProgress`,
   watchProgress: (boardId: string, uid: string) =>
     `${COLLECTIONS.boards}/${boardId}/watchProgress/${uid}`,
+  /** M24: course news, and the log of emails sent from the app */
+  news: (boardId: string) => `${COLLECTIONS.boards}/${boardId}/news`,
+  newsItem: (boardId: string, newsId: string) =>
+    `${COLLECTIONS.boards}/${boardId}/news/${newsId}`,
+  emails: (boardId: string) => `${COLLECTIONS.boards}/${boardId}/emails`,
+  email: (boardId: string, emailId: string) =>
+    `${COLLECTIONS.boards}/${boardId}/emails/${emailId}`,
   /** M10: class participation — classes, their wall slides and the sticky notes on each */
   classes: (boardId: string) => `${COLLECTIONS.boards}/${boardId}/classes`,
   class: (boardId: string, classId: string) =>
@@ -174,6 +181,10 @@ export type BoardDoc = {
   teacherProfiles?: Record<string, TeacherProfile>
   /** The class clock: a timed activity or a break, shown to everyone (M16) */
   clock?: ClassClock | null
+  /** M24: the course setup (schedule, dates, holidays, counter); missing = none */
+  course?: CourseSetup | null
+  /** M24: the name the emails come from and where replies go (D107) */
+  emailSender?: EmailSender | null
 }
 
 // ---------- class tools (M16) ----------
@@ -293,6 +304,192 @@ export const recordingInputSchema = z.object({
   listId: z.string().regex(YOUTUBE_LIST_ID),
 })
 export type RecordingInput = z.infer<typeof recordingInputSchema>
+
+// ---------- course setup (M24): schedule, dates, holidays, class counter ----------
+// Stored on the board doc as `course` (one course = one board). Every field is optional: an empty
+// setup means "no counter, no calendar". The rules only check the shape and sizes (validCourse in
+// firestore.rules); this schema checks the rest. Pure date logic: src/features/course/course.ts
+
+export const COURSE_VERSION = 1
+/** ISO weekday: 1 = Monday … 7 = Sunday */
+export const WEEKDAYS = [1, 2, 3, 4, 5, 6, 7] as const
+export type Weekday = (typeof WEEKDAYS)[number]
+export const MAX_COURSE_DAYS = 731
+export const MAX_COURSE_WEEKS = 104
+export const MAX_COURSE_HOLIDAYS = 60
+export const MAX_COURSE_DAYS_OFF = 100
+export const MAX_COURSE_EXTRAS = 100
+export const MAX_COURSE_TOTAL = 500
+export const HOLIDAY_COUNTRIES = ['CO'] as const
+export type HolidayCountry = (typeof HOLIDAY_COUNTRIES)[number]
+
+export const DATE_KEY = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/
+export const TIME_KEY = /^([01]\d|2[0-3]):[0-5]\d$/
+
+const dateKey = z.string().regex(DATE_KEY)
+const timeKey = z.union([z.string().regex(TIME_KEY), z.literal('')])
+const place = z.string().trim().max(200)
+
+/** A weekday of the schedule, with its own time and place (D111) */
+export const scheduleSlotSchema = z.object({
+  day: z.literal([...WEEKDAYS]),
+  start: timeKey,
+  end: timeKey,
+  place,
+})
+export type ScheduleSlot = z.infer<typeof scheduleSlotSchema>
+
+/** A holiday as loaded (the teacher removes the ones that don't apply) */
+export const courseHolidaySchema = z.object({
+  date: dateKey,
+  name: z.string().trim().max(80),
+})
+export type CourseHoliday = z.infer<typeof courseHolidaySchema>
+
+/** A day without class: "Receso", "Semana de parciales", or a class moved away */
+export const dayOffSchema = z.object({
+  date: dateKey,
+  reason: z.string().trim().max(120),
+})
+export type DayOff = z.infer<typeof dayOffSchema>
+
+/** A one-off class: an extra one, or where a class was moved to */
+export const extraClassSchema = z.object({
+  date: dateKey,
+  start: timeKey,
+  end: timeKey,
+  place,
+  note: z.string().trim().max(120),
+})
+export type ExtraClass = z.infer<typeof extraClassSchema>
+
+export const courseSetupSchema = z
+  .object({
+    v: z.literal(COURSE_VERSION).default(COURSE_VERSION),
+    start: dateKey.nullable().default(null),
+    end: dateKey.nullable().default(null),
+    /** Instead of an end date: Semana 1 … N (the end is the Sunday of week N) */
+    weeks: z
+      .number()
+      .int()
+      .min(1)
+      .max(MAX_COURSE_WEEKS)
+      .nullable()
+      .default(null),
+    schedule: z
+      .array(scheduleSlotSchema)
+      .max(7)
+      .default([])
+      .refine(
+        (slots) => new Set(slots.map((slot) => slot.day)).size === slots.length,
+        'repeated day',
+      ),
+    holidayCountry: z.enum(HOLIDAY_COUNTRIES).nullable().default(null),
+    holidays: z.array(courseHolidaySchema).max(MAX_COURSE_HOLIDAYS).default([]),
+    daysOff: z.array(dayOffSchema).max(MAX_COURSE_DAYS_OFF).default([]),
+    extras: z.array(extraClassSchema).max(MAX_COURSE_EXTRAS).default([]),
+    /** Typed total: only used when the dates can't give one (no end, or no schedule) */
+    total: z
+      .number()
+      .int()
+      .min(1)
+      .max(MAX_COURSE_TOTAL)
+      .nullable()
+      .default(null),
+    /** ± classes given, when a class happened without attendance or was moved */
+    correction: z
+      .number()
+      .int()
+      .min(-MAX_COURSE_TOTAL)
+      .max(MAX_COURSE_TOTAL)
+      .default(0),
+    /** Week number → topic ("Prototipos") */
+    topics: z
+      .record(z.string().regex(/^\d{1,3}$/), z.string().trim().max(80))
+      .default({}),
+    /** "Clase 12 de 32" in the students' board header */
+    showCounter: z.boolean().default(true),
+    /**
+     * Classes given for a course without a schedule: the distinct dates with attendance or a Clase,
+     * saved by the teacher's browser (students can't read attendance)
+     */
+    held: z
+      .number()
+      .int()
+      .min(0)
+      .max(MAX_COURSE_TOTAL)
+      .nullable()
+      .default(null),
+  })
+  .refine((setup) => !setup.start || !setup.end || setup.start <= setup.end, {
+    message: 'end before start',
+    path: ['end'],
+  })
+export type CourseSetup = z.infer<typeof courseSetupSchema>
+
+export const emptyCourse = (): CourseSetup => courseSetupSchema.parse({})
+
+/** Who the emails come from (D107): the teacher's Gmail with this name; replies go to `replyTo` */
+export const emailSenderSchema = z.object({
+  name: z.string().trim().max(80),
+  replyTo: z.union([z.email().max(254), z.literal('')]),
+})
+export type EmailSender = z.infer<typeof emailSenderSchema>
+
+// ---------- course news (M24): "Novedades del curso" ----------
+
+export const NEWS_KINDS = ['deliverable', 'event', 'notice'] as const
+export type NewsKind = (typeof NEWS_KINDS)[number]
+
+/** news/{id}: an item on a date (or the whole week of that date) */
+export type NewsDoc = {
+  date: string
+  wholeWeek: boolean
+  kind: NewsKind
+  title: string
+  text: string
+  link: string
+  createdAt: unknown
+  updatedAt: unknown
+}
+
+export const newsInputSchema = z.object({
+  date: dateKey,
+  wholeWeek: z.boolean().default(false),
+  kind: z.enum(NEWS_KINDS),
+  title: z.string().trim().min(1).max(120),
+  text: z.string().trim().max(1000).default(''),
+  link: z
+    .string()
+    .trim()
+    .max(500)
+    .refine((link) => link === '' || /^https:\/\/\S+$/.test(link), 'https')
+    .default(''),
+})
+export type NewsInput = z.infer<typeof newsInputSchema>
+
+// ---------- emails sent from the app (M24) ----------
+
+export const EMAIL_KINDS = [
+  'message',
+  'announcement',
+  'news',
+  'summary',
+] as const
+export type EmailKind = (typeof EMAIL_KINDS)[number]
+export const MAX_EMAIL_RECIPIENTS = 300
+
+/** emails/{id}: what went out (teacher only; never the message body's recipients' content) */
+export type EmailLogDoc = {
+  kind: EmailKind
+  subject: string
+  sentBy: string
+  /** Delivered to Gmail */
+  sent: string[]
+  /** Gmail refused them (shown with "Reintentar") */
+  failed: string[]
+  createdAt: unknown
+}
 
 // ---------- class participation (M10): sticky-note walls ----------
 // Keep the lists and limits in sync with the classes rules in firestore.rules
