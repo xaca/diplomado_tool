@@ -2875,3 +2875,130 @@ describe('recorded classes (M23)', () => {
     await assertSucceeds(deleteDoc(progress(teacher, LAURA.uid)))
   })
 })
+
+describe('course setup, news and emails (M24)', () => {
+  const course = (overrides: Record<string, unknown> = {}) => ({
+    v: 1,
+    start: '2026-11-03',
+    end: '2026-11-28',
+    weeks: null,
+    schedule: [{ day: 2, start: '18:00', end: '21:00', place: 'Salón 304' }],
+    holidayCountry: 'CO',
+    holidays: [{ date: '2026-11-16', name: 'Independencia de Cartagena' }],
+    daysOff: [],
+    extras: [],
+    total: null,
+    correction: 0,
+    topics: { '1': 'Empatía' },
+    showCounter: true,
+    held: null,
+    ...overrides,
+  })
+  const newsItem = (db: Firestore, id = 'n1') =>
+    doc(db, 'boards', BOARD, 'news', id)
+  const news = (overrides: Record<string, unknown> = {}) => ({
+    date: '2026-11-10',
+    wholeWeek: false,
+    kind: 'deliverable',
+    title: 'Entrega del prototipo',
+    text: '',
+    link: '',
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    ...overrides,
+  })
+  const log = (overrides: Record<string, unknown> = {}) => ({
+    kind: 'message',
+    subject: 'Recordatorio',
+    sentBy: TEACHER.email,
+    sent: [LAURA.email],
+    failed: [],
+    createdAt: serverTimestamp(),
+    ...overrides,
+  })
+
+  it('the teacher saves the course setup and the email sender on the board; bad shapes fail', async () => {
+    await seed()
+    const teacher = as(TEACHER)
+    const ref = doc(teacher, 'boards', BOARD)
+    await assertSucceeds(
+      updateDoc(ref, {
+        course: course(),
+        emailSender: { name: 'Diplomado UX/UI', replyTo: 'docente@uni.edu.co' },
+        updatedAt: serverTimestamp(),
+      }),
+    )
+    // only a total, nothing else
+    await assertSucceeds(
+      updateDoc(ref, {
+        course: course({ start: null, end: null, schedule: [], total: 4 }),
+      }),
+    )
+    await assertSucceeds(updateDoc(ref, { course: null }))
+    for (const bad of [
+      course({ v: 2 }),
+      course({ start: '2026-11-30', end: '2026-11-01' }),
+      course({ start: '3 nov' }),
+      course({ total: 0 }),
+      course({ weeks: 500 }),
+      course({
+        schedule: Array(8).fill({ day: 1, start: '', end: '', place: '' }),
+      }),
+      course({ holidayCountry: 'XX' }),
+      course({ secret: true }),
+    ])
+      await assertFails(updateDoc(ref, { course: bad }))
+    await assertFails(
+      updateDoc(ref, { emailSender: { name: 'x', replyTo: 'y', bcc: 'z' } }),
+    )
+    // a member can't change it
+    await autoJoin(as(LAURA), LAURA, 'st_laura')
+    await assertFails(
+      updateDoc(doc(as(LAURA), 'boards', BOARD), { course: course() }),
+    )
+  })
+
+  it('news: the teacher writes, members read; the email log is the teacher’s only and never edited', async () => {
+    await seed()
+    await autoJoin(as(LAURA), LAURA, 'st_laura')
+    const teacher = as(TEACHER)
+    await assertSucceeds(setDoc(newsItem(teacher), news()))
+    await assertSucceeds(
+      updateDoc(newsItem(teacher), {
+        title: 'Entrega final',
+        link: 'https://example.com/brief',
+        updatedAt: serverTimestamp(),
+      }),
+    )
+    await assertFails(setDoc(newsItem(teacher, 'n2'), news({ kind: 'party' })))
+    await assertFails(
+      setDoc(newsItem(teacher, 'n2'), news({ link: 'javascript:alert(1)' })),
+    )
+    await assertFails(setDoc(newsItem(as(OTHER_TEACHER), 'n2'), news()))
+    await assertSucceeds(getDoc(newsItem(as(LAURA))))
+    await assertFails(getDoc(newsItem(as(STRANGER))))
+    await assertFails(setDoc(newsItem(as(LAURA), 'n3'), news()))
+    await assertFails(deleteDoc(newsItem(as(LAURA))))
+    await assertSucceeds(deleteDoc(newsItem(teacher)))
+
+    const sent = doc(teacher, 'boards', BOARD, 'emails', 'e1')
+    await assertSucceeds(setDoc(sent, log()))
+    await assertFails(
+      setDoc(
+        doc(teacher, 'boards', BOARD, 'emails', 'e2'),
+        log({ sentBy: 'someone@else.com' }),
+      ),
+    )
+    await assertFails(updateDoc(sent, { subject: 'Otro' }))
+    await assertSucceeds(
+      getDocs(collection(teacher, 'boards', BOARD, 'emails')),
+    )
+    await assertFails(getDoc(doc(as(LAURA), 'boards', BOARD, 'emails', 'e1')))
+    await assertFails(
+      setDoc(
+        doc(as(LAURA), 'boards', BOARD, 'emails', 'e3'),
+        log({ sentBy: LAURA.email }),
+      ),
+    )
+  })
+})

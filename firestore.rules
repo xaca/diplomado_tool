@@ -192,12 +192,45 @@ service cloud.firestore {
           && schedule.from <= schedule.to);
     }
 
+    // M24: the course setup (keep the keys and limits in sync with courseSetupSchema in
+    // src/model/index.ts; the app checks each entry)
+    function validCourse(course) {
+      return course == null
+        || (course is map
+          && course.keys().hasOnly(['v', 'start', 'end', 'weeks', 'schedule', 'holidayCountry', 'holidays',
+              'daysOff', 'extras', 'total', 'correction', 'topics', 'showCounter', 'held'])
+          && course.v == 1
+          && (course.start == null || lookDate(course.start))
+          && (course.end == null || lookDate(course.end))
+          && (course.start == null || course.end == null || course.start <= course.end)
+          && (course.weeks == null || (course.weeks is int && course.weeks >= 1 && course.weeks <= 104))
+          && course.schedule is list && course.schedule.size() <= 7
+          && (course.holidayCountry == null || course.holidayCountry in ['CO'])
+          && course.holidays is list && course.holidays.size() <= 60
+          && course.daysOff is list && course.daysOff.size() <= 100
+          && course.extras is list && course.extras.size() <= 100
+          && (course.total == null || (course.total is int && course.total >= 1 && course.total <= 500))
+          && course.correction is int && course.correction >= -500 && course.correction <= 500
+          && course.topics is map && course.topics.size() <= 104
+          && course.showCounter is bool
+          && (course.held == null || (course.held is int && course.held >= 0 && course.held <= 500)));
+    }
+
+    // M24: who the emails come from (D107)
+    function validEmailSender(sender) {
+      return sender == null
+        || (sender is map
+          && sender.keys().hasOnly(['name', 'replyTo'])
+          && isString(sender.name, 0, 80)
+          && isString(sender.replyTo, 0, 254));
+    }
+
     function validBoard(boardId) {
       let data = request.resource.data;
       return data.keys().hasOnly(['title', 'description', 'teacherEmails', 'joinCode', 'joinCodeEnabled', 'status',
           'archiveAfterDays', 'background', 'createdAt', 'updatedAt', 'lastActivityAt', 'archivedAt', 'stages',
           'pattern', 'layout', 'sortBy', 'stickyHeader', 'logo', 'teacherProfiles', 'clock',
-          'style', 'ambient', 'accessories', 'tagline', 'schedule'])
+          'style', 'ambient', 'accessories', 'tagline', 'schedule', 'course', 'emailSender'])
         && isString(data.title, 1, 120)
         && isString(data.description, 0, 500)
         && data.teacherEmails is list && myEmail() in data.teacherEmails
@@ -221,7 +254,10 @@ service cloud.firestore {
         && (!('ambient' in data) || data.ambient is bool)
         && (!('accessories' in data) || data.accessories is bool)
         && (!('tagline' in data) || isString(data.tagline, 0, 60))
-        && (!('schedule' in data) || validSchedule(data.schedule));
+        && (!('schedule' in data) || validSchedule(data.schedule))
+        // M24: course setup and email sender
+        && (!('course' in data) || validCourse(data.course))
+        && (!('emailSender' in data) || validEmailSender(data.emailSender));
     }
 
     match /boards/{boardId} {
@@ -939,6 +975,43 @@ service cloud.firestore {
           && request.resource.data.updatedAt == request.time;
         // removing a student (and purge) takes their progress
         allow delete: if isBoardTeacher(boardId) || (signedIn() && request.auth.uid == uid);
+      }
+
+      // ---------- course news and the email log (M24) ----------
+      // Keep the kinds and limits in sync with newsInputSchema / EmailLogDoc in src/model/index.ts
+
+      function validNews() {
+        let data = request.resource.data;
+        return data.keys().hasOnly(['date', 'wholeWeek', 'kind', 'title', 'text', 'link', 'createdAt', 'updatedAt'])
+          && lookDate(data.date)
+          && data.wholeWeek is bool
+          && data.kind in ['deliverable', 'event', 'notice']
+          && isString(data.title, 1, 120)
+          && isString(data.text, 0, 1000)
+          && isString(data.link, 0, 500) && (data.link == '' || data.link.matches('https://[^ ]+'))
+          && data.updatedAt == request.time;
+      }
+
+      match /news/{newsId} {
+        allow read: if isBoardTeacher(boardId) || isMember(boardId);
+        allow create: if isBoardTeacher(boardId) && validNews()
+          && request.resource.data.createdAt == request.time;
+        allow update: if isBoardTeacher(boardId) && validNews()
+          && request.resource.data.createdAt == resource.data.createdAt;
+        allow delete: if isBoardTeacher(boardId);
+      }
+
+      // What went out from the teacher's Gmail: teacher only, written once, never edited
+      match /emails/{emailId} {
+        allow read, delete: if isBoardTeacher(boardId);
+        allow create: if isBoardTeacher(boardId)
+          && request.resource.data.keys().hasOnly(['kind', 'subject', 'sentBy', 'sent', 'failed', 'createdAt'])
+          && request.resource.data.kind in ['message', 'announcement', 'news', 'summary']
+          && isString(request.resource.data.subject, 1, 200)
+          && request.resource.data.sentBy == myEmail()
+          && request.resource.data.sent is list && request.resource.data.sent.size() <= 300
+          && request.resource.data.failed is list && request.resource.data.failed.size() <= 300
+          && request.resource.data.createdAt == request.time;
       }
 
       // ---------- attendance (M18): one record per class date, teacher only ----------
