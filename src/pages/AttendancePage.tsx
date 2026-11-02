@@ -9,6 +9,7 @@ import { AttendanceHistory } from '@/features/attendance/components/AttendanceHi
 import { TakeAttendance } from '@/features/attendance/components/TakeAttendance'
 import { useAttendance } from '@/features/attendance/hooks'
 import { useBoard } from '@/features/boards/hooks'
+import { AttendanceCourseHint } from '@/features/course/components/CourseStatus'
 import { useStudents } from '@/features/students/hooks'
 import { cn } from '@/lib/utils'
 
@@ -101,15 +102,20 @@ export function AttendancePage() {
       {students.loading || records.loading ? (
         <Skeleton className="h-60" />
       ) : tab === 'take' ? (
-        <TakeAttendance
-          key={date}
-          boardId={boardId}
-          date={date}
-          onDate={setDate}
-          record={records.data.find((record) => record.date === date)}
-          students={students.data}
-          groups={groups}
-        />
+        <>
+          {board.data.course && (
+            <AttendanceCourseHint course={board.data.course} date={date} />
+          )}
+          <TakeAttendance
+            key={date}
+            boardId={boardId}
+            date={date}
+            onDate={setDate}
+            record={records.data.find((record) => record.date === date)}
+            students={students.data}
+            groups={groups}
+          />
+        </>
       ) : (
         <AttendanceHistory
           boardId={boardId}

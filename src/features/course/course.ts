@@ -233,6 +233,52 @@ export function weekOf(setup: CourseSetup, date: string): number | null {
   return week <= MAX_COURSE_WEEKS ? week : null
 }
 
+/**
+ * The week a summary covers: the course week of `today` (Monday … Sunday), or the next one once
+ * this week has no classes left (a summary sent on the weekend is about the coming week); week 1
+ * before the course starts; the next 7 days for a course without weeks
+ */
+export function summaryWindow(setup: CourseSetup | null, today: string) {
+  const weeks = setup ? courseWeeks(setup) : []
+  const index = weeks.findIndex(
+    (item) => today >= item.start && today <= item.end,
+  )
+  const current = weeks[index]
+  const week =
+    current &&
+    !current.classes.some((day) => day.date >= today) &&
+    weeks[index + 1]
+      ? weeks[index + 1]
+      : (current ?? (weeks[0] && today < weeks[0].start ? weeks[0] : undefined))
+  return week
+    ? { from: week.start, to: week.end, week: week.number, topic: week.topic }
+    : { from: today, to: addDaysKey(today, 6), week: null, topic: '' }
+}
+
+/** "Resumen de la semana": its classes, days without class and news (any item with a date) */
+export function weekSummary<News extends { date: string }>(
+  setup: CourseSetup | null,
+  news: readonly News[],
+  today: string,
+) {
+  const window = summaryWindow(setup, today)
+  const inside = (date: string) => date >= window.from && date <= window.to
+  const all = setup ? classDates(setup, { until: window.to }) : []
+  return {
+    ...window,
+    classes: all
+      .map((day, index) => ({ ...day, number: index + 1 }))
+      .filter((day) => inside(day.date)),
+    off: setup
+      ? [...daysWithoutClass(setup)]
+          .filter(([date]) => inside(date))
+          .map(([date, label]) => ({ date, label }))
+          .sort((a, b) => a.date.localeCompare(b.date))
+      : [],
+    news: news.filter((item) => inside(item.date)),
+  }
+}
+
 export type CoursePhase = 'none' | 'before' | 'running' | 'last' | 'finished'
 
 /** Everything a page shows about the course right now ("Clase 12 de 32 · quedan 20") */

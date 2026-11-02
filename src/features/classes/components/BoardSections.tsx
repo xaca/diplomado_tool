@@ -1,14 +1,25 @@
 import { NavLink } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import { Clapperboard, LayoutGrid, StickyNote, Trophy } from 'lucide-react'
+import {
+  CalendarDays,
+  Clapperboard,
+  LayoutGrid,
+  StickyNote,
+  Trophy,
+} from 'lucide-react'
+import { useBoard } from '@/features/boards/hooks'
+import { useHasCalendar } from '@/features/course/hooks'
 import { cn } from '@/lib/utils'
 
 /**
- * "Tarjetas | Clases | Grabaciones | Logros" (M10, M23, M22): the board's cards (unchanged), class
- * walls, recorded classes, achievements.
+ * "Tarjetas | Clases | Grabaciones | Calendario | Logros" (M10, M23, M24, M22): the board's cards
+ * (unchanged), class walls, recorded classes, the course calendar (only when it has dates or
+ * news, D105), achievements.
  */
 export function BoardSections({ boardId }: { boardId: string }) {
   const { t } = useTranslation()
+  const board = useBoard(boardId)
+  const calendar = useHasCalendar(boardId, board.data?.course)
   const tab = ({ isActive }: { isActive: boolean }) =>
     cn(
       'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
@@ -33,6 +44,12 @@ export function BoardSections({ boardId }: { boardId: string }) {
         <Clapperboard className="size-4" />
         {t('recordings.tab')}
       </NavLink>
+      {calendar && (
+        <NavLink to={`/b/${boardId}/calendario`} className={tab}>
+          <CalendarDays className="size-4" />
+          {t('course.calendar')}
+        </NavLink>
+      )}
       <NavLink to={`/b/${boardId}/logros`} className={tab}>
         <Trophy className="size-4" />
         {t('achievements.title')}

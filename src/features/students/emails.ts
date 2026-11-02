@@ -3,7 +3,7 @@ import { normalizeEmail } from '@/lib/collections'
 import type { MemberDoc, StudentDoc } from '@/model'
 
 // Students' emails for the teacher (M18, F24): which address to write to, the list, and mail-app
-// links. Pure, unit-tested. The app never sends email: the teacher writes from their own account.
+// links. Pure, unit-tested. Sending from the app (the teacher's Gmail) is in features/mail (M24).
 
 type Student = Pick<StudentDoc, 'emails'> & { id: string }
 type Member = Pick<MemberDoc, 'studentId' | 'email' | 'joinedAt'>

@@ -5,6 +5,7 @@ import { CircleCheck, EyeOff, Play, RefreshCw, Settings } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { adminTabPath } from '@/features/boards/admin-tabs'
 import { BoardSections } from '@/features/classes/components/BoardSections'
 import { useClassAccess } from '@/features/classes/use-class-access'
 import {
@@ -270,7 +271,7 @@ export function RecordingsPage() {
           <Button
             variant="outline"
             nativeButton={false}
-            render={<Link to={`/teacher/boards/${boardId}#recordings`} />}
+            render={<Link to={adminTabPath(boardId, 'recordings')} />}
           >
             <Settings />
             {t('recordings.manage')}

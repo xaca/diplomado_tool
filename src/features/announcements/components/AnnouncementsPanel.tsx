@@ -58,16 +58,19 @@ const EMPTY: AnnouncementInput = {
 /**
  * The teacher's "Anuncios" (M19, D59–D60, D80): write an announcement (title, message, optional
  * link, "Importante" = a window for students), see how many students read each one, and remind,
- * edit or delete them. `members` = students who joined (for "12 de 17 leyeron").
+ * edit or delete them. `members` = students who joined (for "12 de 17 leyeron"). With `onEmail`
+ * (M24), "También enviar por correo" hands the new announcement to the email composer.
  */
 export function AnnouncementsPanel({
   boardId,
   members,
   onClose,
+  onEmail,
 }: {
   boardId: string
   members: number
   onClose: () => void
+  onEmail?: (announcement: AnnouncementInput) => void
 }) {
   const { t, i18n } = useTranslation()
   const locale = i18n.resolvedLanguage ?? 'es'
@@ -78,6 +81,7 @@ export function AnnouncementsPanel({
   const [form, setForm] = useState<AnnouncementInput>(EMPTY)
   const [editing, setEditing] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [email, setEmail] = useState(false)
   const [removing, setRemoving] = useState<WithId<AnnouncementDoc> | null>(null)
   const valid = announcementInputSchema.safeParse(form).success
   const author = {
@@ -111,8 +115,10 @@ export function AnnouncementsPanel({
       editing ? t('announcements.saved') : t('announcements.published'),
     )
     if (ok) {
+      if (email && !editing && onEmail) onEmail(form)
       setForm(EMPTY)
       setEditing(null)
+      setEmail(false)
     }
   }
 
@@ -199,6 +205,18 @@ export function AnnouncementsPanel({
               </span>
             </Label>
           </div>
+          {onEmail && !editing && (
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="announcement-email"
+                checked={email}
+                onCheckedChange={(checked) => setEmail(checked === true)}
+              />
+              <Label htmlFor="announcement-email" className="font-normal">
+                {t('announcements.alsoEmail')}
+              </Label>
+            </div>
+          )}
           <div className="flex gap-2">
             <Button type="submit" disabled={!valid || busy}>
               <Megaphone />

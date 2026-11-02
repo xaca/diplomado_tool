@@ -11,6 +11,9 @@ import {
 import { Skeleton } from '@/components/ui/skeleton'
 import { CreateBoardDialog } from '@/features/boards/components/CreateBoardDialog'
 import { RestoreDialog } from '@/features/data-transfer/components/RestoreDialog'
+import { ClassCounter } from '@/features/course/components/CourseStatus'
+import { courseState, type Moment } from '@/features/course/course'
+import { useNow } from '@/features/course/hooks'
 import { useTeacherBoards } from '@/features/boards/hooks'
 import {
   lifecycleOf,
@@ -19,6 +22,22 @@ import {
 } from '@/features/boards/lifecycle'
 import type { WithId } from '@/lib/firestore-hooks'
 import type { BoardDoc } from '@/model'
+
+function CourseBadge({
+  course,
+  now,
+}: {
+  course: BoardDoc['course']
+  now: Moment
+}) {
+  const state = courseState(course, now)
+  if (!state.configured) return null
+  return (
+    <Badge variant="secondary" data-testid="home-counter">
+      <ClassCounter state={state} compact />
+    </Badge>
+  )
+}
 
 export function TeacherHomePage() {
   const { t } = useTranslation()
@@ -79,6 +98,7 @@ function BoardGrid({
   archived?: boolean
 }) {
   const { t } = useTranslation()
+  const now = useNow()
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {boards.map((board) => (
@@ -107,6 +127,8 @@ function BoardGrid({
                     {board.joinCode}
                   </Badge>
                 )}
+                {/* M24: "12 / 32" — how far each course is */}
+                {!archived && <CourseBadge course={board.course} now={now} />}
                 {archived && suggestPurge(lifecycleOf(board)) && (
                   <Badge variant="outline" className="text-amber-700">
                     {t('lifecycle.considerPurgeShort')}

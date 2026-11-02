@@ -10,6 +10,7 @@ import {
 import { Link, useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import {
+  CalendarDays,
   CircleCheck,
   ClipboardCheck,
   Megaphone,
@@ -46,6 +47,13 @@ import { AccessoryContext } from '@/features/boards/accessory-context'
 import { boardTheme, hasTagline } from '@/features/boards/styles'
 import { localDate } from '@/features/attendance/attendance'
 import { ClockBanner } from '@/features/clock/components/ClockBanner'
+import { CourseHeaderLine } from '@/features/course/components/CourseStatus'
+import {
+  useCourseState,
+  useHasCalendar,
+  useHeldDates,
+  useNow,
+} from '@/features/course/hooks'
 import { ClockControls } from '@/features/clock/components/ClockControls'
 import { SpaceProfileDialog } from '@/features/spaces/components/SpaceProfileDialog'
 import {
@@ -104,6 +112,12 @@ export function BoardPage() {
     spaces.loading ? null : spaces.data,
     students.loading ? null : students.data,
   )
+  // M24: "Clase 12 de 32 · Próxima clase…" under the title, and the Calendario button
+  const course = board.data?.course ?? null
+  const held = useHeldDates(boardId, course, isBoardTeacher)
+  const courseNow = useCourseState(course, held)
+  const now = useNow()
+  const hasCalendar = useHasCalendar(boardId, course)
 
   const look = draft ?? resolveLook(board.data)
   const stages = boardStages(board.data)
@@ -336,6 +350,18 @@ export function BoardPage() {
                   <HeaderActionLabel>{t('recordings.tab')}</HeaderActionLabel>
                 </Button>
               )}
+              {/* M24: the course calendar */}
+              {(teacher || mySpace) && hasCalendar && (
+                <Button
+                  variant="secondary"
+                  nativeButton={false}
+                  title={t('course.calendar')}
+                  render={<Link to={`/b/${boardId}/calendario`} />}
+                >
+                  <CalendarDays />
+                  <HeaderActionLabel>{t('course.calendar')}</HeaderActionLabel>
+                </Button>
+              )}
               {/* M22: achievements */}
               {(teacher || mySpace) && (
                 <Button
@@ -452,6 +478,11 @@ export function BoardPage() {
             </>
           }
         >
+          <CourseHeaderLine
+            state={courseNow}
+            today={now.date}
+            showCounter={isBoardTeacher || course?.showCounter !== false}
+          />
           {teacher && spaces.data.length > 0 && (
             <div className="flex flex-wrap items-center gap-2">
               <StageSummary

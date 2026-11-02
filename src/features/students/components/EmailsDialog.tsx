@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Copy, Download, Mail } from 'lucide-react'
+import { Copy, Download, Mail, Send } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -39,18 +39,21 @@ const selectClass =
 /**
  * "Correos" (M18, F24, D63–D64): the emails of everyone or a filtered group (group, stage, ready,
  * absent on a date), each student can be unticked; copy, open the teacher's mail app (BCC, split
- * into batches) or CSV. The app never sends email.
+ * into batches) or CSV. With `onSend` (M24), "Enviar desde la app" sends to the chosen students from
+ * the teacher's Gmail.
  */
 export function EmailsDialog({
   boardId,
   board,
   students,
   onClose,
+  onSend,
 }: {
   boardId: string
   board: BoardDoc
   students: Student[]
   onClose: () => void
+  onSend?: (studentIds: string[]) => void
 }) {
   const { t, i18n } = useTranslation()
   const locale = i18n.resolvedLanguage ?? 'es'
@@ -261,7 +264,20 @@ export function EmailsDialog({
         )}
 
         <DialogFooter className="flex-wrap gap-2 sm:justify-start">
-          <Button disabled={!emails.length} onClick={() => void copy()}>
+          {onSend && (
+            <Button
+              disabled={!chosen.length}
+              onClick={() => onSend(chosen.map((student) => student.id))}
+            >
+              <Send />
+              {t('emails.sendFromApp')}
+            </Button>
+          )}
+          <Button
+            variant={onSend ? 'outline' : 'default'}
+            disabled={!emails.length}
+            onClick={() => void copy()}
+          >
             <Copy />
             {t('emails.copy')}
           </Button>

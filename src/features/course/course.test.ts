@@ -14,6 +14,7 @@ import {
   totalClasses,
   weekOf,
   weekdayName,
+  weekSummary,
 } from '@/features/course/course'
 import { courseSetupSchema, type CourseSetup } from '@/model'
 
@@ -246,5 +247,42 @@ describe('formatting', () => {
     expect(formatHours('18:00', '21:00', 'en')).toBe('6:00 PM – 9:00 PM')
     expect(weekdayName(2, 'es')).toBe('martes')
     expect(weekdayName(7, 'en')).toBe('Sunday')
+  })
+})
+
+describe('the week’s summary', () => {
+  it('covers the course week of today (week 1 before the start), with its classes, days off and news', () => {
+    const course = {
+      ...semester,
+      holidays: [{ date: '2026-11-17', name: 'Festivo' }],
+      topics: { '3': 'Pruebas' },
+    }
+    const news = [
+      { date: '2026-11-18', title: 'Entrega' },
+      { date: '2026-11-30', title: 'Después' },
+    ]
+    const summary = weekSummary(course, news, '2026-11-16')
+    expect(summary).toMatchObject({
+      from: '2026-11-16',
+      to: '2026-11-22',
+      week: 3,
+      topic: 'Pruebas',
+    })
+    expect(summary.classes.map((day) => [day.date, day.number])).toEqual([
+      ['2026-11-21', 5],
+    ])
+    expect(summary.off).toEqual([{ date: '2026-11-17', label: 'Festivo' }])
+    expect(summary.news).toEqual([{ date: '2026-11-18', title: 'Entrega' }])
+    expect(weekSummary(course, [], '2026-10-20').week).toBe(1)
+    // on Sunday, with this week's classes over, the summary is about the coming week
+    expect(weekSummary(course, [], '2026-11-15').week).toBe(3)
+    expect(weekSummary(course, [], '2026-11-14').week).toBe(2)
+    // without weeks: the next 7 days
+    expect(weekSummary(setup({ total: 4 }), news, '2026-11-15')).toMatchObject({
+      from: '2026-11-15',
+      to: '2026-11-21',
+      week: null,
+      classes: [],
+    })
   })
 })

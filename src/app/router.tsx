@@ -4,6 +4,7 @@ import { AppShell, type ShellHandle } from '@/components/layout/AppShell'
 import { RouteError } from '@/components/layout/RouteError'
 import { AchievementsPage } from '@/pages/AchievementsPage'
 import { BoardPage } from '@/pages/BoardPage'
+import { CalendarPage } from '@/pages/CalendarPage'
 import { ClassDesignPage } from '@/pages/ClassDesignPage'
 import { ClassesPage } from '@/pages/ClassesPage'
 import { ClassPage } from '@/pages/ClassPage'
@@ -74,6 +75,8 @@ export const router = createBrowserRouter([
             path: 'b/:boardId/videos/:recordingId',
             element: <RecordingPlayerPage />,
           },
+          // M24: the course calendar (weeks, classes, holidays, news)
+          { path: 'b/:boardId/calendario', element: <CalendarPage /> },
           // M10: class participation (sticky-note walls)
           { path: 'b/:boardId/class', element: <ClassesPage /> },
           { path: 'b/:boardId/class/:classId', element: <ClassPage /> },
@@ -102,6 +105,11 @@ export const router = createBrowserRouter([
               {
                 path: 'teacher/boards/:boardId/attendance',
                 element: <AttendanceRoute />,
+              },
+              // M24: Administrar's tabs (Estudiantes, Curso, Grabaciones, Comunicación, Ajustes)
+              {
+                path: 'teacher/boards/:boardId/:tab',
+                element: <TeacherBoardRoute />,
               },
             ],
           },
