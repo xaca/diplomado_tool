@@ -93,7 +93,7 @@ test.describe('M2 · boards, students and joining', () => {
 
     const teacher = await browser.newPage()
     await signIn(teacher, DEMO.teacher)
-    await teacher.goto(`/teacher/boards/${DEMO.boardId}`)
+    await teacher.goto(`/teacher/boards/${DEMO.boardId}/students`)
     const laura = teacher
       .getByTestId('student-row')
       .filter({ hasText: 'Laura Nataly' })
@@ -121,7 +121,7 @@ test.describe('M2 · boards, students and joining', () => {
     // The teacher sees it and creates the card
     const teacher = await browser.newPage()
     await signIn(teacher, DEMO.teacher)
-    await teacher.goto(`/teacher/boards/${DEMO.boardId}`)
+    await teacher.goto(`/teacher/boards/${DEMO.boardId}/students`)
     const laura = teacher
       .getByTestId('student-row')
       .filter({ hasText: 'Laura Nataly' })
@@ -159,7 +159,7 @@ test.describe('M2 · boards, students and joining', () => {
   test('a disabled invite link is rejected', async ({ browser }) => {
     const teacher = await browser.newPage()
     await signIn(teacher, DEMO.teacher)
-    await teacher.goto(`/teacher/boards/${DEMO.boardId}`)
+    await teacher.goto(`/teacher/boards/${DEMO.boardId}/students`)
     await teacher.getByRole('switch').click()
     await expect(teacher.getByText('Enlace desactivado')).toBeVisible()
     await teacher.close()

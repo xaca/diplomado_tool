@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { adminTabPath } from '@/features/boards/admin-tabs'
 import {
   Dialog,
   DialogContent,
@@ -41,7 +42,8 @@ export function CreateBoardDialog() {
       setOpen(false)
       setTitle('')
       setDescription('')
-      navigate(`/teacher/boards/${boardId}`)
+      // A new board starts empty: open it where students are added (M24)
+      navigate(adminTabPath(boardId, 'students'))
     } catch {
       toast.error(t('errors.generic'))
     } finally {

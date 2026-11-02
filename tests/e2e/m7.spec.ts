@@ -20,7 +20,7 @@ test.beforeEach(async () => {
 
 async function openTeacherBoard(page: Page) {
   await signIn(page, DEMO.teacher)
-  await page.goto(`/teacher/boards/${DEMO.boardId}`)
+  await page.goto(`/teacher/boards/${DEMO.boardId}/settings`)
   await expect(page.getByTestId('lifecycle-panel')).toBeVisible()
 }
 
@@ -56,7 +56,7 @@ test.describe('M7 · archived projects', () => {
     ).toHaveCount(0)
 
     // Restore → editable again
-    await teacher.goto(`/teacher/boards/${DEMO.boardId}`)
+    await teacher.goto(`/teacher/boards/${DEMO.boardId}/settings`)
     await teacher.getByRole('button', { name: 'Restaurar' }).click()
     await expect(teacher.getByTestId('lifecycle-panel')).toContainText(
       'pasará a «Proyectos archivados»',
@@ -74,7 +74,7 @@ test.describe('M7 · archived projects', () => {
     await expect(page.getByTestId('archived-boards')).toContainText(
       DEMO.boardTitle,
     )
-    await page.goto(`/teacher/boards/${DEMO.boardId}`)
+    await page.goto(`/teacher/boards/${DEMO.boardId}/settings`)
     await expect(page.getByTestId('lifecycle-panel')).toContainText(
       'Archivado desde',
     )

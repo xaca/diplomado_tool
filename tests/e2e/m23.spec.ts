@@ -30,7 +30,7 @@ function youtube(): FakeYouTube {
 /** The teacher links the playlist in Administrar (review first, then save) */
 async function linkPlaylist(page: Page) {
   await signIn(page, DEMO.teacher)
-  await page.goto(`/teacher/boards/${DEMO.boardId}`)
+  await page.goto(`/teacher/boards/${DEMO.boardId}/recordings`)
   const panel = page.getByTestId('recordings-panel')
   await panel.getByRole('button', { name: 'Agregar lista de YouTube' }).click()
   await panel

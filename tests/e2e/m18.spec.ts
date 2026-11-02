@@ -181,7 +181,7 @@ test.describe('M18 · attendance', () => {
   }) => {
     await seedDay('2026-11-03', { st_carolina: 'absent', st_elma: 'present' })
     await signIn(page, DEMO.teacher)
-    await page.goto(`/teacher/boards/${DEMO.boardId}`)
+    await page.goto(`/teacher/boards/${DEMO.boardId}/students`)
     await page
       .getByRole('row')
       .filter({ hasText: 'carolina@gmail.com' })
@@ -218,7 +218,7 @@ test.describe("M18 · students' emails", () => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write'])
     await seedDay('2026-11-03', { st_elma: 'absent', st_laura: 'present' })
     await signIn(page, DEMO.teacher)
-    await page.goto(`/teacher/boards/${DEMO.boardId}`)
+    await page.goto(`/teacher/boards/${DEMO.boardId}/students`)
     await page.getByRole('button', { name: 'Correos' }).click()
     const dialog = page.getByTestId('emails-dialog')
     await expect(dialog.getByTestId('emails-count')).toHaveText(

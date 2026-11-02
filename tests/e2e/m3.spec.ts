@@ -102,7 +102,7 @@ test.describe('M3 · board dashboard', () => {
 
   test("renaming a student updates the card's name", async ({ page }) => {
     await signIn(page, DEMO.teacher)
-    await page.goto(`/teacher/boards/${DEMO.boardId}`)
+    await page.goto(`/teacher/boards/${DEMO.boardId}/students`)
     await page
       .getByTestId('student-row')
       .filter({ hasText: 'Elma' })

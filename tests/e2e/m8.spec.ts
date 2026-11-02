@@ -71,6 +71,6 @@ test.describe('M8 · launch', () => {
     await expect(page.getByText(DEMO.boardTitle)).toBeVisible()
     await expect(page.getByRole('link', { name: 'Privacidad' })).toBeVisible()
     await page.getByText(DEMO.boardTitle).click()
-    await expect(page.getByTestId('lifecycle-panel')).toBeVisible()
+    await expect(page.getByTestId('admin-tabs')).toBeVisible()
   })
 })

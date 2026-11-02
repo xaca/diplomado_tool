@@ -99,7 +99,7 @@ test.describe('M11 · Design Thinking stage', () => {
 
   test('the teacher renames a stage for the board', async ({ page }) => {
     await signIn(page, DEMO.teacher)
-    await page.goto(`/teacher/boards/${DEMO.boardId}`)
+    await page.goto(`/teacher/boards/${DEMO.boardId}/settings`)
     const panel = page.getByTestId('stages-panel')
     await panel.getByLabel('Etapa 5', { exact: true }).fill('Probando')
     await panel.getByRole('button', { name: 'Guardar' }).click()
@@ -113,7 +113,7 @@ test.describe('M11 · Design Thinking stage', () => {
     await page.keyboard.press('Escape')
 
     // and back to the defaults
-    await page.goto(`/teacher/boards/${DEMO.boardId}`)
+    await page.goto(`/teacher/boards/${DEMO.boardId}/settings`)
     await page.getByRole('button', { name: 'Volver a Design Thinking' }).click()
     await expect(page.getByText('Etapa guardada')).toBeVisible()
     await expect(panel.getByLabel('Etapa 5', { exact: true })).toHaveValue('')
