@@ -12,6 +12,7 @@ import {
   setArchiveAfterDays,
 } from '@/features/boards/api'
 import { slideAssetIds, type BoardFile } from '@/features/data-transfer/backup'
+import { saveCourse, saveEmailSender } from '@/features/course/api'
 import { saveBoardStages } from '@/features/stages/api'
 import { db } from '@/lib/firebase'
 import { normalizeEmail } from '@/lib/collections'
@@ -35,6 +36,11 @@ export async function restoreBoardFile(
     await setArchiveAfterDays(boardId, file.board.archiveAfterDays)
   if (file.board.stages) await saveBoardStages(boardId, file.board.stages)
   if (file.board.look) await saveBoardLook(boardId, file.board.look)
+  // M24: the course setup (also from a template) and the sender; the counter starts over
+  if (file.board.course)
+    await saveCourse(boardId, { ...file.board.course, held: null })
+  if (file.board.emailSender)
+    await saveEmailSender(boardId, file.board.emailSender)
   if (kind === 'template') return boardId
 
   const spaces = new Map(file.spaces.map((space) => [space.studentId, space]))
@@ -191,6 +197,12 @@ export async function restoreBoardFile(
       },
     ]),
   )
+  // M24: course news
+  for (const item of file.news ?? [])
+    writes.push([
+      doc(collection(db, paths.news(boardId))),
+      { ...item, createdAt: serverTimestamp(), updatedAt: serverTimestamp() },
+    ])
   for (let start = 0; start < writes.length; start += 450) {
     const batch = writeBatch(db)
     for (const [ref, data] of writes.slice(start, start + 450))

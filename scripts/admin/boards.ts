@@ -5,6 +5,7 @@ import { isArchived, lifecycleOf } from '@/features/boards/lifecycle'
 import {
   buildBackup,
   classBackupOf,
+  newsBackupOf,
   recordingBackupOf,
   type BoardSnapshot,
 } from '@/features/data-transfer/backup'
@@ -18,6 +19,7 @@ import type {
   AttendanceDoc,
   AnnouncementDoc,
   ClassDoc,
+  NewsDoc,
   RecordingDoc,
   ClassSlideDoc,
   SpaceDoc,
@@ -67,6 +69,8 @@ export async function loadBoard(boardId: string) {
     achievements,
     recordings,
     watchProgress,
+    news,
+    emailLog,
   ] = await Promise.all([
     ref.collection('students').get(),
     ref.collection('spaces').get(),
@@ -86,6 +90,9 @@ export async function loadBoard(boardId: string) {
     // M23: playlists (in the backup) and students' progress (only purged)
     ref.collection('recordings').get(),
     ref.collection('watchProgress').get(),
+    // M24: course news (in the backup) and the email log (only purged)
+    ref.collection('news').get(),
+    ref.collection('emails').get(),
   ])
   const classSlides = await Promise.all(
     classes.docs.map((item) => item.ref.collection('slides').get()),
@@ -122,6 +129,8 @@ export async function loadBoard(boardId: string) {
       archiveAfterDays: board.archiveAfterDays,
       stages: board.stages ?? null,
       look: resolveLook(board),
+      course: board.course ?? null,
+      emailSender: board.emailSender ?? null,
     },
     students: students.docs.map((doc) => {
       const data = doc.data() as StudentDoc
@@ -198,6 +207,7 @@ export async function loadBoard(boardId: string) {
       .map((doc) => doc.data() as RecordingDoc)
       .sort((a, b) => a.position - b.position)
       .map(recordingBackupOf),
+    news: news.docs.map((doc) => newsBackupOf(doc.data() as NewsDoc)),
   }
   const assetRows: AssetRow[] = assets.docs.map((doc) => {
     const data = doc.data() as AssetDoc
@@ -227,6 +237,8 @@ export async function loadBoard(boardId: string) {
     ...classSlides.flatMap((s) => s.docs.map((doc) => doc.ref)),
     ref.collection('achievementStats').doc('counts'),
     ...[
+      news,
+      emailLog,
       recordings,
       watchProgress,
       achievements,

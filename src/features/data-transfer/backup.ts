@@ -31,6 +31,13 @@ import {
   YOUTUBE_LIST_ID,
   YOUTUBE_VIDEO_ID,
   type RecordingDoc,
+  courseSetupSchema,
+  emailSenderSchema,
+  newsInputSchema,
+  type CourseSetup,
+  type EmailSender,
+  type NewsDoc,
+  type NewsInput,
 } from '@/model'
 
 // Board backup and template files (PLAN.md → Import / export). Pure: shared with the admin CLI.
@@ -54,6 +61,9 @@ const boardSettingsSchema = z.object({
   stages: stageListSchema.nullable().optional(),
   /** M12: the board's look (missing = today's look); the logo isn't restored, like covers */
   look: boardLookSchema.optional(),
+  /** M24: the course setup (a template carries it too: copy a course's schedule) and the sender */
+  course: courseSetupSchema.nullable().optional(),
+  emailSender: emailSenderSchema.nullable().optional(),
 })
 
 const slideSchema = z.object({
@@ -185,6 +195,8 @@ export const boardBackupSchema = z.object({
   classes: z.array(classBackupSchema).max(500).optional(),
   /** M23: the YouTube playlists, in the teacher's order (students' progress is not kept) */
   recordings: z.array(recordingBackupSchema).max(50).optional(),
+  /** M24: course news (the email log stays out: it's a record of what was sent) */
+  news: z.array(newsInputSchema).max(1000).optional(),
 })
 export type BoardBackup = z.infer<typeof boardBackupSchema>
 
@@ -204,6 +216,21 @@ export const recordingBackupOf = (
   hidden: recording.hidden ?? [],
 })
 
+/** A news item as it goes into the backup */
+export const newsBackupOf = (
+  item: Pick<
+    NewsDoc,
+    'date' | 'wholeWeek' | 'kind' | 'title' | 'text' | 'link'
+  >,
+): NewsInput => ({
+  date: item.date,
+  wholeWeek: item.wholeWeek ?? false,
+  kind: item.kind,
+  title: item.title,
+  text: item.text ?? '',
+  link: item.link ?? '',
+})
+
 export const boardTemplateSchema = z.object({
   type: z.literal('pbl.boardTemplate'),
   version: z.literal(1),
@@ -219,6 +246,8 @@ export type BoardSnapshot = {
     archiveAfterDays: number
     stages?: StageDef[] | null
     look?: BoardLook
+    course?: CourseSetup | null
+    emailSender?: EmailSender | null
   }
   students: {
     id: string
@@ -252,6 +281,8 @@ export type BoardSnapshot = {
   classes?: ClassBackup[]
   /** M23: playlists in the teacher's order */
   recordings?: RecordingBackup[]
+  /** M24: course news */
+  news?: NewsInput[]
 }
 
 /** A class as it goes into the backup: its slides in order, each with its notes (oldest first). */
@@ -355,6 +386,9 @@ export function buildBackup(
       a.date.localeCompare(b.date),
     ),
     recordings: snapshot.recordings ?? [],
+    news: [...(snapshot.news ?? [])].sort((a, b) =>
+      a.date.localeCompare(b.date),
+    ),
   })
 }
 

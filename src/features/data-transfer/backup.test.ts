@@ -4,11 +4,13 @@ import {
   buildBackup,
   buildTemplate,
   classBackupOf,
+  newsBackupOf,
   parseBoardFile,
   recordingBackupOf,
   slideAssetIds,
   type BoardSnapshot,
 } from '@/features/data-transfer/backup'
+import { courseSetupSchema } from '@/model'
 
 const ref = (assetId: string) => ({
   assetId,
@@ -389,6 +391,48 @@ describe('recorded classes in backups (M23)', () => {
         ...backup,
         recordings: [{ ...recording, listId: '<script>' }],
       }),
+    ).toThrow()
+  })
+})
+
+describe('course setup and news in backups (M24)', () => {
+  it('keeps the course setup, the sender and the news (also the setup in a template); bad values are refused', () => {
+    const course = courseSetupSchema.parse({
+      start: '2026-11-03',
+      end: '2026-11-28',
+      schedule: [{ day: 2, start: '18:00', end: '21:00', place: 'Salón 304' }],
+      holidayCountry: 'CO',
+      holidays: [{ date: '2026-11-16', name: 'Independencia de Cartagena' }],
+      topics: { '1': 'Empatía' },
+    })
+    const news = newsBackupOf({
+      date: '2026-11-10',
+      wholeWeek: false,
+      kind: 'deliverable',
+      title: 'Entrega del prototipo',
+      text: '',
+      link: 'https://example.com',
+    })
+    const board = {
+      ...snapshot.board,
+      course,
+      emailSender: { name: 'Diplomado UX/UI', replyTo: 'docente@uni.edu.co' },
+    }
+    const backup = buildBackup({ ...snapshot, board, news: [news] })
+    expect(backup.board.course).toEqual(course)
+    expect(backup.board.emailSender?.replyTo).toBe('docente@uni.edu.co')
+    expect(backup.news).toEqual([news])
+    expect(buildTemplate(board).board.course).toEqual(course)
+    const parsed = parseBoardFile(JSON.parse(JSON.stringify(backup)))
+    expect(parsed.kind === 'backup' && parsed.file.news).toEqual([news])
+    expect(() =>
+      parseBoardFile({
+        ...backup,
+        board: { ...backup.board, course: { ...course, start: 'mañana' } },
+      }),
+    ).toThrow()
+    expect(() =>
+      parseBoardFile({ ...backup, news: [{ ...news, link: 'javascript:x' }] }),
     ).toThrow()
   })
 })
