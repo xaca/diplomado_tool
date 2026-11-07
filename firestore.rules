@@ -1277,8 +1277,9 @@ service cloud.firestore {
         allow create: if validNewAsset(boardId, assetId) && boardIsActive(boardId)
           && (
             (isSpaceOwner(boardId, request.resource.data.studentId) && !(request.resource.data.kind in ['logo', 'class']))
-            // M15: an image the teacher adds to a student's slide (the student's folder)
-            || (isBoardTeacher(boardId) && request.resource.data.kind == 'slide'
+            // M15: an image the teacher adds to a student's slide (the student's folder);
+            // M27: or a new cover for the student's project
+            || (isBoardTeacher(boardId) && request.resource.data.kind in ['slide', 'cover']
               && exists(/databases/$(database)/documents/boards/$(boardId)/spaces/$(request.resource.data.studentId)))
             // M12: the board logo, and M10b: images in class drawings, by the board's teacher, in the board's own folder
             || (isBoardTeacher(boardId) && request.resource.data.kind in ['logo', 'class']

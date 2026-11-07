@@ -36,6 +36,7 @@ import { UploadError } from '@/features/assets/upload'
 import { recordBoardActivity } from '@/features/boards/api'
 import { useBoard } from '@/features/boards/hooks'
 import { isWritable, lifecycleOf } from '@/features/boards/lifecycle'
+import { PROJECT_NOTES } from '@/features/notes/api'
 import { SlideNotes } from '@/features/notes/components/SlideNotes'
 import {
   useGuardLeavingPage,
@@ -202,6 +203,7 @@ export function EditorPage() {
   const current =
     slides.data.find((slide) => slide.id === selectedId) ?? slides.data[0]
   const currentNotes = current ? (notes.bySlide.get(current.id) ?? []) : []
+  const projectNotes = notes.bySlide.get(PROJECT_NOTES) ?? []
   // M14: links typed as text that could be shown inside the slide (from the saved version)
   const textLinks = current ? embeddableTextLinks(current.content) : 0
 
@@ -382,7 +384,7 @@ export function EditorPage() {
           error={status.error}
           bytes={bytes}
         />
-        {(currentNotes.length > 0 || asTeacher) && (
+        {(currentNotes.length > 0 || asTeacher || projectNotes.length > 0) && (
           <Button
             variant={showNotes ? 'secondary' : 'outline'}
             size="sm"
@@ -541,25 +543,40 @@ export function EditorPage() {
             </div>
           )}
         </div>
-        {current && showNotes && (currentNotes.length > 0 || asTeacher) && (
-          <aside className="max-h-48 shrink-0 overflow-y-auto border-t p-2 md:max-h-none md:w-72 md:border-t-0 md:border-l">
-            <SlideNotes
-              key={`${current.id}:${noteDraft !== null}`}
-              boardId={boardId}
-              studentId={studentId}
-              slideId={current.id}
-              notes={currentNotes}
-              canWrite={isBoardTeacher}
-              where={t('comments.whereSlide', {
-                number: order.indexOf(current.id) + 1,
-                name: space.data.ownerName,
-              })}
-              teacherProfiles={board.data?.teacherProfiles}
-              draft={noteDraft ?? undefined}
-              onAdded={() => setNoteDraft(null)}
-            />
-          </aside>
-        )}
+        {current &&
+          showNotes &&
+          (currentNotes.length > 0 || asTeacher || projectNotes.length > 0) && (
+            <aside className="flex max-h-48 shrink-0 flex-col gap-2 overflow-y-auto border-t p-2 md:max-h-none md:w-72 md:border-t-0 md:border-l">
+              {/* M27: the teacher's comments on the whole project, next to the slides */}
+              <SlideNotes
+                boardId={boardId}
+                studentId={studentId}
+                slideId={null}
+                notes={projectNotes}
+                canWrite={isBoardTeacher}
+                viewer={isBoardTeacher ? 'teacher' : 'owner'}
+                where={t('comments.whereProject', {
+                  name: space.data.ownerName,
+                })}
+                teacherProfiles={board.data?.teacherProfiles}
+              />
+              <SlideNotes
+                key={`${current.id}:${noteDraft !== null}`}
+                boardId={boardId}
+                studentId={studentId}
+                slideId={current.id}
+                notes={currentNotes}
+                canWrite={isBoardTeacher}
+                where={t('comments.whereSlide', {
+                  number: order.indexOf(current.id) + 1,
+                  name: space.data.ownerName,
+                })}
+                teacherProfiles={board.data?.teacherProfiles}
+                draft={noteDraft ?? undefined}
+                onAdded={() => setNoteDraft(null)}
+              />
+            </aside>
+          )}
       </div>
 
       {inserting && (

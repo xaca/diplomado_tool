@@ -57,10 +57,10 @@ test.describe("M15 · teacher edits students' slides", () => {
     await expect(page.getByTestId('teacher-editing')).toContainText(
       'Sebastian Cetina',
     )
-    // Reordering, duplicating and deleting stay with the student
+    // M27 (D129): the teacher deletes (and reorders) too; duplicating stays with the student
     await expect(
       page.getByRole('button', { name: /Eliminar diapositiva/ }),
-    ).toHaveCount(0)
+    ).toHaveCount(2)
     await expect(page.getByRole('button', { name: /Duplicar/ })).toHaveCount(0)
 
     await writeText(page, 'Corregido')

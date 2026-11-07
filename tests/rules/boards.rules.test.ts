@@ -3699,6 +3699,33 @@ describe("the teacher's feedback on a project (M27)", () => {
     )
   })
 
+  it('the teacher registers a new cover image in the student folder; a classmate cannot', async () => {
+    await seeded()
+    const asset = (overrides: Record<string, unknown> = {}) => ({
+      publicId: `pbl/dev/${BOARD}/st_laura/cov1`,
+      studentId: 'st_laura',
+      kind: 'cover',
+      width: 800,
+      height: 450,
+      format: 'webp',
+      bytes: 1000,
+      status: 'active',
+      createdAt: serverTimestamp(),
+      ...overrides,
+    })
+    await assertSucceeds(
+      setDoc(doc(as(TEACHER), 'boards', BOARD, 'assets', 'cov1'), asset()),
+    )
+    await assertFails(
+      setDoc(
+        doc(as(SEB), 'boards', BOARD, 'assets', 'cov2'),
+        asset({
+          publicId: `pbl/dev/${BOARD}/st_laura/cov2`,
+        }),
+      ),
+    )
+  })
+
   it('"Comentario nuevo": the teacher lights it, only the student clears it', async () => {
     await seeded()
     await assertSucceeds(
