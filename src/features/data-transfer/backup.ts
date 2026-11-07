@@ -38,14 +38,6 @@ import {
   type EmailSender,
   type NewsDoc,
   type NewsInput,
-  GOOGLE_FORMS_ID,
-  GOOGLE_SLIDES_ID,
-  MAX_EVALUATION_TITLE,
-  MAX_EVALUATIONS,
-  MAX_PRESENTATION_TITLE,
-  MAX_PRESENTATIONS,
-  type EvaluationDoc,
-  type PresentationDoc,
 } from '@/model'
 
 // Board backup and template files (PLAN.md → Import / export). Pure: shared with the admin CLI.
@@ -154,53 +146,6 @@ const recordingBackupSchema = z.object({
   hidden: z.array(z.string().regex(YOUTUBE_VIDEO_ID)).max(MAX_RECORDING_VIDEOS),
 })
 
-/** M25: a Google Slides link, in the teacher's order (D124) */
-const presentationBackupSchema = z.object({
-  title: z.string().trim().min(1).max(MAX_PRESENTATION_TITLE),
-  presentationId: z.string().regex(GOOGLE_SLIDES_ID),
-  published: z.boolean().default(false),
-  enabled: z.boolean(),
-})
-/** M25: a Google Forms link, in the teacher's order (D124) */
-const evaluationBackupSchema = z.object({
-  title: z.string().trim().min(1).max(MAX_EVALUATION_TITLE),
-  formId: z.string().regex(GOOGLE_FORMS_ID),
-  published: z.boolean(),
-  enabled: z.boolean(),
-})
-export type PresentationBackup = z.infer<typeof presentationBackupSchema>
-export type EvaluationBackup = z.infer<typeof evaluationBackupSchema>
-
-/** Course material that a template carries too (a new cohort reuses it, D124) */
-const materialSchema = {
-  presentations: z
-    .array(presentationBackupSchema)
-    .max(MAX_PRESENTATIONS)
-    .optional(),
-  evaluations: z.array(evaluationBackupSchema).max(MAX_EVALUATIONS).optional(),
-}
-
-export const presentationBackupOf = (
-  item: Pick<
-    PresentationDoc,
-    'title' | 'presentationId' | 'published' | 'enabled'
-  >,
-): PresentationBackup => ({
-  title: item.title,
-  presentationId: item.presentationId,
-  published: item.published ?? false,
-  enabled: item.enabled,
-})
-
-export const evaluationBackupOf = (
-  item: Pick<EvaluationDoc, 'title' | 'formId' | 'published' | 'enabled'>,
-): EvaluationBackup => ({
-  title: item.title,
-  formId: item.formId,
-  published: item.published,
-  enabled: item.enabled,
-})
-
 export const boardBackupSchema = z.object({
   type: z.literal('pbl.boardBackup'),
   version: z.literal(1),
@@ -252,8 +197,6 @@ export const boardBackupSchema = z.object({
   recordings: z.array(recordingBackupSchema).max(50).optional(),
   /** M24: course news (the email log stays out: it's a record of what was sent) */
   news: z.array(newsInputSchema).max(1000).optional(),
-  /** M25: Google Slides and Google Forms (optional: files from before keep restoring) */
-  ...materialSchema,
 })
 export type BoardBackup = z.infer<typeof boardBackupSchema>
 
@@ -292,8 +235,6 @@ export const boardTemplateSchema = z.object({
   type: z.literal('pbl.boardTemplate'),
   version: z.literal(1),
   board: boardSettingsSchema,
-  /** M25: the course's Google Slides and Google Forms (D124) */
-  ...materialSchema,
 })
 export type BoardTemplate = z.infer<typeof boardTemplateSchema>
 
@@ -342,9 +283,6 @@ export type BoardSnapshot = {
   recordings?: RecordingBackup[]
   /** M24: course news */
   news?: NewsInput[]
-  /** M25: in the teacher's order */
-  presentations?: PresentationBackup[]
-  evaluations?: EvaluationBackup[]
 }
 
 /** A class as it goes into the backup: its slides in order, each with its notes (oldest first). */
@@ -451,22 +389,15 @@ export function buildBackup(
     news: [...(snapshot.news ?? [])].sort((a, b) =>
       a.date.localeCompare(b.date),
     ),
-    presentations: snapshot.presentations ?? [],
-    evaluations: snapshot.evaluations ?? [],
   })
 }
 
-/** The board's settings and its course material (M25, D124): no students, no work. */
-export function buildTemplate(
-  snapshot: Pick<BoardSnapshot, 'board' | 'presentations' | 'evaluations'>,
-): BoardTemplate {
-  return boardTemplateSchema.parse({
+export function buildTemplate(board: BoardSnapshot['board']): BoardTemplate {
+  return {
     type: 'pbl.boardTemplate',
     version: 1,
-    board: boardSettingsSchema.parse(snapshot.board),
-    presentations: snapshot.presentations ?? [],
-    evaluations: snapshot.evaluations ?? [],
-  })
+    board: boardSettingsSchema.parse(board),
+  }
 }
 
 export type BoardFile =

@@ -5,9 +5,7 @@ import { isArchived, lifecycleOf } from '@/features/boards/lifecycle'
 import {
   buildBackup,
   classBackupOf,
-  evaluationBackupOf,
   newsBackupOf,
-  presentationBackupOf,
   recordingBackupOf,
   type BoardSnapshot,
 } from '@/features/data-transfer/backup'
@@ -23,8 +21,6 @@ import type {
   ClassDoc,
   NewsDoc,
   RecordingDoc,
-  EvaluationDoc,
-  PresentationDoc,
   ClassSlideDoc,
   SpaceDoc,
   StickyNoteDoc,
@@ -75,8 +71,6 @@ export async function loadBoard(boardId: string) {
     watchProgress,
     news,
     emailLog,
-    presentations,
-    evaluations,
   ] = await Promise.all([
     ref.collection('students').get(),
     ref.collection('spaces').get(),
@@ -99,9 +93,6 @@ export async function loadBoard(boardId: string) {
     // M24: course news (in the backup) and the email log (only purged)
     ref.collection('news').get(),
     ref.collection('emails').get(),
-    // M25: Google Slides and Google Forms (in the backup)
-    ref.collection('presentations').get(),
-    ref.collection('evaluations').get(),
   ])
   const classSlides = await Promise.all(
     classes.docs.map((item) => item.ref.collection('slides').get()),
@@ -217,14 +208,6 @@ export async function loadBoard(boardId: string) {
       .sort((a, b) => a.position - b.position)
       .map(recordingBackupOf),
     news: news.docs.map((doc) => newsBackupOf(doc.data() as NewsDoc)),
-    presentations: presentations.docs
-      .map((doc) => doc.data() as PresentationDoc)
-      .sort((a, b) => a.position - b.position)
-      .map(presentationBackupOf),
-    evaluations: evaluations.docs
-      .map((doc) => doc.data() as EvaluationDoc)
-      .sort((a, b) => a.position - b.position)
-      .map(evaluationBackupOf),
   }
   const assetRows: AssetRow[] = assets.docs.map((doc) => {
     const data = doc.data() as AssetDoc
@@ -254,8 +237,6 @@ export async function loadBoard(boardId: string) {
     ...classSlides.flatMap((s) => s.docs.map((doc) => doc.ref)),
     ref.collection('achievementStats').doc('counts'),
     ...[
-      presentations,
-      evaluations,
       news,
       emailLog,
       recordings,

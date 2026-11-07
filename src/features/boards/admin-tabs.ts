@@ -4,8 +4,6 @@ export const ADMIN_TABS = [
   'students',
   'course',
   'recordings',
-  'presentations',
-  'evaluations',
   'communication',
   'settings',
 ] as const

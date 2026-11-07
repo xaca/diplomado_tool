@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next'
 import {
   CalendarDays,
   Clapperboard,
-  ClipboardCheck,
   LayoutGrid,
   Presentation,
   StickyNote,
@@ -11,17 +10,12 @@ import {
 } from 'lucide-react'
 import { useBoard } from '@/features/boards/hooks'
 import { useHasCalendar } from '@/features/course/hooks'
-import { useHasEvaluations } from '@/features/evaluations/hooks'
-import { useHasPresentations } from '@/features/presentations/hooks'
-import { normalizeEmail } from '@/lib/collections'
 import { cn } from '@/lib/utils'
-import { isTeacherRole, useAuth } from '@/providers/auth-context'
 
 /**
- * "Tarjetas | Clases | Grabaciones | Presentaciones | Evaluaciones | Calendario | Logros" (M10,
- * M23, M25, M24, M22): the board's cards (unchanged), class walls, recorded classes, Google Slides
- * and Google Forms (for students only when one is visible, D120; the teacher always sees them), the
- * course calendar (only when it has dates or news, D105), achievements.
+ * "Tarjetas | Clases | Grabaciones | Presentaciones | Calendario | Logros" (M10, M23, M25, M24,
+ * M22): the board's cards (unchanged), class walls, recorded classes, the students' own slides
+ * (D126), the course calendar (only when it has dates or news, D105), achievements.
  */
 export function BoardSections({
   boardId,
@@ -31,16 +25,8 @@ export function BoardSections({
   tone?: 'dark' | 'light'
 }) {
   const { t } = useTranslation()
-  const { user, role } = useAuth()
   const board = useBoard(boardId)
-  const teacher =
-    isTeacherRole(role) &&
-    !!board.data?.teacherEmails.includes(normalizeEmail(user?.email ?? ''))
   const calendar = useHasCalendar(boardId, board.data?.course)
-  // Until the board is loaded we don't know who's looking: no query yet
-  const known = board.data ? boardId : undefined
-  const presentations = useHasPresentations(known, teacher)
-  const evaluations = useHasEvaluations(known, teacher)
   const glass = tone === 'light'
   const tab = ({ isActive }: { isActive: boolean }) =>
     cn(
@@ -73,18 +59,10 @@ export function BoardSections({
         <Clapperboard className="size-4" />
         {t('recordings.tab')}
       </NavLink>
-      {presentations && (
-        <NavLink to={`/b/${boardId}/presentaciones`} className={tab}>
-          <Presentation className="size-4" />
-          {t('presentations.tab')}
-        </NavLink>
-      )}
-      {evaluations && (
-        <NavLink to={`/b/${boardId}/evaluaciones`} className={tab}>
-          <ClipboardCheck className="size-4" />
-          {t('evaluations.tab')}
-        </NavLink>
-      )}
+      <NavLink to={`/b/${boardId}/presentaciones`} className={tab}>
+        <Presentation className="size-4" />
+        {t('presentations.tab')}
+      </NavLink>
       {calendar && (
         <NavLink to={`/b/${boardId}/calendario`} className={tab}>
           <CalendarDays className="size-4" />

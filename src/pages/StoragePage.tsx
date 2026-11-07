@@ -308,7 +308,7 @@ export function StoragePage() {
               data.value &&
               downloadJson(
                 `plantilla-${slugify(title)}.json`,
-                buildTemplate(data.value.snapshot),
+                buildTemplate(data.value.snapshot.board),
               )
             }
           >

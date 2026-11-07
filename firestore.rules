@@ -977,59 +977,6 @@ service cloud.firestore {
         allow delete: if isBoardTeacher(boardId) || (signedIn() && request.auth.uid == uid);
       }
 
-      // ---------- presentations (M25): Google Slides linked by the teacher ----------
-      // Keep the patterns and limits in sync with src/model/index.ts (GOOGLE_SLIDES_ID,
-      // MAX_PRESENTATION_TITLE). Members read only the visible ones (D121): their queries
-      // must ask for `enabled == true`.
-
-      function validPresentation() {
-        let data = request.resource.data;
-        return data.keys().hasOnly(['title', 'presentationId', 'published', 'position',
-            'enabled', 'createdAt', 'updatedAt'])
-          && isString(data.title, 1, 120)
-          && data.presentationId is string && data.presentationId.matches('[A-Za-z0-9_-]{20,200}')
-          && (!('published' in data) || data.published is bool)
-          && data.position is int && data.position >= 0
-          && data.enabled is bool
-          && data.updatedAt == request.time;
-      }
-
-      match /presentations/{presentationId} {
-        allow read: if isBoardTeacher(boardId)
-          || (isMember(boardId) && resource.data.enabled == true);
-        allow create: if isBoardTeacher(boardId) && validPresentation()
-          && request.resource.data.createdAt == request.time;
-        allow update: if isBoardTeacher(boardId) && validPresentation()
-          && request.resource.data.createdAt == resource.data.createdAt;
-        allow delete: if isBoardTeacher(boardId);
-      }
-
-      // ---------- evaluations (M25): Google Forms linked by the teacher ----------
-      // Keep the patterns and limits in sync with src/model/index.ts (GOOGLE_FORMS_ID,
-      // MAX_EVALUATION_TITLE). Members read only the visible ones (D121), as presentations.
-
-      function validEvaluation() {
-        let data = request.resource.data;
-        return data.keys().hasOnly(['title', 'formId', 'published', 'position', 'enabled',
-            'createdAt', 'updatedAt'])
-          && isString(data.title, 1, 120)
-          && data.formId is string && data.formId.matches('[A-Za-z0-9_-]{20,80}')
-          && data.published is bool
-          && data.position is int && data.position >= 0
-          && data.enabled is bool
-          && data.updatedAt == request.time;
-      }
-
-      match /evaluations/{evaluationId} {
-        allow read: if isBoardTeacher(boardId)
-          || (isMember(boardId) && resource.data.enabled == true);
-        allow create: if isBoardTeacher(boardId) && validEvaluation()
-          && request.resource.data.createdAt == request.time;
-        allow update: if isBoardTeacher(boardId) && validEvaluation()
-          && request.resource.data.createdAt == resource.data.createdAt;
-        allow delete: if isBoardTeacher(boardId);
-      }
-
       // ---------- course news and the email log (M24) ----------
       // Keep the kinds and limits in sync with newsInputSchema / EmailLogDoc in src/model/index.ts
 

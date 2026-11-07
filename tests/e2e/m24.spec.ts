@@ -29,7 +29,7 @@ async function savedCourse() {
 }
 
 test.describe('M24 · Administrar in tabs', () => {
-  test('eight tabs (M25 added Presentaciones and Evaluaciones), each with its own link; old links still land in the right place', async ({
+  test('six tabs, each with its own link; old links still land in the right place', async ({
     page,
   }) => {
     await signIn(page, DEMO.teacher)
@@ -40,8 +40,6 @@ test.describe('M24 · Administrar in tabs', () => {
       'Estudiantes',
       'Curso',
       'Grabaciones',
-      'Presentaciones',
-      'Evaluaciones',
       'Comunicación',
       'Ajustes',
     ])

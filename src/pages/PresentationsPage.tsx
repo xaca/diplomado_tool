@@ -1,53 +1,35 @@
-import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import { EyeOff, LayoutGrid, List, Presentation, Settings } from 'lucide-react'
+import {
+  CircleCheck,
+  ClipboardCheck,
+  Eye,
+  Pencil,
+  Play,
+  Presentation,
+} from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
-import { adminTabPath } from '@/features/boards/admin-tabs'
 import { useClassAccess } from '@/features/classes/use-class-access'
-import { usePresentations } from '@/features/presentations/hooks'
-import {
-  embedUrl,
-  thumbnailUrl as slideThumbnail,
-} from '@/features/presentations/presentations'
-import { EmbedFrame } from '@/features/slides/components/EmbedFrame'
-import { cn } from '@/lib/utils'
-import type { PresentationDoc } from '@/model'
+import { useSpaces } from '@/features/spaces/hooks'
+import { IMAGE_SIZES, imageUrl } from '@/lib/cloudinary'
 import type { WithId } from '@/lib/firestore-hooks'
+import type { SpaceDoc } from '@/model'
 
-type View = 'grid' | 'list'
-
-function readView(): View {
-  try {
-    const v = localStorage.getItem('presentations-view')
-    return v === 'list' ? 'list' : 'grid'
-  } catch {
-    return 'grid'
-  }
-}
-
-function saveView(v: View) {
-  try {
-    localStorage.setItem('presentations-view', v)
-  } catch {
-    /* ignore */
-  }
-}
-
+/**
+ * Presentaciones (M25, revised 2026-11-07): the students' own slides made in the app — nothing
+ * else. A student's evaluation form is a Google Form inside one of their slides (Insertar
+ * contenido → Google Forms), so classmates fill it in while viewing the presentation.
+ */
 export function PresentationsPage() {
   const { t } = useTranslation()
   const { boardId = '' } = useParams()
   const access = useClassAccess(boardId)
-  // Students read only the visible ones (D121): wait to know who's looking
-  const presentations = usePresentations(boardId, {
-    load: !access.loading && access.allowed,
-    onlyVisible: !access.teacher,
-  })
-  const [view, setView] = useState<View>(readView)
-  const [selected, setSelected] = useState<WithId<PresentationDoc> | null>(null)
+  const spaces = useSpaces(
+    access.allowed ? boardId : undefined,
+    access.studentId ?? null,
+  )
 
   if (!access.loading && !access.allowed)
     return (
@@ -56,13 +38,10 @@ export function PresentationsPage() {
       </section>
     )
 
-  const loading = access.loading || presentations.loading
-  const list = presentations.data
-
-  function toggleView(v: View) {
-    setView(v)
-    saveView(v)
-  }
+  const loading = access.loading || spaces.loading
+  const withSlides = spaces.data.filter((space) => space.slideCount > 0)
+  const empty = spaces.data.length - withSlides.length
+  const mine = spaces.data.find((space) => space.id === access.studentId)
 
   return (
     <section className="mx-auto flex w-full max-w-5xl flex-col gap-5 p-4 sm:p-6">
@@ -81,141 +60,170 @@ export function PresentationsPage() {
               : t('presentations.hint')}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="inline-flex rounded-lg border p-0.5">
-            <Button
-              variant={view === 'grid' ? 'secondary' : 'ghost'}
-              size="icon-sm"
-              title={t('presentations.gridView')}
-              onClick={() => toggleView('grid')}
-            >
-              <LayoutGrid className="size-4" />
-            </Button>
-            <Button
-              variant={view === 'list' ? 'secondary' : 'ghost'}
-              size="icon-sm"
-              title={t('presentations.listView')}
-              onClick={() => toggleView('list')}
-            >
-              <List className="size-4" />
-            </Button>
-          </div>
-          {access.teacher && (
+        {access.teacher && (
+          <div className="flex flex-wrap gap-2">
             <Button
               variant="outline"
               nativeButton={false}
-              render={<Link to={adminTabPath(boardId, 'presentations')} />}
+              render={<Link to={`/b/${boardId}/present`} />}
             >
-              <Settings />
-              {t('presentations.manage')}
+              <Play />
+              {t('presentations.presentAll')}
             </Button>
-          )}
-        </div>
+            <Button
+              nativeButton={false}
+              render={<Link to={`/b/${boardId}/present?ready=1`} />}
+            >
+              <CircleCheck />
+              {t('ready.presentReady')}
+            </Button>
+          </div>
+        )}
       </div>
 
+      {mine && (
+        <div
+          className="flex flex-col gap-3 rounded-xl border bg-muted/40 p-4"
+          data-testid="my-presentation"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="font-semibold">
+              {t('presentations.mine', { count: mine.slideCount })}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {access.writableBoard && (
+                <Button
+                  variant="outline"
+                  nativeButton={false}
+                  render={<Link to={`/b/${boardId}/s/${mine.id}/edit`} />}
+                >
+                  <Pencil />
+                  {t('presentations.editMine')}
+                </Button>
+              )}
+              {mine.slideCount > 0 && (
+                <Button
+                  nativeButton={false}
+                  render={<Link to={`/b/${boardId}/present/${mine.id}`} />}
+                >
+                  <Play />
+                  {t('presentations.present')}
+                </Button>
+              )}
+            </div>
+          </div>
+          <p className="flex gap-2 text-sm text-muted-foreground">
+            <ClipboardCheck className="size-4 shrink-0" />
+            {t('presentations.formTip')}
+          </p>
+        </div>
+      )}
+
       {loading ? (
-        <Skeleton className="h-96" />
-      ) : list.length === 0 ? (
+        <Skeleton className="h-64" />
+      ) : withSlides.length === 0 ? (
         <p
           className="rounded-xl border border-dashed p-6 text-center text-muted-foreground"
           data-testid="no-presentations"
         >
-          {access.teacher
-            ? t('presentations.noneTeacher')
-            : t('presentations.none')}
+          {t('presentations.none')}
         </p>
-      ) : view === 'grid' ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {list.map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              className="group flex flex-col overflow-hidden rounded-xl border bg-card shadow-sm transition-shadow hover:shadow-md"
-              onClick={() => setSelected(p)}
-              data-testid="presentation"
-              data-presentation={p.id}
-            >
-              <div className="relative aspect-video w-full overflow-hidden bg-muted">
-                {slideThumbnail(p.presentationId, p.published) && (
-                  <img
-                    src={slideThumbnail(p.presentationId, p.published) ?? ''}
-                    alt={p.title}
-                    loading="lazy"
-                    className="size-full object-cover"
-                    onError={(e) => {
-                      const img = e.currentTarget
-                      img.style.display = 'none'
-                      img.parentElement
-                        ?.querySelector('[data-fallback]')
-                        ?.removeAttribute('hidden')
-                    }}
-                  />
-                )}
-                <span
-                  data-fallback
-                  hidden={!!slideThumbnail(p.presentationId, p.published)}
-                  className="absolute inset-0 flex items-center justify-center"
-                >
-                  <Presentation className="size-12 text-muted-foreground/40" />
-                </span>
-              </div>
-              <div className="flex items-center gap-2 p-3">
-                <span className="truncate text-sm font-semibold">
-                  {p.title}
-                </span>
-                {access.teacher && !p.enabled && (
-                  <Badge variant="secondary" className="shrink-0">
-                    <EyeOff className="mr-1 size-3" />
-                    {t('presentations.disabled')}
-                  </Badge>
-                )}
-              </div>
-            </button>
-          ))}
-        </div>
       ) : (
-        list.map((p) => (
-          <article
-            key={p.id}
-            className="flex flex-col gap-2"
-            data-testid="presentation"
-            data-presentation={p.id}
-          >
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-semibold">{p.title}</h2>
-              {access.teacher && !p.enabled && (
-                <Badge variant="secondary">
-                  <EyeOff className="mr-1 size-3" />
-                  {t('presentations.disabled')}
-                </Badge>
-              )}
-            </div>
-            <div className="aspect-video w-full overflow-hidden rounded-xl border">
-              <EmbedFrame
-                link={embedUrl(p.presentationId, p.published)}
-                title={p.title}
-              />
-            </div>
-          </article>
-        ))
+        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {withSlides.map((space) => (
+            <PresentationCard
+              key={space.id}
+              boardId={boardId}
+              space={space}
+              canPresent={access.teacher || space.id === access.studentId}
+            />
+          ))}
+        </ul>
       )}
 
-      <Dialog
-        open={!!selected}
-        onOpenChange={(open) => !open && setSelected(null)}
-      >
-        {selected && (
-          <DialogContent className={cn('sm:max-w-5xl', 'flex flex-col gap-3')}>
-            <DialogTitle>{selected.title}</DialogTitle>
-            <div className="aspect-video w-full overflow-hidden rounded-lg border">
-              <EmbedFrame
-                link={embedUrl(selected.presentationId, selected.published)}
-                title={selected.title}
-              />
-            </div>
-          </DialogContent>
-        )}
-      </Dialog>
+      {!loading && empty > 0 && (
+        <p
+          className="text-sm text-muted-foreground"
+          data-testid="without-slides"
+        >
+          {t('presentations.withoutSlides', { count: empty })}
+        </p>
+      )}
     </section>
+  )
+}
+
+function PresentationCard({
+  boardId,
+  space,
+  canPresent,
+}: {
+  boardId: string
+  space: WithId<SpaceDoc>
+  canPresent: boolean
+}) {
+  const { t } = useTranslation()
+  return (
+    <li
+      className="flex flex-col overflow-hidden rounded-xl border bg-card shadow-sm"
+      data-testid="presentation"
+      data-student={space.id}
+    >
+      <div
+        className="relative aspect-video w-full"
+        style={{ backgroundColor: space.color }}
+      >
+        {space.cover ? (
+          <img
+            src={imageUrl(space.cover, IMAGE_SIZES.cardCover)}
+            alt=""
+            loading="lazy"
+            className="size-full object-cover"
+          />
+        ) : (
+          <span className="absolute inset-0 flex items-center justify-center">
+            <Presentation className="size-10 text-foreground/25" />
+          </span>
+        )}
+        {space.readyToPresent && (
+          <Badge className="absolute top-2 right-2">
+            <CircleCheck className="mr-1 size-3" />
+            {t('ready.badge')}
+          </Badge>
+        )}
+      </div>
+      <div className="flex flex-1 flex-col gap-1 p-3">
+        <p className="truncate font-semibold">{space.ownerName}</p>
+        {space.title && (
+          <p className="truncate text-sm text-muted-foreground">
+            {space.title}
+          </p>
+        )}
+        <p className="text-xs text-muted-foreground">
+          {t('presentations.slides', { count: space.slideCount })}
+        </p>
+        <div className="mt-auto flex flex-wrap gap-2 pt-2">
+          <Button
+            size="sm"
+            variant="outline"
+            nativeButton={false}
+            render={<Link to={`/b/${boardId}/s/${space.id}`} />}
+          >
+            <Eye />
+            {t('presentations.view')}
+          </Button>
+          {canPresent && (
+            <Button
+              size="sm"
+              nativeButton={false}
+              render={<Link to={`/b/${boardId}/present/${space.id}`} />}
+            >
+              <Play />
+              {t('presentations.present')}
+            </Button>
+          )}
+        </div>
+      </div>
+    </li>
   )
 }

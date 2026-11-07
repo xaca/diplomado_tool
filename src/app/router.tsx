@@ -25,7 +25,6 @@ import { PresenterPage } from '@/pages/PresenterPage'
 import { PrivacyPage } from '@/pages/PrivacyPage'
 import { ProfilePage } from '@/pages/ProfilePage'
 import { RecordingPlayerPage } from '@/pages/RecordingPlayerPage'
-import { EvaluationsPage } from '@/pages/EvaluationsPage'
 import { PresentationsPage } from '@/pages/PresentationsPage'
 import { RecordingsPage } from '@/pages/RecordingsPage'
 import { SpacePage } from '@/pages/SpacePage'
@@ -85,10 +84,6 @@ export const router = createBrowserRouter([
               {
                 path: 'b/:boardId/presentaciones',
                 element: <PresentationsPage />,
-              },
-              {
-                path: 'b/:boardId/evaluaciones',
-                element: <EvaluationsPage />,
               },
               { path: 'b/:boardId/calendario', element: <CalendarPage /> },
               { path: 'b/:boardId/class', element: <ClassesPage /> },
