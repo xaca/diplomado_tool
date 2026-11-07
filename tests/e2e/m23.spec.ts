@@ -78,9 +78,12 @@ test.describe('M23 · recorded classes', () => {
     // A new class is added to the playlist on YouTube; nobody touches the app
     fake.lists[LIST].push('clase0004d')
     await signIn(page, 'laura@gmail.com')
-    // from the board's header (Tarjetas)
+    // from the board's sections bar (Tarjetas, M25)
     await page.goto(`/b/${DEMO.boardId}`)
-    await page.getByRole('button', { name: 'Grabaciones' }).click()
+    await page
+      .getByRole('navigation', { name: 'Secciones del tablero' })
+      .getByRole('link', { name: 'Grabaciones' })
+      .click()
     await expect(page).toHaveURL(new RegExp(`${videosUrl}$`))
     await expect(page.getByTestId('video')).toHaveCount(4)
     await expect(video(page, 'clase0004d')).toContainText('Más reciente')

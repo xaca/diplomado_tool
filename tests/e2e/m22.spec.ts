@@ -49,7 +49,10 @@ test.describe('M22 · achievements', () => {
     // Sebastian's card is already in "Prototipar" (seed)
     await signIn(page, 'scetina@uni.edu.co')
     await page.goto(`/b/${DEMO.boardId}`)
-    await page.getByRole('button', { name: 'Logros' }).click()
+    await page
+      .getByRole('navigation', { name: 'Secciones del tablero' })
+      .getByRole('link', { name: 'Logros' })
+      .click()
     await expect(row(page, 'prototype')).toHaveAttribute(
       'data-unlocked',
       'true',

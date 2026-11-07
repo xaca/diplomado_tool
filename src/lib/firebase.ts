@@ -67,7 +67,12 @@ export const db = initializeFirestore(app, {
 })
 
 if (import.meta.env.DEV && env.VITE_USE_EMULATORS) {
-  // Ports must match the "emulators" section in firebase.json
-  connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true })
-  connectFirestoreEmulator(db, '127.0.0.1', 8080)
+  // The "emulators" ports in firebase.json, unless the e2e run started them elsewhere (another
+  // project's emulator already on 8080 / 9099): Playwright passes the hosts `emulators:exec` set
+  const authHost = import.meta.env.VITE_AUTH_EMULATOR_HOST || '127.0.0.1:9099'
+  const [firestoreHost, firestorePort] = (
+    import.meta.env.VITE_FIRESTORE_EMULATOR_HOST || '127.0.0.1:8080'
+  ).split(':')
+  connectAuthEmulator(auth, `http://${authHost}`, { disableWarnings: true })
+  connectFirestoreEmulator(db, firestoreHost, Number(firestorePort))
 }

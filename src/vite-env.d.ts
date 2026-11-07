@@ -10,6 +10,9 @@ interface ImportMetaEnv {
   readonly VITE_CLOUDINARY_CLOUD_NAME: string
   readonly VITE_MEDIA_API_URL: string
   readonly VITE_USE_EMULATORS?: string
+  /** e2e only: emulator hosts when not on the default ports */
+  readonly VITE_FIRESTORE_EMULATOR_HOST?: string
+  readonly VITE_AUTH_EMULATOR_HOST?: string
 }
 
 interface ImportMeta {

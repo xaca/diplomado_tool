@@ -75,10 +75,12 @@ test.describe('M10 · class participation', () => {
   }) => {
     await signIn(page, DEMO.teacher)
     await page.goto(`/b/${DEMO.boardId}`)
-    // Tarjetas: the cards are still there, plus a "Clases" button
+    // Tarjetas: the cards are still there, plus "Clases" in the sections bar (M25)
     await expect(page.getByTestId('space-card').first()).toBeVisible()
-    // (a link styled as a button)
-    await page.getByRole('button', { name: 'Clases' }).click()
+    await page
+      .getByRole('navigation', { name: 'Secciones del tablero' })
+      .getByRole('link', { name: 'Clases' })
+      .click()
     await expect(page).toHaveURL(new RegExp(`${classesUrl}$`))
 
     await page.getByRole('button', { name: 'Nueva clase' }).click()

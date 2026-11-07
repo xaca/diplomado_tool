@@ -29,7 +29,7 @@ async function savedCourse() {
 }
 
 test.describe('M24 · Administrar in tabs', () => {
-  test('six tabs, each with its own link; old links still land in the right place', async ({
+  test('eight tabs (M25 added Presentaciones and Evaluaciones), each with its own link; old links still land in the right place', async ({
     page,
   }) => {
     await signIn(page, DEMO.teacher)
@@ -40,6 +40,8 @@ test.describe('M24 · Administrar in tabs', () => {
       'Estudiantes',
       'Curso',
       'Grabaciones',
+      'Presentaciones',
+      'Evaluaciones',
       'Comunicación',
       'Ajustes',
     ])
@@ -94,10 +96,15 @@ test.describe('M24 · course setup and class counter', () => {
     await signIn(page, 'laura@gmail.com')
     await page.goto(`/b/${DEMO.boardId}`)
     await expect(page.getByTestId('course-line')).toContainText('Clase 2 de 4')
-    // no dates and no news: no calendar
-    await expect(page.getByRole('button', { name: 'Calendario' })).toHaveCount(
-      0,
-    )
+    // no dates and no news: no calendar (the bar is there, without it)
+    await expect(
+      page.getByRole('navigation', { name: 'Secciones del tablero' }),
+    ).toBeVisible()
+    await expect(
+      page
+        .getByRole('navigation', { name: 'Secciones del tablero' })
+        .getByRole('link', { name: 'Calendario' }),
+    ).toHaveCount(0)
   })
 
   test('start, end and the schedule give the classes; holidays, a day off and a moved class; weeks, the calendar and attendance', async ({
@@ -190,7 +197,10 @@ test.describe('M24 · course setup and class counter', () => {
     await signIn(page, 'laura@gmail.com')
     await page.goto(`/b/${DEMO.boardId}`)
     await expect(page.getByTestId('course-line')).toContainText(counter)
-    await page.getByRole('button', { name: 'Calendario' }).click()
+    await page
+      .getByRole('navigation', { name: 'Secciones del tablero' })
+      .getByRole('link', { name: 'Calendario' })
+      .click()
     await expect(page).toHaveURL(/\/calendario$/)
     await expect(page.getByTestId('calendar-week')).toHaveCount(4)
     const current = page.locator('[data-testid="calendar-week"][data-week="2"]')
