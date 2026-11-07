@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { sortSpaces } from '@/features/spaces/api'
+import { sortSpaces, versionToKeep } from '@/features/spaces/api'
 
 const at = (iso: string) => ({ toDate: () => new Date(iso) })
 
@@ -30,5 +30,53 @@ describe('sortSpaces', () => {
     const copy = [...spaces]
     sortSpaces(spaces, 'b')
     expect(spaces).toEqual(copy)
+  })
+})
+
+describe('versionToKeep (M27, D129)', () => {
+  const space = {
+    studentId: 'st1',
+    ownerName: 'Laura',
+    ownerPhotoURL: null,
+    title: 'Huerta',
+    summary: 'Mi idea',
+    color: '#FFFFFF',
+    cover: null,
+    slideOrder: [],
+    slideCount: 0,
+    createdAt: null,
+    updatedAt: null,
+  }
+
+  it("the first change by the teacher keeps the student's details", () => {
+    expect(versionToKeep(space)).toEqual({
+      title: 'Huerta',
+      summary: 'Mi idea',
+      color: '#FFFFFF',
+      cover: null,
+      by: 'student',
+    })
+  })
+
+  it("later changes keep the student's original, not the teacher's earlier one", () => {
+    const original = { ...versionToKeep(space) }
+    const edited = {
+      ...space,
+      title: 'Huerta del profe',
+      previousVersion: original,
+    }
+    expect(versionToKeep(edited)).toBe(original)
+  })
+
+  it('after the student restored theirs, the current details are the student’s again', () => {
+    const restored = {
+      ...space,
+      previousVersion: {
+        ...versionToKeep(space),
+        title: 'Del profe',
+        by: 'teacher' as const,
+      },
+    }
+    expect(versionToKeep(restored).title).toBe('Huerta')
   })
 })

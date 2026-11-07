@@ -121,12 +121,16 @@ export async function loadBoard(boardId: string) {
       s.docs.map((poll) => poll.ref.collection('votes').get()),
     ),
   )
-  const [slides, notes] = await Promise.all([
+  const [slides, notes, deletedSlides] = await Promise.all([
     Promise.all(
       spaces.docs.map((space) => space.ref.collection('slides').get()),
     ),
     Promise.all(
       spaces.docs.map((space) => space.ref.collection('notes').get()),
+    ),
+    // M27: slides the teacher deleted, until the student restores them
+    Promise.all(
+      spaces.docs.map((space) => space.ref.collection('deletedSlides').get()),
     ),
   ])
 
@@ -239,8 +243,8 @@ export async function loadBoard(boardId: string) {
     }
   })
   const refs: DocumentReference[] = [
-    ...[...slides, ...notes, ...votes, ...polls].flatMap((s) =>
-      s.docs.map((doc) => doc.ref),
+    ...[...slides, ...notes, ...deletedSlides, ...votes, ...polls].flatMap(
+      (s) => s.docs.map((doc) => doc.ref),
     ),
     // kept versions and edit locks (M15), whether they exist or not
     ...slides.flatMap((s, index) =>
@@ -282,6 +286,10 @@ export async function loadBoard(boardId: string) {
       // the board logo (M12) counts like a card cover
       covers: [
         ...spaces.docs.map((doc) => (doc.data() as SpaceDoc).cover),
+        // M27: the cover of the kept project version
+        ...spaces.docs.map(
+          (doc) => (doc.data() as SpaceDoc).previousVersion?.cover,
+        ),
         board.logo,
       ],
       // images of the kept versions (M15) count too
@@ -291,6 +299,10 @@ export async function loadBoard(boardId: string) {
             const data = doc.data() as SlideDoc
             return [...(data.assetIds ?? []), ...(data.versionAssetIds ?? [])]
           }),
+        ),
+        // M27: images of deleted slides the student can still restore
+        ...deletedSlides.flatMap((s) =>
+          s.docs.map((doc) => (doc.data() as { assetIds: string[] }).assetIds),
         ),
         // M10b: images in the teacher's class drawings are in use too
         ...classSlides.flatMap((s) =>

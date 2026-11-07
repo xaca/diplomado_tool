@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { insertAt, orderSlides, shouldTouchSpace } from '@/features/slides/api'
+import {
+  insertAt,
+  orderSlides,
+  shouldTouchSpace,
+  studentOrderBack,
+} from '@/features/slides/api'
 
 describe('slide order', () => {
   it('follows the space order and skips slides not loaded yet', () => {
@@ -20,5 +25,23 @@ describe('slide order', () => {
     const now = Date.UTC(2026, 9, 27, 12)
     expect(shouldTouchSpace(new Date(now - 9 * 60_000), now)).toBe(false)
     expect(shouldTouchSpace(new Date(now - 10 * 60_000), now)).toBe(true)
+  })
+})
+
+describe('studentOrderBack (M27, "Restaurar el orden")', () => {
+  it("brings back the student's order", () => {
+    expect(studentOrderBack(['c', 'a', 'b'], ['a', 'b', 'c'])).toEqual([
+      'a',
+      'b',
+      'c',
+    ])
+  })
+
+  it('keeps slides added since at the end and skips deleted ones', () => {
+    expect(studentOrderBack(['b', 'd', 'a'], ['a', 'b', 'c'])).toEqual([
+      'a',
+      'b',
+      'd',
+    ])
   })
 })

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { groupNotes } from '@/features/notes/api'
+import { groupNotes, PROJECT_NOTES, visibilityOf } from '@/features/notes/api'
 
 const at = (iso: string) => ({ toDate: () => new Date(iso) })
 
@@ -21,5 +21,22 @@ describe('groupNotes', () => {
       { id: 'old', slideId: 's1', createdAt: at('2026-10-01') },
     ])
     expect(grouped.get('s1')?.map((n) => n.id)).toEqual(['old', 'new'])
+  })
+
+  it('project comments (no slide) go under PROJECT_NOTES (M27)', () => {
+    const grouped = groupNotes([
+      { id: 'p', slideId: null, createdAt: at('2026-11-07') },
+      { id: 'a', slideId: 's1', createdAt: at('2026-10-01') },
+    ])
+    expect(grouped.get(PROJECT_NOTES)?.map((n) => n.id)).toEqual(['p'])
+    expect(grouped.get('s1')?.map((n) => n.id)).toEqual(['a'])
+  })
+})
+
+describe('visibilityOf (M27, D128)', () => {
+  it('notes from before M27 are private; only "public" is public', () => {
+    expect(visibilityOf({})).toBe('private')
+    expect(visibilityOf({ visibility: 'private' })).toBe('private')
+    expect(visibilityOf({ visibility: 'public' })).toBe('public')
   })
 })

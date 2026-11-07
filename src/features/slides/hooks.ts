@@ -1,7 +1,11 @@
 import { useMemo } from 'react'
 import { useLiveQuery } from '@/lib/firestore-hooks'
-import { orderSlides, slidesCollection } from '@/features/slides/api'
-import type { SlideDoc } from '@/model'
+import {
+  deletedSlidesCollection,
+  orderSlides,
+  slidesCollection,
+} from '@/features/slides/api'
+import type { DeletedSlideDoc, SlideDoc } from '@/model'
 
 /** Live slides of a space, in the space's order. */
 export function useSlides(
@@ -18,4 +22,18 @@ export function useSlides(
     [order, result.data],
   )
   return { ...result, data: slides }
+}
+
+/** M27: slides the teacher deleted (owner and board teacher only; `enabled: false` for others) */
+export function useDeletedSlides(
+  boardId: string | undefined,
+  studentId: string | undefined,
+  enabled: boolean,
+) {
+  return useLiveQuery<DeletedSlideDoc>(
+    enabled && boardId && studentId
+      ? deletedSlidesCollection(boardId, studentId)
+      : null,
+    `deletedSlides:${boardId}:${studentId}:${enabled}`,
+  )
 }

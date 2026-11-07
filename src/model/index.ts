@@ -48,6 +48,11 @@ export const paths = {
     kind: VersionKind,
   ) =>
     `${COLLECTIONS.boards}/${boardId}/spaces/${studentId}/slides/${slideId}/versions/${kind}`,
+  /** M27: slides the teacher deleted, until the student restores them */
+  deletedSlides: (boardId: string, studentId: string) =>
+    `${COLLECTIONS.boards}/${boardId}/spaces/${studentId}/deletedSlides`,
+  deletedSlide: (boardId: string, studentId: string, slideId: string) =>
+    `${COLLECTIONS.boards}/${boardId}/spaces/${studentId}/deletedSlides/${slideId}`,
   /** M15: who is editing a slide right now */
   lock: (boardId: string, studentId: string, slideId: string) =>
     `${COLLECTIONS.boards}/${boardId}/spaces/${studentId}/locks/${slideId}`,
@@ -957,6 +962,18 @@ export type SpaceDoc = {
   readyAt?: unknown
   /** M15: the teacher changed the student's slides and the student hasn't looked yet */
   teacherEditsUnseen?: boolean
+  /** M27: the teacher wrote a comment the student hasn't looked at yet */
+  teacherCommentsUnseen?: boolean
+  /** M27 (D132): "En progreso" or "Listo"; missing = not marked (readyToPresent: true reads as ready) */
+  workStatus?: WorkStatus | null
+  workStatusAt?: unknown
+  workStatusBy?: 'student' | 'teacher'
+  /** M27 (D129): the project details before the teacher changed them (swapped on restore) */
+  previousVersion?: ProjectVersion | null
+  /** M27: when the teacher last changed the project details */
+  teacherEditedAt?: unknown
+  /** M27: the student's slide order before the teacher reordered (or deleted) slides */
+  studentSlideOrder?: string[] | null
   /** The student's group (e.g. "Equipo 1"), copied from the roster for the "Por grupo" layout (M12) */
   group?: string
   /** Where the student is in the process (M11): a StageDef id of this board; null = no ring */
@@ -965,6 +982,34 @@ export type SpaceDoc = {
   stageSetBy?: 'student' | 'teacher'
   createdAt: unknown
   updatedAt: unknown
+}
+
+// ---------- M27: the teacher's feedback on a project ----------
+
+export type WorkStatus = 'wip' | 'ready'
+export const WORK_STATUSES = ['wip', 'ready'] as const
+
+/** The project details as someone left them; `by` = whose version it is */
+export type ProjectVersion = {
+  title: string
+  summary: string
+  color: string
+  cover: ImageRef | null
+  by: 'student' | 'teacher'
+}
+
+/**
+ * spaces/{studentId}/deletedSlides/{slideId}: a slide the teacher deleted, kept until the student
+ * restores it or removes it for good (M27, D129). Its notes stay in `notes` meanwhile.
+ */
+export type DeletedSlideDoc = Pick<
+  SlideDoc,
+  'content' | 'files' | 'assetIds' | 'bytes'
+> & {
+  /** Where it was in the slide order (restored there, or at the end) */
+  position: number
+  deletedAt: unknown
+  deletedByName: string
 }
 
 // ---------- stages (M11): the ring around the student's photo ----------
@@ -1087,12 +1132,15 @@ export const MAX_SLIDE_BYTES = 900_000
 export const SLIDE_WARN_BYTES = 800_000
 
 /**
- * boards/{boardId}/spaces/{studentId}/notes/{noteId}: the teacher's annotation on one slide.
- * Private: only the board's teachers and the space's owner read them.
+ * boards/{boardId}/spaces/{studentId}/notes/{noteId}: the teacher's comment on one slide, or on
+ * the whole project (M27, `slideId: null`). Private (the board's teachers and the space's owner)
+ * unless the teacher makes it public (M27, D128): then classmates read it too.
  */
 export type NoteDoc = {
-  slideId: string
+  slideId: string | null
   text: string
+  /** M27: missing = private (notes from before) */
+  visibility?: NoteVisibility
   authorEmail: string
   authorName: string
   createdAt: unknown
@@ -1100,6 +1148,9 @@ export type NoteDoc = {
 }
 
 export const MAX_NOTE_LENGTH = 2000
+
+export type NoteVisibility = 'private' | 'public'
+export const NOTE_VISIBILITIES = ['private', 'public'] as const
 
 export const noteTextSchema = z.string().trim().min(1).max(MAX_NOTE_LENGTH)
 

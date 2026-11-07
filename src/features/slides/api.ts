@@ -20,6 +20,7 @@ import {
   MAX_SLIDES,
   paths,
   VERSION_KINDS,
+  type DeletedSlideDoc,
   type ImageRef,
   type SlideDoc,
   type SlideLockDoc,
@@ -376,4 +377,133 @@ export function releaseLock(
   slideId: string,
 ) {
   return deleteDoc(lockRef(boardId, studentId, slideId))
+}
+
+// ---------- M27 (D129): the teacher reorders and deletes; the student restores ----------
+
+export type DeletedSlide = WithId<DeletedSlideDoc>
+
+export const deletedSlidesCollection = (boardId: string, studentId: string) =>
+  collection(db, paths.deletedSlides(boardId, studentId))
+
+/** The teacher's new order; the student's own order is kept the first time ("Restaurar el orden"). */
+export async function reorderSlidesAsTeacher(
+  boardId: string,
+  studentId: string,
+  order: readonly string[],
+  next: string[],
+  studentSlideOrder: readonly string[] | null | undefined,
+) {
+  await written(
+    updateDoc(doc(db, paths.space(boardId, studentId)), {
+      slideOrder: next,
+      slideCount: next.length,
+      studentSlideOrder: studentSlideOrder ?? [...order],
+      teacherEditsUnseen: true,
+      updatedAt: serverTimestamp(),
+    }),
+  )
+}
+
+/**
+ * The teacher deletes a student's slide: a copy goes to "Eliminadas por el docente" in the same
+ * batch (the rules require it), so the student can bring it back. Its notes stay with the copy.
+ */
+export async function deleteSlideAsTeacher(
+  boardId: string,
+  studentId: string,
+  order: readonly string[],
+  slide: Pick<Slide, 'id' | 'content' | 'files' | 'assetIds' | 'bytes'>,
+  teacherName: string,
+  studentSlideOrder: readonly string[] | null | undefined,
+) {
+  const batch = writeBatch(db)
+  batch.delete(doc(db, paths.slide(boardId, studentId, slide.id)))
+  deleteSlideExtras(batch, boardId, studentId, slide.id)
+  batch.set(doc(db, paths.deletedSlide(boardId, studentId, slide.id)), {
+    content: slide.content,
+    files: slide.files,
+    assetIds: slide.assetIds,
+    bytes: slide.bytes,
+    position: Math.max(0, order.indexOf(slide.id)),
+    deletedAt: serverTimestamp(),
+    deletedByName: teacherName.slice(0, 200) || '—',
+  })
+  const next = order.filter((id) => id !== slide.id)
+  batch.update(doc(db, paths.space(boardId, studentId)), {
+    slideOrder: next,
+    slideCount: next.length,
+    studentSlideOrder: studentSlideOrder ?? [...order],
+    teacherEditsUnseen: true,
+    updatedAt: serverTimestamp(),
+  })
+  await written(batch.commit())
+}
+
+/** "Restaurar": the slide comes back where it was (or at the end, if the list got shorter). */
+export async function restoreDeletedSlide(
+  boardId: string,
+  studentId: string,
+  order: readonly string[],
+  copy: DeletedSlide,
+) {
+  if (order.length >= MAX_SLIDES) throw new TooManySlidesError()
+  const batch = writeBatch(db)
+  batch.set(doc(db, paths.slide(boardId, studentId, copy.id)), {
+    ...slideData(copy.content, copy.bytes, copy.files),
+    lastEditedBy: 'student',
+  })
+  batch.delete(doc(db, paths.deletedSlide(boardId, studentId, copy.id)))
+  const next = insertAt(order, copy.position, copy.id)
+  batch.update(doc(db, paths.space(boardId, studentId)), {
+    slideOrder: next,
+    slideCount: next.length,
+    updatedAt: serverTimestamp(),
+  })
+  await written(batch.commit())
+}
+
+/** The student lets it go for good: the copy and its notes (its images become unused). */
+export async function discardDeletedSlide(
+  boardId: string,
+  studentId: string,
+  slideId: string,
+  noteIds: readonly string[],
+) {
+  const batch = writeBatch(db)
+  batch.delete(doc(db, paths.deletedSlide(boardId, studentId, slideId)))
+  for (const noteId of noteIds)
+    batch.delete(doc(db, paths.note(boardId, studentId, noteId)))
+  await written(batch.commit())
+}
+
+/**
+ * The student's order back: their slides as they had them, then any slide added since (pure,
+ * unit-tested). Slides deleted meanwhile are skipped.
+ */
+export function studentOrderBack(
+  current: readonly string[],
+  studentOrder: readonly string[],
+) {
+  const here = new Set(current)
+  const kept = studentOrder.filter((id) => here.has(id))
+  const keptSet = new Set(kept)
+  return [...kept, ...current.filter((id) => !keptSet.has(id))]
+}
+
+export async function restoreStudentOrder(
+  boardId: string,
+  studentId: string,
+  current: readonly string[],
+  studentOrder: readonly string[],
+) {
+  const next = studentOrderBack(current, studentOrder)
+  await written(
+    updateDoc(doc(db, paths.space(boardId, studentId)), {
+      slideOrder: next,
+      slideCount: next.length,
+      studentSlideOrder: null,
+      updatedAt: serverTimestamp(),
+    }),
+  )
 }

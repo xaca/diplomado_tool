@@ -32,6 +32,7 @@ import {
   type ClassDoc,
   type ClassSlideDoc,
   type StickyNoteDoc,
+  type DeletedSlideDoc,
   type SpaceDoc,
   type StudentDoc,
   VERSION_KINDS,
@@ -141,7 +142,7 @@ export async function loadBoardData(boardId: string): Promise<BoardData> {
       snapshot.docs.map((poll) => getDocs(collection(poll.ref, 'votes'))),
     ),
   )
-  const [slides, notes] = await Promise.all([
+  const [slides, notes, deletedSlides] = await Promise.all([
     Promise.all(
       spaces.docs.map((space) =>
         getDocs(collection(db, paths.slides(boardId, space.id))),
@@ -150,6 +151,12 @@ export async function loadBoardData(boardId: string): Promise<BoardData> {
     Promise.all(
       spaces.docs.map((space) =>
         getDocs(collection(db, paths.notes(boardId, space.id))),
+      ),
+    ),
+    // M27: slides the teacher deleted, until the student restores them
+    Promise.all(
+      spaces.docs.map((space) =>
+        getDocs(collection(db, paths.deletedSlides(boardId, space.id))),
       ),
     ),
   ])
@@ -259,6 +266,10 @@ export async function loadBoardData(boardId: string): Promise<BoardData> {
     // the board logo (M12) counts like a card cover
     covers: [
       ...spaces.docs.map((space) => (space.data() as SpaceDoc).cover),
+      // M27: the cover of the kept project version ("Restaurar mi versión")
+      ...spaces.docs.map(
+        (space) => (space.data() as SpaceDoc).previousVersion?.cover,
+      ),
       boardData.logo,
     ],
     // images of the kept versions (M15) count too: a restore must find them
@@ -268,6 +279,10 @@ export async function loadBoardData(boardId: string): Promise<BoardData> {
           const data = slide.data() as SlideDoc
           return [...(data.assetIds ?? []), ...(data.versionAssetIds ?? [])]
         }),
+      ),
+      // M27: images of deleted slides the student can still restore
+      ...deletedSlides.flatMap((snapshot) =>
+        snapshot.docs.map((copy) => (copy.data() as DeletedSlideDoc).assetIds),
       ),
       // M10b: images in the teacher's class drawings are in use too
       ...classSlides.flatMap((snapshot) =>
@@ -279,8 +294,8 @@ export async function loadBoardData(boardId: string): Promise<BoardData> {
       ),
     ],
     refs: [
-      ...[...slides, ...notes, ...votes, ...polls].flatMap((snapshot) =>
-        snapshot.docs.map((d) => d.ref),
+      ...[...slides, ...notes, ...deletedSlides, ...votes, ...polls].flatMap(
+        (snapshot) => snapshot.docs.map((d) => d.ref),
       ),
       // kept versions and edit locks (M15), whether they exist or not
       ...slides.flatMap((snapshot, index) =>

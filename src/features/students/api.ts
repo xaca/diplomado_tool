@@ -140,11 +140,14 @@ async function deleteSlides(
   boardId: string,
   studentId: string,
 ) {
-  const [slides, notes] = await Promise.all([
+  const [slides, notes, deleted] = await Promise.all([
     getDocs(collection(db, paths.slides(boardId, studentId))),
     getDocs(collection(db, paths.notes(boardId, studentId))),
+    // M27: slides the teacher deleted, kept for the student
+    getDocs(collection(db, paths.deletedSlides(boardId, studentId))),
   ])
-  for (const item of [...slides.docs, ...notes.docs]) batch.delete(item.ref)
+  for (const item of [...slides.docs, ...notes.docs, ...deleted.docs])
+    batch.delete(item.ref)
   for (const slide of slides.docs)
     deleteSlideExtras(batch, boardId, studentId, slide.id)
   // M16: their polls and the votes on them

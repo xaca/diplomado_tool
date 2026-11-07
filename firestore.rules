@@ -394,7 +394,10 @@ service cloud.firestore {
         let data = request.resource.data;
         return data.keys().hasOnly(['studentId', 'ownerName', 'ownerPhotoURL', 'title', 'summary', 'color',
             'slideOrder', 'slideCount', 'cover', 'stage', 'stageUpdatedAt', 'stageSetBy', 'group', 'teacherEditsUnseen',
-            'readyToPresent', 'readyAt', 'ownerStatus', 'ownerDecor', 'createdAt', 'updatedAt'])
+            'readyToPresent', 'readyAt', 'ownerStatus', 'ownerDecor', 'createdAt', 'updatedAt',
+            // M27
+            'teacherCommentsUnseen', 'workStatus', 'workStatusAt', 'workStatusBy', 'previousVersion',
+            'teacherEditedAt', 'studentSlideOrder'])
           && (!('cover' in data) || data.cover == null || validImageRef(data.cover, boardId, studentId))
           && data.studentId == studentId
           && isString(data.ownerName, 1, 120)
@@ -410,8 +413,33 @@ service cloud.firestore {
           && (!('group' in data) || isString(data.group, 0, 60))
           && (!('teacherEditsUnseen' in data) || data.teacherEditsUnseen is bool)
           && (!('readyToPresent' in data) || data.readyToPresent is bool)
+          // M27: En progreso / Listo, kept equal to the M16 flag every list and filter reads
+          && (!('workStatus' in data) || data.workStatus == null || data.workStatus in ['wip', 'ready'])
+          && (!('workStatus' in data) || data.get('readyToPresent', false) == (data.workStatus == 'ready'))
+          && (!('workStatusBy' in data) || data.workStatusBy in ['student', 'teacher'])
+          && (!('teacherCommentsUnseen' in data) || data.teacherCommentsUnseen is bool)
+          && (!('previousVersion' in data) || data.previousVersion == null || validProjectVersion(data.previousVersion, studentId))
+          && (!('studentSlideOrder' in data) || data.studentSlideOrder == null
+              || (data.studentSlideOrder is list && data.studentSlideOrder.size() <= 50))
           && (!('ownerStatus' in data) || validStatus(data.ownerStatus))
           && (!('ownerDecor' in data) || validDecor(data.ownerDecor));
+      }
+
+      // M27: the project details as someone left them (restored with one click)
+      function validProjectVersion(version, studentId) {
+        return version is map
+          && version.keys().hasOnly(['title', 'summary', 'color', 'cover', 'by'])
+          && isString(version.title, 0, 120)
+          && isString(version.summary, 0, 1000)
+          && version.color in spaceColors()
+          && (version.cover == null || validImageRef(version.cover, boardId, studentId))
+          && version.by in ['student', 'teacher'];
+      }
+
+      // M27: whoever changes En progreso / Listo signs it, with the server time
+      function workStatusSignedBy(who) {
+        return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['workStatus', 'workStatusAt', 'workStatusBy'])
+          || (request.resource.data.workStatusBy == who && request.resource.data.workStatusAt == request.time);
       }
 
       // M11: whoever changes the stage signs it, with the server time
@@ -448,8 +476,11 @@ service cloud.firestore {
             && request.resource.data.diff(resource.data).affectedKeys()
                  .hasOnly(['title', 'summary', 'color', 'ownerName', 'ownerPhotoURL', 'cover', 'slideOrder',
                    'slideCount', 'stage', 'stageUpdatedAt', 'stageSetBy', 'readyToPresent', 'readyAt',
-                   'ownerStatus', 'ownerDecor', 'updatedAt'])
-            && stageSignedBy('student'))
+                   'ownerStatus', 'ownerDecor', 'updatedAt',
+                   // M27: their status, and restoring what the teacher changed
+                   'workStatus', 'workStatusAt', 'workStatusBy', 'previousVersion', 'studentSlideOrder'])
+            && stageSignedBy('student')
+            && workStatusSignedBy('student'))
           // the teacher renames the student or changes their group → keep the card in sync (M12)
           || (isBoardTeacher(boardId)
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ownerName', 'group']))
@@ -457,10 +488,34 @@ service cloud.firestore {
           || (isBoardTeacher(boardId)
             && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ownerStatus'])
             && request.resource.data.ownerStatus == null)
-          // M15: the student has seen the teacher's changes (no "updated" bump)
+          // M15 / M27: the student has seen the teacher's changes and comments (no "updated" bump)
           || (isSpaceOwner(boardId, studentId)
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['teacherEditsUnseen'])
-            && request.resource.data.teacherEditsUnseen == false)
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['teacherEditsUnseen', 'teacherCommentsUnseen'])
+            && request.resource.data.get('teacherEditsUnseen', false) == false
+            && request.resource.data.get('teacherCommentsUnseen', false) == false)
+          // M27 (D129): the board's teacher may change everything the student can in the project
+          // (not their name, photo or profile extras), signing what they changed
+          || (isBoardTeacher(boardId) && boardIsActive(boardId)
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['title', 'summary', 'color', 'cover', 'slideOrder', 'slideCount', 'stage', 'stageUpdatedAt',
+                   'stageSetBy', 'readyToPresent', 'readyAt', 'workStatus', 'workStatusAt', 'workStatusBy',
+                   'previousVersion', 'teacherEditedAt', 'studentSlideOrder', 'teacherEditsUnseen',
+                   'teacherCommentsUnseen', 'updatedAt'])
+            && stageSignedBy('teacher')
+            && workStatusSignedBy('teacher')
+            // the M16 flag only moves with a signed En progreso / Listo
+            && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['readyToPresent', 'readyAt'])
+              || request.resource.data.diff(resource.data).affectedKeys().hasAny(['workStatusAt']))
+            && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['title', 'summary', 'color', 'cover'])
+              || request.resource.data.teacherEditedAt == request.time)
+            && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['updatedAt'])
+              || request.resource.data.updatedAt == request.time)
+            // only the student clears the "✎ Docente" / "Comentario nuevo" badges
+            && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['teacherEditsUnseen'])
+              || request.resource.data.teacherEditsUnseen == true)
+            && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['teacherCommentsUnseen'])
+              || request.resource.data.teacherCommentsUnseen == true)
+            && teacherOrderChange(studentId))
           // M15: the teacher changed a slide (badge on the card), or appended a slide at the end
           || (isBoardTeacher(boardId) && boardIsActive(boardId)
             && request.resource.data.teacherEditsUnseen == true
@@ -475,6 +530,19 @@ service cloud.firestore {
             && stageSignedBy('teacher'))
         );
         allow delete: if isBoardTeacher(boardId);
+
+        // M27: the teacher's change to the slide order: a new order of the same slides, one slide
+        // added at the end, or one removed whose copy is kept for the student (same batch)
+        function teacherOrderChange(studentId) {
+          let before = resource.data.slideOrder;
+          let after = request.resource.data.slideOrder;
+          return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['slideOrder'])
+            || (after.size() == before.size() && after.toSet() == before.toSet()
+              && after.toSet().size() == after.size())
+            || (after.size() == before.size() + 1 && after[0:before.size()] == before)
+            || (after.size() == before.size() - 1 && before.removeAll(after).size() == 1
+              && existsAfter(/databases/$(database)/documents/boards/$(boardId)/spaces/$(studentId)/deletedSlides/$(before.removeAll(after)[0])));
+        }
 
         // ---------- slides/{slideId}: one Excalidraw scene per slide (M5) ----------
         // Saving a slide never touches the space document (dashboards listen to spaces).
@@ -559,6 +627,27 @@ service cloud.firestore {
           allow delete: if isBoardTeacher(boardId) || (isSpaceOwner(boardId, studentId) && freeOrMine());
         }
 
+        // ---------- M27: slides the teacher deleted, until the student restores them ----------
+
+        match /deletedSlides/{slideId} {
+          allow read: if isBoardTeacher(boardId) || isSpaceOwner(boardId, studentId);
+          // the copy is written in the same batch that deletes the slide
+          allow create: if isBoardTeacher(boardId) && boardIsActive(boardId)
+            && request.resource.data.keys().hasOnly(['content', 'files', 'assetIds', 'bytes', 'position',
+                 'deletedAt', 'deletedByName'])
+            && request.resource.data.content is string && request.resource.data.content.size() <= 900000
+            && request.resource.data.files is map && request.resource.data.files.size() <= 30
+            && request.resource.data.assetIds is list && request.resource.data.assetIds.size() <= 30
+            && request.resource.data.bytes is int && request.resource.data.bytes >= 0
+            && request.resource.data.position is int && request.resource.data.position >= 0
+            && request.resource.data.deletedAt == request.time
+            && isString(request.resource.data.deletedByName, 1, 200)
+            && !existsAfter(/databases/$(database)/documents/boards/$(boardId)/spaces/$(studentId)/slides/$(slideId));
+          // the student restores it (or removes it for good); the teacher too (student removed, purge)
+          allow delete: if isBoardTeacher(boardId)
+            || (isSpaceOwner(boardId, studentId) && boardIsActive(boardId));
+        }
+
         // ---------- M16: polls in a student's space, one vote per student ----------
 
         function pollPath(pollId) {
@@ -639,32 +728,38 @@ service cloud.firestore {
           }
         }
 
-        // ---------- notes/{noteId}: the teacher's annotations on a slide ----------
-        // Private feedback: the board's teachers and the space's owner, never classmates.
+        // ---------- notes/{noteId}: the teacher's comments on a slide or on the project ----------
+        // Private by default: the board's teachers and the space's owner. M27 (D128): the teacher
+        // may make one public, then the board's members read it too (they query visibility == public).
 
         function slidePath(boardId, studentId, slideId) {
           return /databases/$(database)/documents/boards/$(boardId)/spaces/$(studentId)/slides/$(slideId);
         }
 
         match /notes/{noteId} {
-          allow read: if isBoardTeacher(boardId) || isSpaceOwner(boardId, studentId);
+          allow read: if isBoardTeacher(boardId) || isSpaceOwner(boardId, studentId)
+            || (isMember(boardId) && resource.data.visibility == 'public');
           allow create: if isBoardTeacher(boardId)
-            && request.resource.data.keys().hasOnly(['slideId', 'text', 'authorEmail', 'authorName',
+            && request.resource.data.keys().hasOnly(['slideId', 'text', 'visibility', 'authorEmail', 'authorName',
                 'createdAt', 'updatedAt'])
-            && request.resource.data.slideId is string
-            && exists(slidePath(boardId, studentId, request.resource.data.slideId))
+            // a slide of this space, or null: the whole project (M27)
+            && (request.resource.data.slideId == null
+              || (request.resource.data.slideId is string
+                && exists(slidePath(boardId, studentId, request.resource.data.slideId))))
+            && request.resource.data.visibility in ['private', 'public']
             && isString(request.resource.data.text, 1, 2000)
             && request.resource.data.authorEmail == myEmail()
             && isString(request.resource.data.authorName, 1, 200)
             && request.resource.data.createdAt == request.time
             && request.resource.data.updatedAt == request.time;
           allow update: if isBoardTeacher(boardId)
-            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text', 'updatedAt'])
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text', 'visibility', 'updatedAt'])
             && isString(request.resource.data.text, 1, 2000)
+            && request.resource.data.get('visibility', 'private') in ['private', 'public']
             && request.resource.data.updatedAt == request.time;
-          // The owner removes them only together with their slide (same batch)
+          // The owner removes them only together with their slide (same batch); never project comments
           allow delete: if isBoardTeacher(boardId)
-            || (isSpaceOwner(boardId, studentId)
+            || (isSpaceOwner(boardId, studentId) && resource.data.slideId != null
               && !existsAfter(slidePath(boardId, studentId, resource.data.slideId)));
         }
       }

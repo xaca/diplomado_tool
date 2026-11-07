@@ -1090,6 +1090,7 @@ describe("teacher's notes on slides", () => {
 
   const note = (overrides: Record<string, unknown> = {}) => ({
     slideId: 's1',
+    visibility: 'private',
     text: 'Buen avance; agrega la fuente del dato.',
     authorEmail: TEACHER.email,
     authorName: 'Profe',
@@ -1588,7 +1589,7 @@ describe("teacher edits students' slides (M15)", () => {
     await assertFails(setDoc(slideRef(as(TEACHER)), asTeacher()))
   })
 
-  it('the teacher appends a slide but cannot reorder or delete', async () => {
+  it('the teacher appends a slide and (M27, D129) reorders, never duplicating one', async () => {
     await withSlide()
     const db = as(TEACHER)
     const add = writeBatch(db)
@@ -1599,14 +1600,20 @@ describe("teacher edits students' slides (M15)", () => {
       teacherEditsUnseen: true,
     })
     await assertSucceeds(add.commit())
-    await assertFails(
+    await assertSucceeds(
       updateDoc(spaceRef(db), {
         slideOrder: ['s2', 's1'],
         slideCount: 2,
         teacherEditsUnseen: true,
       }),
     )
-    // (deleting stays possible for the teacher: removing a student deletes their slides; the editor never offers it)
+    await assertFails(
+      updateDoc(spaceRef(db), {
+        slideOrder: ['s1', 's1'],
+        slideCount: 2,
+        teacherEditsUnseen: true,
+      }),
+    )
   })
 
   it('versions: the teacher keeps only the student one; the student swaps both; only they read them', async () => {
@@ -1784,7 +1791,7 @@ describe("teacher's class tools (M16)", () => {
     await assertFails(updateDoc(boardOf(as(LAURA)), { clock: clock() }))
   })
 
-  it('the student marks their slides ready; classmates and the teacher cannot', async () => {
+  it('the student marks their slides ready; classmates cannot, the teacher only with a signed status (M27)', async () => {
     await withPoll()
     const ready = {
       readyToPresent: true,
@@ -3352,6 +3359,358 @@ describe('Mensajes (M26)', () => {
         from: 'teacher',
         uid: TEACHER.uid,
         exists: true,
+      }),
+    )
+  })
+})
+
+describe("the teacher's feedback on a project (M27)", () => {
+  const SEB = { uid: 'seb', email: 'seb@gmail.com' }
+  const spaceRef = (db: Firestore) =>
+    doc(db, 'boards', BOARD, 'spaces', 'st_laura')
+  const notesOf = (db: Firestore) =>
+    collection(db, 'boards', BOARD, 'spaces', 'st_laura', 'notes')
+  const noteRef = (db: Firestore, noteId: string) => doc(notesOf(db), noteId)
+  const slideRef = (db: Firestore, slideId = 's1') =>
+    doc(db, 'boards', BOARD, 'spaces', 'st_laura', 'slides', slideId)
+  const deletedRef = (db: Firestore, slideId = 's1') =>
+    doc(db, 'boards', BOARD, 'spaces', 'st_laura', 'deletedSlides', slideId)
+  const slide = {
+    engine: 'excalidraw',
+    content: '{"elements":[]}',
+    files: {},
+    assetIds: [],
+    bytes: 15,
+    schemaVersion: 1,
+  }
+  const comment = (overrides: Record<string, unknown> = {}) => ({
+    slideId: null,
+    text: 'Tu proyecto va bien; falta el prototipo.',
+    visibility: 'private',
+    authorEmail: TEACHER.email,
+    authorName: 'Profe',
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    ...overrides,
+  })
+
+  /** Laura joined with slides s1, s2; Seb (a classmate) joined; notes: private, public, old (no visibility) */
+  async function seeded(boardOverrides: Record<string, unknown> = {}) {
+    await seed({ boardOverrides })
+    await autoJoin(as(LAURA), LAURA, 'st_laura')
+    await env.withSecurityRulesDisabled(async (context) => {
+      const db = context.firestore()
+      for (const id of ['s1', 's2'])
+        await setDoc(
+          doc(db, 'boards', BOARD, 'spaces', 'st_laura', 'slides', id),
+          { ...slide, updatedAt: serverTimestamp() },
+        )
+      await updateDoc(doc(db, 'boards', BOARD, 'spaces', 'st_laura'), {
+        title: 'Huerta urbana',
+        slideOrder: ['s1', 's2'],
+        slideCount: 2,
+      })
+      await setDoc(
+        doc(db, 'boards', BOARD, 'students', 'st_seb'),
+        student([SEB.email]),
+      )
+      await setDoc(doc(db, 'boards', BOARD, 'studentEmails', SEB.email), {
+        email: SEB.email,
+        studentId: 'st_seb',
+      })
+      const notes = collection(
+        db,
+        'boards',
+        BOARD,
+        'spaces',
+        'st_laura',
+        'notes',
+      )
+      await setDoc(doc(notes, 'private'), comment())
+      await setDoc(doc(notes, 'public'), comment({ visibility: 'public' }))
+      const { visibility: _old, ...old } = comment({ slideId: 's1' })
+      void _old
+      await setDoc(doc(notes, 'old'), old)
+    })
+    await autoJoin(as(SEB), SEB, 'st_seb')
+  }
+
+  it('the teacher comments on the whole project, private or public, and switches it later', async () => {
+    await seeded()
+    const db = as(TEACHER)
+    await assertSucceeds(setDoc(noteRef(db, 'c1'), comment()))
+    await assertSucceeds(
+      setDoc(noteRef(db, 'c2'), comment({ visibility: 'public' })),
+    )
+    await assertSucceeds(
+      setDoc(
+        noteRef(db, 'c3'),
+        comment({ slideId: 's2', visibility: 'public' }),
+      ),
+    )
+    // a visibility is required and must be one of the two
+    const { visibility: _v, ...noVisibility } = comment()
+    void _v
+    await assertFails(setDoc(noteRef(db, 'c4'), noVisibility))
+    await assertFails(
+      setDoc(noteRef(db, 'c4'), comment({ visibility: 'everyone' })),
+    )
+    await assertSucceeds(
+      updateDoc(noteRef(db, 'c1'), {
+        visibility: 'public',
+        updatedAt: serverTimestamp(),
+      }),
+    )
+    await assertFails(
+      updateDoc(noteRef(db, 'c1'), {
+        visibility: 'world',
+        updatedAt: serverTimestamp(),
+      }),
+    )
+    await assertFails(
+      setDoc(
+        noteRef(as(OTHER_TEACHER), 'c5'),
+        comment({ authorEmail: OTHER_TEACHER.email }),
+      ),
+    )
+  })
+
+  it('classmates read public comments only; private and older notes never reach them', async () => {
+    await seeded()
+    const seb = as(SEB)
+    await assertSucceeds(
+      getDocs(query(notesOf(seb), where('visibility', '==', 'public'))),
+    )
+    await assertSucceeds(getDoc(noteRef(seb, 'public')))
+    await assertFails(getDocs(notesOf(seb)))
+    await assertFails(getDoc(noteRef(seb, 'private')))
+    await assertFails(getDoc(noteRef(seb, 'old')))
+    await assertFails(
+      getDocs(
+        query(notesOf(as(STRANGER)), where('visibility', '==', 'public')),
+      ),
+    )
+    // the owner reads everything
+    await assertSucceeds(getDocs(notesOf(as(LAURA))))
+  })
+
+  it('students never write or re-label comments; the owner never deletes a project comment', async () => {
+    await seeded()
+    const laura = as(LAURA)
+    await assertFails(
+      setDoc(noteRef(laura, 'c9'), comment({ authorEmail: LAURA.email })),
+    )
+    await assertFails(
+      updateDoc(noteRef(laura, 'private'), {
+        visibility: 'public',
+        updatedAt: serverTimestamp(),
+      }),
+    )
+    await assertFails(deleteDoc(noteRef(laura, 'private')))
+    await assertFails(deleteDoc(noteRef(as(SEB), 'public')))
+  })
+
+  it('the teacher edits the project details, signed, keeping the student version', async () => {
+    await seeded()
+    const db = as(TEACHER)
+    const previousVersion = {
+      title: 'Huerta urbana',
+      summary: '',
+      color: '#FFFFFF',
+      cover: null,
+      by: 'student',
+    }
+    await assertFails(
+      updateDoc(spaceRef(db), {
+        title: 'Huerta urbana comunitaria',
+        updatedAt: serverTimestamp(),
+      }),
+    )
+    await assertSucceeds(
+      updateDoc(spaceRef(db), {
+        title: 'Huerta urbana comunitaria',
+        summary: 'Un huerto en la azotea del colegio.',
+        previousVersion,
+        teacherEditedAt: serverTimestamp(),
+        teacherEditsUnseen: true,
+        updatedAt: serverTimestamp(),
+      }),
+    )
+    await assertFails(
+      updateDoc(spaceRef(db), {
+        previousVersion: { ...previousVersion, by: 'someone' },
+        teacherEditedAt: serverTimestamp(),
+      }),
+    )
+    // not the student's own profile extras
+    await assertFails(
+      updateDoc(spaceRef(db), {
+        ownerDecor: { banner: 'stars' },
+        teacherEditedAt: serverTimestamp(),
+      }),
+    )
+    // only the board's teacher, only on a writable board
+    await assertFails(
+      updateDoc(spaceRef(as(OTHER_TEACHER)), {
+        title: 'X',
+        teacherEditedAt: serverTimestamp(),
+      }),
+    )
+    await assertFails(
+      updateDoc(spaceRef(as(SEB)), {
+        title: 'X',
+        updatedAt: serverTimestamp(),
+      }),
+    )
+    // the student restores theirs (the teacher's goes into previousVersion)
+    await assertSucceeds(
+      updateDoc(spaceRef(as(LAURA)), {
+        title: 'Huerta urbana',
+        summary: '',
+        previousVersion: {
+          ...previousVersion,
+          title: 'Huerta urbana comunitaria',
+          summary: 'Un huerto en la azotea del colegio.',
+          by: 'teacher',
+        },
+        updatedAt: serverTimestamp(),
+      }),
+    )
+  })
+
+  it('nobody but the student edits on a locked board', async () => {
+    await seeded({ status: 'locked' })
+    await assertFails(
+      updateDoc(spaceRef(as(TEACHER)), {
+        title: 'X',
+        teacherEditedAt: serverTimestamp(),
+      }),
+    )
+  })
+
+  it('the teacher deletes a slide only keeping a copy; the student restores it', async () => {
+    await seeded()
+    const db = as(TEACHER)
+    const copy = {
+      content: '{"elements":[]}',
+      files: {},
+      assetIds: [],
+      bytes: 15,
+      position: 0,
+      deletedAt: serverTimestamp(),
+      deletedByName: 'Profe',
+    }
+    // without the copy: refused
+    const bare = writeBatch(db)
+    bare.delete(slideRef(db))
+    bare.update(spaceRef(db), {
+      slideOrder: ['s2'],
+      slideCount: 1,
+      teacherEditsUnseen: true,
+    })
+    await assertFails(bare.commit())
+    // the copy can't be written while the slide is still there
+    await assertFails(setDoc(deletedRef(db), copy))
+    const batch = writeBatch(db)
+    batch.delete(slideRef(db))
+    batch.set(deletedRef(db), copy)
+    batch.update(spaceRef(db), {
+      slideOrder: ['s2'],
+      slideCount: 1,
+      studentSlideOrder: ['s1', 's2'],
+      teacherEditsUnseen: true,
+    })
+    await assertSucceeds(batch.commit())
+    // classmates don't see it; the student does
+    await assertFails(getDoc(deletedRef(as(SEB))))
+    await assertSucceeds(getDoc(deletedRef(as(LAURA))))
+    await assertFails(setDoc(deletedRef(as(LAURA), 's2'), copy))
+    // the student restores it where it was
+    const laura = as(LAURA)
+    const restore = writeBatch(laura)
+    restore.set(slideRef(laura), { ...slide, updatedAt: serverTimestamp() })
+    restore.delete(deletedRef(laura))
+    restore.update(spaceRef(laura), {
+      slideOrder: ['s1', 's2'],
+      slideCount: 2,
+      studentSlideOrder: null,
+      updatedAt: serverTimestamp(),
+    })
+    await assertSucceeds(restore.commit())
+  })
+
+  it('En progreso / Listo: signed by whoever sets it, consistent with the ready flag', async () => {
+    await seeded()
+    const laura = as(LAURA)
+    await assertSucceeds(
+      updateDoc(spaceRef(laura), {
+        workStatus: 'wip',
+        workStatusAt: serverTimestamp(),
+        workStatusBy: 'student',
+        readyToPresent: false,
+        updatedAt: serverTimestamp(),
+      }),
+    )
+    // "Listo" must also set the M16 flag every list reads
+    await assertFails(
+      updateDoc(spaceRef(laura), {
+        workStatus: 'ready',
+        workStatusAt: serverTimestamp(),
+        workStatusBy: 'student',
+        readyToPresent: false,
+        updatedAt: serverTimestamp(),
+      }),
+    )
+    await assertFails(
+      updateDoc(spaceRef(laura), {
+        workStatus: 'ready',
+        workStatusAt: serverTimestamp(),
+        workStatusBy: 'teacher',
+        readyToPresent: true,
+        updatedAt: serverTimestamp(),
+      }),
+    )
+    await assertFails(
+      updateDoc(spaceRef(laura), {
+        workStatus: 'done',
+        workStatusAt: serverTimestamp(),
+        workStatusBy: 'student',
+        updatedAt: serverTimestamp(),
+      }),
+    )
+    // the teacher sets it too, signed as the teacher
+    await assertSucceeds(
+      updateDoc(spaceRef(as(TEACHER)), {
+        workStatus: 'ready',
+        workStatusAt: serverTimestamp(),
+        workStatusBy: 'teacher',
+        readyToPresent: true,
+        readyAt: serverTimestamp(),
+      }),
+    )
+    await assertFails(
+      updateDoc(spaceRef(as(SEB)), {
+        workStatus: 'wip',
+        workStatusAt: serverTimestamp(),
+        workStatusBy: 'student',
+        readyToPresent: false,
+        updatedAt: serverTimestamp(),
+      }),
+    )
+  })
+
+  it('"Comentario nuevo": the teacher lights it, only the student clears it', async () => {
+    await seeded()
+    await assertSucceeds(
+      updateDoc(spaceRef(as(TEACHER)), { teacherCommentsUnseen: true }),
+    )
+    await assertFails(
+      updateDoc(spaceRef(as(TEACHER)), { teacherCommentsUnseen: false }),
+    )
+    await assertSucceeds(
+      updateDoc(spaceRef(as(LAURA)), {
+        teacherCommentsUnseen: false,
+        teacherEditsUnseen: false,
       }),
     )
   })
