@@ -15,7 +15,6 @@ import {
   useAllAchievements,
   useMyAchievements,
 } from '@/features/achievements/hooks'
-import { BoardSections } from '@/features/classes/components/BoardSections'
 import { useClassAccess } from '@/features/classes/use-class-access'
 import { useSpaces } from '@/features/spaces/hooks'
 import { toDate } from '@/lib/time'
@@ -110,7 +109,6 @@ export function AchievementsPage() {
 
   return (
     <section className="mx-auto flex w-full max-w-3xl flex-col gap-5 p-4 sm:p-6">
-      <BoardSections boardId={boardId} />
       <div>
         <p className="text-sm text-muted-foreground">
           {access.board.data?.title}

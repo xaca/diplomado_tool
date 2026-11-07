@@ -167,6 +167,7 @@ export function SendEmailDialog({
       if (outcome.sent.length)
         toast.success(t('mail.sentToast', { count: outcome.sent.length }))
     } catch (error) {
+      console.error('[mail]', error)
       setProblem(error instanceof GmailError ? error.problem : 'failed')
     } finally {
       setProgress(null)

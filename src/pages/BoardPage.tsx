@@ -10,7 +10,6 @@ import {
 import { Link, useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import {
-  CalendarDays,
   CircleCheck,
   ClipboardCheck,
   Megaphone,
@@ -18,12 +17,10 @@ import {
   Pencil,
   Presentation,
   Settings,
-  StickyNote,
-  Clapperboard,
   Timer,
-  Trophy,
 } from 'lucide-react'
 import { HomeLink } from '@/components/layout/HomeLink'
+import { BoardSections } from '@/features/classes/components/BoardSections'
 import { AnnouncementsPanel } from '@/features/announcements/components/AnnouncementsPanel'
 import { NotificationBell } from '@/features/announcements/components/NotificationBell'
 import { UserMenu } from '@/components/layout/UserMenu'
@@ -48,12 +45,7 @@ import { boardTheme, hasTagline } from '@/features/boards/styles'
 import { localDate } from '@/features/attendance/attendance'
 import { ClockBanner } from '@/features/clock/components/ClockBanner'
 import { CourseHeaderLine } from '@/features/course/components/CourseStatus'
-import {
-  useCourseState,
-  useHasCalendar,
-  useHeldDates,
-  useNow,
-} from '@/features/course/hooks'
+import { useCourseState, useHeldDates, useNow } from '@/features/course/hooks'
 import { ClockControls } from '@/features/clock/components/ClockControls'
 import { SpaceProfileDialog } from '@/features/spaces/components/SpaceProfileDialog'
 import {
@@ -117,8 +109,6 @@ export function BoardPage() {
   const held = useHeldDates(boardId, course, isBoardTeacher)
   const courseNow = useCourseState(course, held)
   const now = useNow()
-  const hasCalendar = useHasCalendar(boardId, course)
-
   const look = draft ?? resolveLook(board.data)
   const stages = boardStages(board.data)
   const shown = useMemo(
@@ -326,56 +316,6 @@ export function BoardPage() {
           compact={compact}
           actions={
             <>
-              {/* M10: the class walls (this page, Tarjetas, stays as it was) */}
-              {(teacher || mySpace) && (
-                <Button
-                  variant="secondary"
-                  nativeButton={false}
-                  title={t('classes.tab')}
-                  render={<Link to={`/b/${boardId}/class`} />}
-                >
-                  <StickyNote />
-                  <HeaderActionLabel>{t('classes.tab')}</HeaderActionLabel>
-                </Button>
-              )}
-              {/* M23: recorded classes */}
-              {(teacher || mySpace) && (
-                <Button
-                  variant="secondary"
-                  nativeButton={false}
-                  title={t('recordings.tab')}
-                  render={<Link to={`/b/${boardId}/videos`} />}
-                >
-                  <Clapperboard />
-                  <HeaderActionLabel>{t('recordings.tab')}</HeaderActionLabel>
-                </Button>
-              )}
-              {/* M24: the course calendar */}
-              {(teacher || mySpace) && hasCalendar && (
-                <Button
-                  variant="secondary"
-                  nativeButton={false}
-                  title={t('course.calendar')}
-                  render={<Link to={`/b/${boardId}/calendario`} />}
-                >
-                  <CalendarDays />
-                  <HeaderActionLabel>{t('course.calendar')}</HeaderActionLabel>
-                </Button>
-              )}
-              {/* M22: achievements */}
-              {(teacher || mySpace) && (
-                <Button
-                  variant="secondary"
-                  nativeButton={false}
-                  title={t('achievements.button')}
-                  render={<Link to={`/b/${boardId}/logros`} />}
-                >
-                  <Trophy />
-                  <HeaderActionLabel>
-                    {t('achievements.button')}
-                  </HeaderActionLabel>
-                </Button>
-              )}
               {mySpace && writable && (
                 <Button
                   title={t('dashboard.editMine')}
@@ -514,6 +454,9 @@ export function BoardPage() {
           )}
         </BoardHeader>
         <section className="relative z-[1] mx-auto flex max-w-7xl flex-col gap-6 p-4 sm:p-6">
+          {(teacher || mySpace) && (
+            <BoardSections boardId={boardId} tone={tone} />
+          )}
           {isBoardTeacher && announcing && (
             <AnnouncementsPanel
               boardId={boardId}

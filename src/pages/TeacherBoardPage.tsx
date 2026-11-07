@@ -52,6 +52,8 @@ import {
 } from '@/features/mail/components/SendEmailDialog'
 import { displayNameOf } from '@/features/profile/api'
 import { useProfile } from '@/features/profile/hooks'
+import { EvaluationsPanel } from '@/features/evaluations/components/EvaluationsPanel'
+import { PresentationsPanel } from '@/features/presentations/components/PresentationsPanel'
 import { RecordingsPanel } from '@/features/recordings/components/RecordingsPanel'
 import { useSpaces } from '@/features/spaces/hooks'
 import { StagesPanel } from '@/features/stages/components/StagesPanel'
@@ -427,6 +429,10 @@ export function TeacherBoardPage() {
       )}
 
       {tab === 'recordings' && <RecordingsPanel boardId={boardId} />}
+
+      {tab === 'presentations' && <PresentationsPanel boardId={boardId} />}
+
+      {tab === 'evaluations' && <EvaluationsPanel boardId={boardId} />}
 
       {tab === 'communication' && (
         <>

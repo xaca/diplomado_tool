@@ -34,7 +34,8 @@ beforeAll(async () => {
         'utf8',
       ),
       host: '127.0.0.1',
-      port: 8080,
+      // the port `emulators:exec` started on (8080 unless another emulator already has it)
+      port: Number(process.env.FIRESTORE_EMULATOR_HOST?.split(':')[1] ?? 8080),
     },
   })
 })

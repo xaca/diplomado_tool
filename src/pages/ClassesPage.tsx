@@ -30,7 +30,6 @@ import {
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatClassDate } from '@/features/attendance/attendance'
 import { createClass, deleteClass, updateClass } from '@/features/classes/api'
-import { BoardSections } from '@/features/classes/components/BoardSections'
 import { ClassDialog } from '@/features/classes/components/ClassDialog'
 import { useClasses } from '@/features/classes/hooks'
 import { useClassAccess } from '@/features/classes/use-class-access'
@@ -59,7 +58,6 @@ export function ClassesPage() {
 
   return (
     <section className="mx-auto flex w-full max-w-5xl flex-col gap-5 p-4 sm:p-6">
-      <BoardSections boardId={boardId} />
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-sm text-muted-foreground">

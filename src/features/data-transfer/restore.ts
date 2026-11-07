@@ -41,6 +41,38 @@ export async function restoreBoardFile(
     await saveCourse(boardId, { ...file.board.course, held: null })
   if (file.board.emailSender)
     await saveEmailSender(boardId, file.board.emailSender)
+  // M25: Google Slides and Google Forms in their order (a template carries them too, D124)
+  const material: [DocumentReference, Record<string, unknown>][] = [
+    ...(file.presentations ?? []).map(
+      (item, position) =>
+        [
+          doc(collection(db, paths.presentations(boardId))),
+          {
+            ...item,
+            position,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          },
+        ] as [DocumentReference, Record<string, unknown>],
+    ),
+    ...(file.evaluations ?? []).map(
+      (item, position) =>
+        [
+          doc(collection(db, paths.evaluations(boardId))),
+          {
+            ...item,
+            position,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          },
+        ] as [DocumentReference, Record<string, unknown>],
+    ),
+  ]
+  if (material.length) {
+    const batch = writeBatch(db)
+    for (const [ref, data] of material) batch.set(ref, data)
+    await batch.commit()
+  }
   if (kind === 'template') return boardId
 
   const spaces = new Map(file.spaces.map((space) => [space.studentId, space]))

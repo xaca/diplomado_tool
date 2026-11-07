@@ -3,8 +3,10 @@ import { useTranslation } from 'react-i18next'
 import {
   CalendarDays,
   Clapperboard,
+  ClipboardCheck,
   LayoutDashboard,
   Mail,
+  Presentation,
   Settings,
   Users,
 } from 'lucide-react'
@@ -20,6 +22,8 @@ const ICONS = {
   students: Users,
   course: CalendarDays,
   recordings: Clapperboard,
+  presentations: Presentation,
+  evaluations: ClipboardCheck,
   communication: Mail,
   settings: Settings,
 } satisfies Record<AdminTab, unknown>

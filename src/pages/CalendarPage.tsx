@@ -4,7 +4,6 @@ import { Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { adminTabPath } from '@/features/boards/admin-tabs'
-import { BoardSections } from '@/features/classes/components/BoardSections'
 import { useClassAccess } from '@/features/classes/use-class-access'
 import {
   CourseCalendar,
@@ -47,7 +46,6 @@ export function CalendarPage() {
 
   return (
     <section className="mx-auto flex w-full max-w-3xl flex-col gap-5 p-4 sm:p-6">
-      <BoardSections boardId={boardId} />
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
           <p className="text-sm text-muted-foreground">

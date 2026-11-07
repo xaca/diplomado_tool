@@ -6,6 +6,8 @@ import {
   classBackupOf,
   newsBackupOf,
   parseBoardFile,
+  evaluationBackupOf,
+  presentationBackupOf,
   recordingBackupOf,
   slideAssetIds,
   type BoardSnapshot,
@@ -85,8 +87,8 @@ describe('board backup', () => {
     expect(parsed.file).toEqual(backup)
   })
 
-  it('templates carry only the board settings', () => {
-    const template = buildTemplate(snapshot.board)
+  it('templates carry only the board settings (and course material, M25)', () => {
+    const template = buildTemplate(snapshot)
     expect(template).toEqual({
       type: 'pbl.boardTemplate',
       version: 1,
@@ -95,6 +97,8 @@ describe('board backup', () => {
         description: 'PBL',
         archiveAfterDays: 90,
       },
+      presentations: [],
+      evaluations: [],
     })
     expect(parseBoardFile(template).kind).toBe('template')
   })
@@ -116,7 +120,7 @@ describe('board backup', () => {
       backup,
     )
     // a template of a Design Thinking course keeps its stages
-    expect(buildTemplate(withStages.board).board.stages).toEqual(stages)
+    expect(buildTemplate(withStages).board.stages).toEqual(stages)
     // files from before M11 (no stage fields) still restore
     const old = JSON.parse(JSON.stringify(buildBackup(snapshot)))
     delete old.spaces[0].stage
@@ -422,7 +426,7 @@ describe('course setup and news in backups (M24)', () => {
     expect(backup.board.course).toEqual(course)
     expect(backup.board.emailSender?.replyTo).toBe('docente@uni.edu.co')
     expect(backup.news).toEqual([news])
-    expect(buildTemplate(board).board.course).toEqual(course)
+    expect(buildTemplate({ board }).board.course).toEqual(course)
     const parsed = parseBoardFile(JSON.parse(JSON.stringify(backup)))
     expect(parsed.kind === 'backup' && parsed.file.news).toEqual([news])
     expect(() =>
@@ -434,5 +438,53 @@ describe('course setup and news in backups (M24)', () => {
     expect(() =>
       parseBoardFile({ ...backup, news: [{ ...news, link: 'javascript:x' }] }),
     ).toThrow()
+  })
+
+  it('keeps Google Slides and Google Forms in order, in backups and templates (M25, D124)', () => {
+    const presentations = [
+      presentationBackupOf({
+        title: 'Clase 1 — Introducción',
+        presentationId: '1AbCdEfGhIjKlMnOpQrStUvWxYz0123456789_-abcd',
+        enabled: true,
+      }),
+      presentationBackupOf({
+        title: 'Publicada',
+        presentationId: `2PACX-1v${'Q'.repeat(78)}`,
+        published: true,
+        enabled: false,
+      }),
+    ]
+    const evaluations = [
+      evaluationBackupOf({
+        title: 'Rúbrica Shark Tank — Equipo 1',
+        formId: '1FAIpQLSdAbCdEfGhIjKlMnOpQrStUvWxYz012345',
+        published: true,
+        enabled: true,
+      }),
+    ]
+    // a presentation from before `published` existed comes back as not published
+    expect(presentations[0].published).toBe(false)
+    const withMaterial = { ...snapshot, presentations, evaluations }
+    const backup = buildBackup(withMaterial)
+    expect(backup.presentations).toEqual(presentations)
+    expect(backup.evaluations).toEqual(evaluations)
+    const template = buildTemplate(withMaterial)
+    expect(template.presentations).toEqual(presentations)
+    expect(template.evaluations).toEqual(evaluations)
+    const parsed = parseBoardFile(JSON.parse(JSON.stringify(template)))
+    expect(parsed.kind === 'template' && parsed.file.evaluations).toEqual(
+      evaluations,
+    )
+    // a bad id is refused; files from before M25 still restore
+    expect(() =>
+      parseBoardFile({
+        ...backup,
+        presentations: [{ ...presentations[0], presentationId: 'a b' }],
+      }),
+    ).toThrow()
+    const old = JSON.parse(JSON.stringify(backup))
+    delete old.presentations
+    delete old.evaluations
+    expect(parseBoardFile(old).kind).toBe('backup')
   })
 })

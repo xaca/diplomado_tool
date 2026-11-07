@@ -85,6 +85,16 @@ export const paths = {
     `${COLLECTIONS.boards}/${boardId}/watchProgress`,
   watchProgress: (boardId: string, uid: string) =>
     `${COLLECTIONS.boards}/${boardId}/watchProgress/${uid}`,
+  /** Presentaciones: Google Slides linked by the teacher */
+  presentations: (boardId: string) =>
+    `${COLLECTIONS.boards}/${boardId}/presentations`,
+  presentation: (boardId: string, presentationId: string) =>
+    `${COLLECTIONS.boards}/${boardId}/presentations/${presentationId}`,
+  /** Evaluaciones: Google Forms linked by the teacher */
+  evaluations: (boardId: string) =>
+    `${COLLECTIONS.boards}/${boardId}/evaluations`,
+  evaluation: (boardId: string, evaluationId: string) =>
+    `${COLLECTIONS.boards}/${boardId}/evaluations/${evaluationId}`,
   /** M24: course news, and the log of emails sent from the app */
   news: (boardId: string) => `${COLLECTIONS.boards}/${boardId}/news`,
   newsItem: (boardId: string, newsId: string) =>
@@ -304,6 +314,62 @@ export const recordingInputSchema = z.object({
   listId: z.string().regex(YOUTUBE_LIST_ID),
 })
 export type RecordingInput = z.infer<typeof recordingInputSchema>
+
+// ---------- presentations: Google Slides linked by the teacher ----------
+// Keep the patterns and limits in sync with the presentations rules in firestore.rules
+
+/** Editor ids are ~44 characters; ids of presentations published to the web are longer */
+export const GOOGLE_SLIDES_ID = /^[A-Za-z0-9_-]{20,200}$/
+export const MAX_PRESENTATION_TITLE = 120
+export const MAX_PRESENTATIONS = 50
+
+/**
+ * presentations/{id}: a Google Slides presentation linked by the board's teacher.
+ * Students read only enabled ones (D121, the rules check it) and see them embedded.
+ */
+export type PresentationDoc = {
+  title: string
+  presentationId: string
+  /** Added from a link published to the web (`/presentation/d/e/<id>`); missing = false */
+  published?: boolean
+  position: number
+  enabled: boolean
+  createdAt: unknown
+  updatedAt: unknown
+}
+
+export const presentationInputSchema = z.object({
+  title: z.string().trim().min(1).max(MAX_PRESENTATION_TITLE),
+  url: z.string().url(),
+})
+export type PresentationInput = z.infer<typeof presentationInputSchema>
+
+// ---------- evaluations: Google Forms linked by the teacher ----------
+// Keep the patterns and limits in sync with the evaluations rules in firestore.rules
+
+export const GOOGLE_FORMS_ID = /^[A-Za-z0-9_-]{20,80}$/
+export const MAX_EVALUATION_TITLE = 120
+export const MAX_EVALUATIONS = 20
+
+/**
+ * evaluations/{id}: a Google Form linked by the board's teacher.
+ * Students read only enabled ones (D121, the rules check it) and fill them in embedded.
+ */
+export type EvaluationDoc = {
+  title: string
+  formId: string
+  published: boolean
+  position: number
+  enabled: boolean
+  createdAt: unknown
+  updatedAt: unknown
+}
+
+export const evaluationInputSchema = z.object({
+  title: z.string().trim().min(1).max(MAX_EVALUATION_TITLE),
+  url: z.string().url(),
+})
+export type EvaluationInput = z.infer<typeof evaluationInputSchema>
 
 // ---------- course setup (M24): schedule, dates, holidays, class counter ----------
 // Stored on the board doc as `course` (one course = one board). Every field is optional: an empty

@@ -98,7 +98,9 @@ export function AnnouncementsPanel({
       await action()
       toast.success(done)
       return true
-    } catch {
+    } catch (error) {
+      // The cause (e.g. permission-denied) only shows in the console; the toast stays friendly
+      console.error('[announcements]', error)
       toast.error(t('errors.generic'))
       return false
     } finally {
