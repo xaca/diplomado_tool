@@ -267,13 +267,13 @@ export function MessageThread({
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                if (!deleting) return
-                deleteMessage(boardId, studentId, deleting.id).catch(
-                  (error) => {
-                    console.error('[messages] not deleted', error)
-                    toast.error(t('errors.generic'))
-                  },
-                )
+                const target = deleting
+                setDeleting(null)
+                if (!target) return
+                deleteMessage(boardId, studentId, target.id).catch((error) => {
+                  console.error('[messages] not deleted', error)
+                  toast.error(t('errors.generic'))
+                })
               }}
             >
               {t('common.remove')}

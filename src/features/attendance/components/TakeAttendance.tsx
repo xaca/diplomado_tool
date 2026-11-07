@@ -102,6 +102,7 @@ export function TakeAttendance({
   }
 
   async function remove() {
+    setConfirmDelete(false)
     if (!record) return
     try {
       await deleteAttendanceDay(boardId, record)

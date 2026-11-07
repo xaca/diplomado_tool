@@ -164,6 +164,7 @@ test.describe('M26 · Mensajes', () => {
       .getByRole('button', { name: 'Eliminar' })
       .click()
     await expect(wrong).toHaveCount(0)
+    await expect(page.getByRole('alertdialog')).toHaveCount(0)
     // the delete reached the server before switching accounts
     await expect
       .poll(async () =>
@@ -192,10 +193,15 @@ test.describe('M26 · Mensajes', () => {
     await expect(page.getByTestId('messages-badge')).toHaveText('1')
     await item.click()
     await page.getByRole('button', { name: 'Eliminar conversación' }).click()
+    await expect(page.getByRole('alertdialog')).toContainText(
+      'Sebastian Cetina',
+    )
     await page
       .getByRole('alertdialog')
       .getByRole('button', { name: 'Eliminar' })
       .click()
+    // the dialog closes (the action button doesn't close it by itself)
+    await expect(page.getByRole('alertdialog')).toHaveCount(0)
     await expect(item).toHaveCount(0)
     await expect
       .poll(async () => (await emulatorDb.doc(conversationPath).get()).exists)

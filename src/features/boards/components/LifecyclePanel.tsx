@@ -163,9 +163,10 @@ export function LifecyclePanel({ board }: { board: WithId<BoardDoc> }) {
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() =>
+              onClick={() => {
+                setConfirming(false)
                 void run(() => archiveBoard(board.id), t('lifecycle.archived'))
-              }
+              }}
             >
               {t('lifecycle.archiveNow')}
             </AlertDialogAction>

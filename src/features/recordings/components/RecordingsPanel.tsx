@@ -494,11 +494,12 @@ function PlaylistRow({
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() =>
+              onClick={() => {
+                setDeleting(false)
                 void deleteRecording(boardId, recording.id).catch(() =>
                   toast.error(t('errors.generic')),
                 )
-              }
+              }}
             >
               {t('common.remove')}
             </AlertDialogAction>

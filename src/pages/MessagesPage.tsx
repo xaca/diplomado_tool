@@ -106,7 +106,8 @@ function TeacherInbox({
   const conversations = useConversations(boardId, true)
   const spaces = useSpaces(boardId, null)
   const [search, setSearch] = useState('')
-  const [removing, setRemoving] = useState(false)
+  // the conversation being deleted (kept so the dialog's title has the name while it closes)
+  const [removing, setRemoving] = useState<string | null>(null)
 
   const names = useMemo(
     () => new Map(spaces.data.map((space) => [space.id, space.ownerName])),
@@ -270,7 +271,7 @@ function TeacherInbox({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setRemoving(true)}
+                    onClick={() => selected && setRemoving(selected)}
                   >
                     <Trash2 />
                     {t('messages.deleteConversation')}
@@ -295,12 +296,15 @@ function TeacherInbox({
         )}
       </div>
 
-      <AlertDialog open={removing} onOpenChange={setRemoving}>
+      <AlertDialog
+        open={!!removing}
+        onOpenChange={(isOpen) => !isOpen && setRemoving(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
               {t('messages.deleteConversationTitle', {
-                name: selected ? nameOf(selected) : '',
+                name: removing ? nameOf(removing) : '',
               })}
             </AlertDialogTitle>
             <AlertDialogDescription>
@@ -311,9 +315,10 @@ function TeacherInbox({
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                if (!selected) return
-                const studentId = selected
-                open(null)
+                const studentId = removing
+                setRemoving(null)
+                if (!studentId) return
+                if (studentId === selected) open(null)
                 deleteConversation(boardId, studentId).catch((error) => {
                   console.error('[messages] conversation not deleted', error)
                   toast.error(t('errors.generic'))
