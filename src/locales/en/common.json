@@ -386,7 +386,7 @@
   },
   "privacy": {
     "title": "Privacy notice",
-    "updated": "Updated: October 31, 2026",
+    "updated": "Updated: November 7, 2026",
     "intro": "{{app}} is an academic tool to document and present course projects (project-based learning). This notice explains which personal data it uses and how, under Colombian Law 1581 of 2012 and Decree 1377 of 2013.",
     "sections": [
       {
@@ -424,6 +424,12 @@
         "body": [
           "With third-party services that have their own security measures: Google Firebase (sign-in, database and website), Cloudinary (images) and Cloudflare (service that authorizes image uploads). Their servers may be outside Colombia (e.g. in the United States); by using the tool you authorize that transfer.",
           "Content embedded in slides (Google, YouTube in privacy mode, Figma, Canva, Miro, Notion…) loads from each service’s servers when someone views the slide."
+        ]
+      },
+      {
+        "title": "Messages with your teacher",
+        "body": [
+          "The messages you write in “Messages” are seen only by you and that course’s teachers; your classmates never see them. They are kept with the course and in its backups, and only the teacher can delete them. They are deleted when the course is purged, or when the teacher removes you from the course together with your messages. Please don’t send sensitive data (passwords, health or bank details)."
         ]
       },
       {
@@ -1473,5 +1479,50 @@
     "summaryOff": "No class:",
     "summaryNews": "News:",
     "summaryCounter": "We're on class {{given}} of {{total}} ({{left}} left)."
+  },
+  "messages": {
+    "title": "Messages",
+    "titleStudent": "Messages with your teacher",
+    "button": "Messages",
+    "buttonCount_one": "Messages: {{count}} new",
+    "buttonCount_other": "Messages: {{count}} new",
+    "newForTeacher": "You have a new message from a student",
+    "newForStudent": "Your teacher wrote to you",
+    "open": "Open messages",
+    "older": "Show earlier",
+    "emptyStudent": "Write to your teacher: a question, a link, whatever you need.",
+    "emptyTeacher": "No messages yet. Write the first one.",
+    "teacherBadge": "Teacher",
+    "delete": "Delete message",
+    "seen": "Seen",
+    "deleteTitle": "Delete this message?",
+    "deleteHint": "It disappears for you and for the student. This can’t be undone.",
+    "readOnly": "This course is archived: messages can be read, not sent.",
+    "notSent": "Couldn’t send. Check your connection and try again.",
+    "privacyHint": "Only you and your teacher see these messages. They are kept with the course.",
+    "placeholder": "Write a message…",
+    "send": "Send",
+    "formerStudent": "Former student",
+    "search": "Search student",
+    "writeTo": "Write to…",
+    "writeToName": "Write to {{name}}",
+    "message": "Message",
+    "noConversations": "No conversations yet.",
+    "unread": "New",
+    "you": "You",
+    "waiting": "Not answered",
+    "back": "Back to the list",
+    "viewSpace": "View their space",
+    "markUnread": "Mark as unread",
+    "deleteConversation": "Delete conversation",
+    "pick": "Pick a conversation or write to a student.",
+    "deleteConversationTitle": "Delete the conversation with {{name}}?",
+    "deleteConversationHint": "All its messages are deleted, for you and for the student. This can’t be undone.",
+    "homeBadge_one": "{{count}} new message",
+    "homeBadge_other": "{{count}} new messages",
+    "removeWithStudent": "Also delete their messages",
+    "summaryNone": "Nothing waiting for a reply.",
+    "summary_one": "{{unread}} new · {{count}} not answered",
+    "summary_other": "{{unread}} new · {{count}} not answered"
   }
 }

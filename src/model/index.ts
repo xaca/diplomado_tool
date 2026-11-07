@@ -69,6 +69,15 @@ export const paths = {
     `${COLLECTIONS.boards}/${boardId}/announcementState`,
   announcementState: (boardId: string, uid: string) =>
     `${COLLECTIONS.boards}/${boardId}/announcementState/${uid}`,
+  /** M26: one private conversation per student (doc id = studentId) and its messages */
+  conversations: (boardId: string) =>
+    `${COLLECTIONS.boards}/${boardId}/conversations`,
+  conversation: (boardId: string, studentId: string) =>
+    `${COLLECTIONS.boards}/${boardId}/conversations/${studentId}`,
+  messages: (boardId: string, studentId: string) =>
+    `${COLLECTIONS.boards}/${boardId}/conversations/${studentId}/messages`,
+  message: (boardId: string, studentId: string, messageId: string) =>
+    `${COLLECTIONS.boards}/${boardId}/conversations/${studentId}/messages/${messageId}`,
   /** M22: each member's achievements (doc id = uid) and how many unlocked each one */
   achievements: (boardId: string) =>
     `${COLLECTIONS.boards}/${boardId}/achievements`,
@@ -598,6 +607,46 @@ export type AnnouncementDoc = {
   updatedAt: unknown
   /** = createdAt, or the last "Recordar": newer than a student's read / removed → new again */
   remindedAt: unknown
+}
+
+// ---------- Mensajes (M26): a student ↔ the course's teachers ----------
+// Keep the limits in sync with the conversations rules in firestore.rules
+
+export const MAX_MESSAGE_TEXT = 1000
+export const MAX_MESSAGE_PREVIEW = 120
+/** One message every 2 s per conversation (the rules check it against lastMessageAt) */
+export const MESSAGE_COOLDOWN_MS = 2000
+/** Messages loaded at a time ("Ver anteriores" loads this many more) */
+export const MESSAGES_PAGE = 50
+
+export type MessageFrom = 'student' | 'teacher'
+
+/**
+ * conversations/{studentId}: one per student and course, shared by all the course's teachers.
+ * Keyed by studentId (not uid): a student with two accounts keeps one conversation (D115).
+ */
+export type ConversationDoc = {
+  studentId: string
+  createdAt: unknown
+  lastMessageAt: unknown
+  /** The newest message: the rules check it exists, so the preview always matches a message */
+  lastMessageId: string
+  lastFrom: MessageFrom
+  lastText: string
+  /** When the student / a teacher last opened it (one read time for all teachers, D117) */
+  studentReadAt?: unknown
+  teacherReadAt?: unknown
+}
+
+/** conversations/{studentId}/messages/{id}: never edited (D116); only the teacher deletes */
+export type MessageDoc = {
+  from: MessageFrom
+  authorUid: string
+  authorName: string
+  text: string
+  createdAt: unknown
+  /** Brought back by a restore: the original time, written by the teacher */
+  restored?: boolean
 }
 
 /** announcementState/{uid}: when I read / removed each announcement (mine only) */

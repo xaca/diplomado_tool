@@ -3,6 +3,7 @@ import {
   doc,
   serverTimestamp,
   setDoc,
+  Timestamp,
   writeBatch,
   type DocumentReference,
 } from 'firebase/firestore'
@@ -13,6 +14,7 @@ import {
 } from '@/features/boards/api'
 import { slideAssetIds, type BoardFile } from '@/features/data-transfer/backup'
 import { saveCourse, saveEmailSender } from '@/features/course/api'
+import { previewOf } from '@/features/messages/messages'
 import { saveBoardStages } from '@/features/stages/api'
 import { db } from '@/lib/firebase'
 import { normalizeEmail } from '@/lib/collections'
@@ -208,6 +210,38 @@ export async function restoreBoardFile(
     for (const [ref, data] of writes.slice(start, start + 450))
       batch.set(ref, data)
     await batch.commit()
+  }
+  // M26 (D119): conversations come back marked "restored". The messages go first: the rules
+  // accept a conversation only when its last message exists. Nothing shows as new to anybody.
+  for (const conversation of file.conversations ?? []) {
+    const messages = conversation.messages.map((message) => ({
+      ref: doc(collection(db, paths.messages(boardId, conversation.studentId))),
+      data: {
+        from: message.from,
+        authorUid: '',
+        authorName: message.authorName,
+        text: message.text,
+        createdAt: Timestamp.fromDate(new Date(message.sentAt)),
+        restored: true,
+      },
+    }))
+    for (let start = 0; start < messages.length; start += 450) {
+      const batch = writeBatch(db)
+      for (const { ref, data } of messages.slice(start, start + 450))
+        batch.set(ref, data)
+      await batch.commit()
+    }
+    const last = messages[messages.length - 1]
+    await setDoc(doc(db, paths.conversation(boardId, conversation.studentId)), {
+      studentId: conversation.studentId,
+      createdAt: serverTimestamp(),
+      lastMessageAt: last.data.createdAt,
+      lastMessageId: last.ref.id,
+      lastFrom: last.data.from,
+      lastText: previewOf(last.data.text),
+      studentReadAt: last.data.createdAt,
+      teacherReadAt: serverTimestamp(),
+    })
   }
   return boardId
 }

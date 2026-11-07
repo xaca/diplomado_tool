@@ -23,6 +23,7 @@ import { HomeLink } from '@/components/layout/HomeLink'
 import { BoardSections } from '@/features/classes/components/BoardSections'
 import { AnnouncementsPanel } from '@/features/announcements/components/AnnouncementsPanel'
 import { NotificationBell } from '@/features/announcements/components/NotificationBell'
+import { MessagesButton } from '@/features/messages/components/MessagesButton'
 import { UserMenu } from '@/components/layout/UserMenu'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -309,7 +310,12 @@ export function BoardPage() {
           studentCount={spaces.data.length}
           tone={tone}
           backdrop={theme.backdrop}
-          notifications={<NotificationBell boardId={boardId} />}
+          notifications={
+            <>
+              <MessagesButton boardId={boardId} tone={tone} />
+              <NotificationBell boardId={boardId} />
+            </>
+          }
           garland={theme.style?.garland}
           tagline={tagline}
           sticky={look.stickyHeader}

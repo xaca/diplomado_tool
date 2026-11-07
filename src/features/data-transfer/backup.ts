@@ -38,6 +38,8 @@ import {
   type EmailSender,
   type NewsDoc,
   type NewsInput,
+  MAX_MESSAGE_TEXT,
+  type MessageDoc,
 } from '@/model'
 
 // Board backup and template files (PLAN.md → Import / export). Pure: shared with the admin CLI.
@@ -146,6 +148,41 @@ const recordingBackupSchema = z.object({
   hidden: z.array(z.string().regex(YOUTUBE_VIDEO_ID)).max(MAX_RECORDING_VIDEOS),
 })
 
+/** M26: one student's conversation with the teachers, oldest message first (D119) */
+const conversationBackupSchema = z.object({
+  studentId: z.string().regex(/^[A-Za-z0-9_-]{1,128}$/),
+  messages: z
+    .array(
+      z.object({
+        from: z.enum(['student', 'teacher']),
+        authorName: z.string().min(1).max(200),
+        text: z.string().min(1).max(MAX_MESSAGE_TEXT),
+        sentAt: z.iso.datetime(),
+      }),
+    )
+    .min(1)
+    .max(5000),
+})
+export type ConversationBackup = z.infer<typeof conversationBackupSchema>
+
+/** A conversation as it goes into the backup: its messages, oldest first */
+export const conversationBackupOf = (
+  studentId: string,
+  messages: (Pick<MessageDoc, 'from' | 'authorName' | 'text'> & {
+    sentAt: Date
+  })[],
+): ConversationBackup => ({
+  studentId,
+  messages: [...messages]
+    .sort((a, b) => a.sentAt.getTime() - b.sentAt.getTime())
+    .map((message) => ({
+      from: message.from,
+      authorName: message.authorName,
+      text: message.text,
+      sentAt: message.sentAt.toISOString(),
+    })),
+})
+
 export const boardBackupSchema = z.object({
   type: z.literal('pbl.boardBackup'),
   version: z.literal(1),
@@ -197,6 +234,8 @@ export const boardBackupSchema = z.object({
   recordings: z.array(recordingBackupSchema).max(50).optional(),
   /** M24: course news (the email log stays out: it's a record of what was sent) */
   news: z.array(newsInputSchema).max(1000).optional(),
+  /** M26: the students' conversations (not in a template); optional: files from before restore */
+  conversations: z.array(conversationBackupSchema).max(500).optional(),
 })
 export type BoardBackup = z.infer<typeof boardBackupSchema>
 
@@ -283,6 +322,8 @@ export type BoardSnapshot = {
   recordings?: RecordingBackup[]
   /** M24: course news */
   news?: NewsInput[]
+  /** M26: conversations, each with its messages */
+  conversations?: ConversationBackup[]
 }
 
 /** A class as it goes into the backup: its slides in order, each with its notes (oldest first). */
@@ -388,6 +429,10 @@ export function buildBackup(
     recordings: snapshot.recordings ?? [],
     news: [...(snapshot.news ?? [])].sort((a, b) =>
       a.date.localeCompare(b.date),
+    ),
+    // Conversations of students no longer on the roster are left out (like attendance)
+    conversations: (snapshot.conversations ?? []).filter(
+      (item) => students.has(item.studentId) && item.messages.length > 0,
     ),
   })
 }

@@ -20,6 +20,7 @@ import {
   splitByLifecycle,
   suggestPurge,
 } from '@/features/boards/lifecycle'
+import { HomeMessagesBadge } from '@/features/messages/components/HomeMessagesBadge'
 import type { WithId } from '@/lib/firestore-hooks'
 import type { BoardDoc } from '@/model'
 
@@ -129,6 +130,8 @@ function BoardGrid({
                 )}
                 {/* M24: "12 / 32" — how far each course is */}
                 {!archived && <CourseBadge course={board.course} now={now} />}
+                {/* M26: students' messages waiting to be read */}
+                {!archived && <HomeMessagesBadge boardId={board.id} />}
                 {archived && suggestPurge(lifecycleOf(board)) && (
                   <Badge variant="outline" className="text-amber-700">
                     {t('lifecycle.considerPurgeShort')}

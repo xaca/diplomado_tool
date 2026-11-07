@@ -3003,3 +3003,356 @@ describe('course setup, news and emails (M24)', () => {
     )
   })
 })
+
+describe('Mensajes (M26)', () => {
+  const SEB = { uid: 'seb', email: 'seb@gmail.com' }
+  const conversation = (db: Firestore, studentId = 'st_laura') =>
+    doc(db, 'boards', BOARD, 'conversations', studentId)
+  const message = (db: Firestore, id: string, studentId = 'st_laura') =>
+    doc(db, 'boards', BOARD, 'conversations', studentId, 'messages', id)
+
+  /** Sends like the app: the message and its conversation in one batch */
+  function send(
+    db: Firestore,
+    {
+      id,
+      from,
+      uid,
+      text = 'Hola profe, ¿la entrega es el viernes?',
+      exists,
+      studentId = 'st_laura',
+      overrides = {},
+      conversationOverrides = {},
+    }: {
+      id: string
+      from: 'student' | 'teacher'
+      uid: string
+      text?: string
+      exists: boolean
+      studentId?: string
+      overrides?: Record<string, unknown>
+      conversationOverrides?: Record<string, unknown>
+    },
+  ) {
+    const batch = writeBatch(db)
+    batch.set(message(db, id, studentId), {
+      from,
+      authorUid: uid,
+      authorName: from === 'teacher' ? 'Profe' : 'Laura',
+      text,
+      createdAt: serverTimestamp(),
+      ...overrides,
+    })
+    const last = {
+      lastMessageAt: serverTimestamp(),
+      lastMessageId: id,
+      lastFrom: from,
+      lastText: text.slice(0, 120),
+      [from === 'student' ? 'studentReadAt' : 'teacherReadAt']:
+        serverTimestamp(),
+      ...conversationOverrides,
+    }
+    if (exists) batch.update(conversation(db, studentId), last)
+    else
+      batch.set(conversation(db, studentId), {
+        studentId,
+        createdAt: serverTimestamp(),
+        ...last,
+      })
+    return batch.commit()
+  }
+
+  const pause = (ms: number) =>
+    new Promise((resolve) => setTimeout(resolve, ms))
+
+  async function joined() {
+    await seed()
+    await autoJoin(as(LAURA), LAURA, 'st_laura')
+    await env.withSecurityRulesDisabled(async (context) => {
+      const db = context.firestore() as unknown as Firestore
+      await setDoc(
+        doc(db, 'boards', BOARD, 'students', 'st_seb'),
+        student([SEB.email]),
+      )
+      await setDoc(doc(db, 'boards', BOARD, 'studentEmails', SEB.email), {
+        email: SEB.email,
+        studentId: 'st_seb',
+      })
+    })
+    await autoJoin(as(SEB), SEB, 'st_seb')
+  }
+
+  /** Laura's conversation with one message, written straight to the database */
+  async function seeded() {
+    await joined()
+    await env.withSecurityRulesDisabled(async (context) => {
+      const db = context.firestore() as unknown as Firestore
+      const old = Timestamp.fromDate(new Date(Date.now() - 60_000))
+      await setDoc(message(db, 'm1'), {
+        from: 'student',
+        authorUid: LAURA.uid,
+        authorName: 'Laura',
+        text: 'Primera',
+        createdAt: old,
+      })
+      await setDoc(conversation(db), {
+        studentId: 'st_laura',
+        createdAt: old,
+        lastMessageAt: old,
+        lastMessageId: 'm1',
+        lastFrom: 'student',
+        lastText: 'Primera',
+        studentReadAt: old,
+      })
+    })
+  }
+
+  it('a student starts a conversation and the teacher answers; each marks it read', async () => {
+    await joined()
+    const laura = as(LAURA)
+    const teacher = as(TEACHER)
+    await assertSucceeds(
+      send(laura, { id: 'm1', from: 'student', uid: LAURA.uid, exists: false }),
+    )
+    await assertSucceeds(getDoc(conversation(laura)))
+    await assertSucceeds(
+      getDocs(
+        collection(
+          laura,
+          'boards',
+          BOARD,
+          'conversations',
+          'st_laura',
+          'messages',
+        ),
+      ),
+    )
+    await assertSucceeds(
+      getDocs(collection(teacher, 'boards', BOARD, 'conversations')),
+    )
+    await assertSucceeds(
+      updateDoc(conversation(teacher), { teacherReadAt: serverTimestamp() }),
+    )
+    await pause(2100)
+    await assertSucceeds(
+      send(teacher, {
+        id: 'm2',
+        from: 'teacher',
+        uid: TEACHER.uid,
+        text: 'Sí, el viernes: https://forms.gle/abc',
+        exists: true,
+      }),
+    )
+    await assertSucceeds(
+      updateDoc(conversation(laura), { studentReadAt: serverTimestamp() }),
+    )
+    // the teacher can also start one with another student
+    await assertSucceeds(
+      send(teacher, {
+        id: 'm3',
+        from: 'teacher',
+        uid: TEACHER.uid,
+        studentId: 'st_seb',
+        exists: false,
+      }),
+    )
+  })
+
+  it('classmates and strangers never read or write someone else’s conversation', async () => {
+    await seeded()
+    const seb = as(SEB)
+    await assertFails(getDoc(conversation(seb)))
+    await assertFails(getDoc(message(seb, 'm1')))
+    await assertFails(
+      getDocs(
+        collection(
+          seb,
+          'boards',
+          BOARD,
+          'conversations',
+          'st_laura',
+          'messages',
+        ),
+      ),
+    )
+    await assertFails(
+      getDocs(collection(seb, 'boards', BOARD, 'conversations')),
+    )
+    // students can't list the board's conversations, not even to find their own
+    await assertFails(
+      getDocs(collection(as(LAURA), 'boards', BOARD, 'conversations')),
+    )
+    await assertFails(getDoc(conversation(as(STRANGER))))
+    await assertFails(getDoc(conversation(as(OTHER_TEACHER))))
+    // Seb writing into Laura's conversation, as himself or as her
+    await assertFails(
+      send(seb, { id: 'x1', from: 'student', uid: SEB.uid, exists: true }),
+    )
+    await assertFails(
+      send(seb, { id: 'x2', from: 'student', uid: LAURA.uid, exists: true }),
+    )
+  })
+
+  it('a student writes only as themselves, with a real message, and not faster than every 2 s', async () => {
+    await seeded()
+    const laura = as(LAURA)
+    // posing as the teacher, someone else's uid, too long, an extra field
+    await assertFails(
+      send(laura, { id: 'x1', from: 'teacher', uid: LAURA.uid, exists: true }),
+    )
+    await assertFails(
+      send(laura, { id: 'x2', from: 'student', uid: SEB.uid, exists: true }),
+    )
+    await assertFails(
+      send(laura, {
+        id: 'x3',
+        from: 'student',
+        uid: LAURA.uid,
+        text: 'x'.repeat(1001),
+        exists: true,
+      }),
+    )
+    await assertFails(
+      send(laura, {
+        id: 'x4',
+        from: 'student',
+        uid: LAURA.uid,
+        exists: true,
+        overrides: { restored: true },
+      }),
+    )
+    // the preview changed without a new message
+    await assertFails(
+      updateDoc(conversation(laura), {
+        lastText: 'Otra cosa',
+        lastMessageAt: serverTimestamp(),
+        studentReadAt: serverTimestamp(),
+      }),
+    )
+    // a message without moving the conversation to it
+    await assertFails(
+      setDoc(message(laura, 'x5'), {
+        from: 'student',
+        authorUid: LAURA.uid,
+        authorName: 'Laura',
+        text: 'Sola',
+        createdAt: serverTimestamp(),
+      }),
+    )
+    // touching the teacher's read time
+    await assertFails(
+      updateDoc(conversation(laura), { teacherReadAt: serverTimestamp() }),
+    )
+
+    await assertSucceeds(
+      send(laura, { id: 'm2', from: 'student', uid: LAURA.uid, exists: true }),
+    )
+    // right away again: too soon
+    await assertFails(
+      send(laura, { id: 'm3', from: 'student', uid: LAURA.uid, exists: true }),
+    )
+    await pause(2100)
+    await assertSucceeds(
+      send(laura, { id: 'm3', from: 'student', uid: LAURA.uid, exists: true }),
+    )
+  })
+
+  it('nobody edits a message; only the teacher deletes messages and conversations (D116)', async () => {
+    await seeded()
+    const laura = as(LAURA)
+    const teacher = as(TEACHER)
+    await assertFails(updateDoc(message(laura, 'm1'), { text: 'Editado' }))
+    await assertFails(updateDoc(message(teacher, 'm1'), { text: 'Editado' }))
+    await assertFails(deleteDoc(message(laura, 'm1')))
+    await assertFails(deleteDoc(conversation(laura)))
+
+    // The teacher deletes the newest message and moves the preview back to the previous one
+    await pause(2100)
+    await assertSucceeds(
+      send(laura, {
+        id: 'm2',
+        from: 'student',
+        uid: LAURA.uid,
+        text: 'Algo grosero',
+        exists: true,
+      }),
+    )
+    let previous: { createdAt: unknown } | undefined
+    await env.withSecurityRulesDisabled(async (context) => {
+      const db = context.firestore() as unknown as Firestore
+      previous = (await getDoc(message(db, 'm1'))).data() as {
+        createdAt: unknown
+      }
+    })
+    const batch = writeBatch(teacher)
+    batch.delete(message(teacher, 'm2'))
+    batch.update(conversation(teacher), {
+      lastMessageAt: previous!.createdAt,
+      lastMessageId: 'm1',
+      lastFrom: 'student',
+      lastText: 'Primera',
+    })
+    await assertSucceeds(batch.commit())
+    // the preview can't point at a message that doesn't exist
+    await assertFails(updateDoc(conversation(teacher), { lastMessageId: 'm2' }))
+    // "Marcar como no leído"
+    await assertSucceeds(
+      updateDoc(conversation(teacher), { teacherReadAt: null }),
+    )
+    // a teacher of another course can't delete
+    await assertFails(deleteDoc(message(as(OTHER_TEACHER), 'm1')))
+    await assertSucceeds(deleteDoc(message(teacher, 'm1')))
+    await assertSucceeds(deleteDoc(conversation(teacher)))
+  })
+
+  it('a restored backup: the teacher writes old messages back, marked restored; students can’t', async () => {
+    await joined()
+    const old = Timestamp.fromDate(new Date(2026, 9, 1))
+    const restored = {
+      from: 'student',
+      authorUid: 'old-uid',
+      authorName: 'Laura',
+      text: 'Del curso anterior',
+      createdAt: old,
+      restored: true,
+    }
+    await assertFails(setDoc(message(as(LAURA), 'r1'), restored))
+    const teacher = as(TEACHER)
+    const batch = writeBatch(teacher)
+    batch.set(message(teacher, 'r1'), restored)
+    batch.set(conversation(teacher), {
+      studentId: 'st_laura',
+      createdAt: serverTimestamp(),
+      lastMessageAt: old,
+      lastMessageId: 'r1',
+      lastFrom: 'student',
+      lastText: 'Del curso anterior',
+    })
+    await assertSucceeds(batch.commit())
+    // a restored message can't claim to be new
+    await assertFails(
+      setDoc(message(teacher, 'r2'), { ...restored, restored: false }),
+    )
+  })
+
+  it('an archived course is read-only: messages can be read, not sent', async () => {
+    await seeded()
+    await updateDoc(doc(as(TEACHER), 'boards', BOARD), {
+      status: 'archived',
+      archivedAt: serverTimestamp(),
+    })
+    const laura = as(LAURA)
+    await assertSucceeds(getDoc(message(laura, 'm1')))
+    await assertFails(
+      send(laura, { id: 'm2', from: 'student', uid: LAURA.uid, exists: true }),
+    )
+    await assertFails(
+      send(as(TEACHER), {
+        id: 'm3',
+        from: 'teacher',
+        uid: TEACHER.uid,
+        exists: true,
+      }),
+    )
+  })
+})

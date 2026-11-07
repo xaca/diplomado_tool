@@ -10,6 +10,7 @@ import {
   writeBatch,
   type WriteBatch,
 } from 'firebase/firestore'
+import { deleteConversation } from '@/features/messages/api'
 import { recordBoardActivity } from '@/features/boards/api'
 import { db } from '@/lib/firebase'
 import type { WithId } from '@/lib/firestore-hooks'
@@ -169,8 +170,16 @@ export async function createMissingSpace(boardId: string, student: Student) {
   })
 }
 
-/** Deletes the student, their email index, linked accounts, their space and attendance. */
-export async function removeStudent(boardId: string, student: Student) {
+/**
+ * Deletes the student, their email index, linked accounts, their space and attendance; their
+ * messages too unless `messages: false` (M26, D119: kept as "Antiguo estudiante").
+ */
+export async function removeStudent(
+  boardId: string,
+  student: Student,
+  { messages = true }: { messages?: boolean } = {},
+) {
+  if (messages) await deleteConversation(boardId, student.id)
   const batch = writeBatch(db)
   await deleteSlides(batch, boardId, student.id)
   await moveAttendance(batch, boardId, student.id)

@@ -712,6 +712,125 @@ service cloud.firestore {
         allow delete: if isBoardTeacher(boardId) || (signedIn() && request.auth.uid == uid);
       }
 
+      // ---------- Mensajes (M26): each student ↔ the course's teachers, privately ----------
+      // Keep the limits in sync with src/model/index.ts (MAX_MESSAGE_TEXT, MAX_MESSAGE_PREVIEW,
+      // MESSAGE_COOLDOWN_MS). Sending writes the message and its conversation in one batch, and
+      // each points at the other: the preview always matches a real message. Messages are never
+      // edited; only the teacher deletes (D116). Classmates never read another's conversation.
+
+      function conversationPath(studentId) {
+        return /databases/$(database)/documents/boards/$(boardId)/conversations/$(studentId);
+      }
+
+      function messagePath(studentId, messageId) {
+        return /databases/$(database)/documents/boards/$(boardId)/conversations/$(studentId)/messages/$(messageId);
+      }
+
+      // The student of this conversation (a teacher of the board writes as the teacher)
+      function isConversationStudent(studentId) {
+        return !isBoardTeacher(boardId) && isSpaceOwner(boardId, studentId);
+      }
+
+      function inConversation(studentId) {
+        return isBoardTeacher(boardId) || isSpaceOwner(boardId, studentId);
+      }
+
+      function senderRole() {
+        return isBoardTeacher(boardId) ? 'teacher' : 'student';
+      }
+
+      function optionalTime(data, key) {
+        return !(key in data) || data[key] == null || data[key] is timestamp;
+      }
+
+      function validConversation(studentId) {
+        let data = request.resource.data;
+        return data.keys().hasOnly(['studentId', 'createdAt', 'lastMessageAt', 'lastMessageId',
+            'lastFrom', 'lastText', 'studentReadAt', 'teacherReadAt'])
+          && data.studentId == studentId
+          && data.createdAt is timestamp
+          && data.lastMessageAt is timestamp
+          && isString(data.lastMessageId, 1, 128)
+          && data.lastFrom in ['student', 'teacher']
+          && isString(data.lastText, 0, 120)
+          && optionalTime(data, 'studentReadAt')
+          && optionalTime(data, 'teacherReadAt')
+          && existsAfter(messagePath(studentId, data.lastMessageId));
+      }
+
+      // Sending: the newest message is mine and new in this same write, on an active board, and
+      // at least 2 s after the previous one
+      function sendsNow(studentId) {
+        let data = request.resource.data;
+        return data.lastMessageAt == request.time
+          && data.lastFrom == senderRole()
+          && getAfter(messagePath(studentId, data.lastMessageId)).data.createdAt == request.time
+          && boardIsActive(boardId)
+          && (resource == null
+            || request.time > resource.data.lastMessageAt + duration.value(2, 's'));
+      }
+
+      function unchanged(key) {
+        return request.resource.data.get(key, null) == resource.data.get(key, null);
+      }
+
+      match /conversations/{studentId} {
+        allow get: if inConversation(studentId);
+        allow list: if isBoardTeacher(boardId);
+
+        // The student starts it with a message, or sends one; or only marks it read
+        allow create: if isConversationStudent(studentId) && validConversation(studentId)
+          && request.resource.data.createdAt == request.time
+          && sendsNow(studentId)
+          && request.resource.data.studentReadAt == request.time
+          && !('teacherReadAt' in request.resource.data);
+        allow update: if isConversationStudent(studentId) && (
+          (validConversation(studentId) && unchanged('createdAt') && unchanged('teacherReadAt')
+            && sendsNow(studentId)
+            && request.resource.data.studentReadAt == request.time)
+          || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['studentReadAt'])
+            && request.resource.data.studentReadAt == request.time));
+
+        // A teacher sends, reads, marks unread, fixes the preview after deleting a message, or
+        // restores a backup (old times); a message sent now follows the same checks as a student's
+        allow create: if isBoardTeacher(boardId) && validConversation(studentId)
+          && request.resource.data.createdAt == request.time
+          && (request.resource.data.lastMessageAt != request.time || sendsNow(studentId));
+        allow update: if isBoardTeacher(boardId) && validConversation(studentId)
+          && unchanged('createdAt') && unchanged('studentReadAt')
+          && (request.resource.data.lastMessageAt == resource.data.lastMessageAt
+            || request.resource.data.lastMessageAt != request.time
+            || sendsNow(studentId));
+        allow delete: if isBoardTeacher(boardId);
+
+        match /messages/{messageId} {
+          allow read: if inConversation(studentId);
+          // Sent now, as who I am, and the conversation points at it in the same write
+          allow create: if inConversation(studentId)
+            && request.resource.data.keys().hasOnly(['from', 'authorUid', 'authorName', 'text',
+                'createdAt'])
+            && request.resource.data.from == senderRole()
+            && request.resource.data.authorUid == request.auth.uid
+            && isString(request.resource.data.authorName, 1, 200)
+            && isString(request.resource.data.text, 1, 1000)
+            && request.resource.data.createdAt == request.time
+            && getAfter(conversationPath(studentId)).data.lastMessageId == messageId
+            && boardIsActive(boardId);
+          // A restored backup: the teacher writes the old messages back, marked as restored
+          allow create: if isBoardTeacher(boardId)
+            && request.resource.data.keys().hasOnly(['from', 'authorUid', 'authorName', 'text',
+                'createdAt', 'restored'])
+            && request.resource.data.restored == true
+            && request.resource.data.from in ['student', 'teacher']
+            && isString(request.resource.data.authorUid, 0, 128)
+            && isString(request.resource.data.authorName, 1, 200)
+            && isString(request.resource.data.text, 1, 1000)
+            && request.resource.data.createdAt is timestamp;
+          allow update: if false;
+          allow delete: if isBoardTeacher(boardId);
+        }
+      }
+
       // ---------- class participation (M10): sticky-note walls ----------
       // Keep the lists and limits in sync with src/model/index.ts (CLASS_LAYOUTS, NOTE_COLORS,
       // REACTIONS, MAX_CLASS_SLIDES, MAX_NOTES_PER_PERSON, MAX_STICKY_TEXT)

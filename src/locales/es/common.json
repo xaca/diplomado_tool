@@ -386,7 +386,7 @@
   },
   "privacy": {
     "title": "Aviso de privacidad",
-    "updated": "Actualizado: 31 de octubre de 2026",
+    "updated": "Actualizado: 7 de noviembre de 2026",
     "intro": "{{app}} es una herramienta académica para documentar y presentar proyectos del curso (aprendizaje basado en proyectos). Este aviso explica qué datos personales usa y cómo, conforme a la Ley 1581 de 2012 y el Decreto 1377 de 2013 de Colombia.",
     "sections": [
       {
@@ -424,6 +424,12 @@
         "body": [
           "En servicios de terceros con sus propias medidas de seguridad: Google Firebase (inicio de sesión, base de datos y sitio web), Cloudinary (imágenes) y Cloudflare (servicio que autoriza la subida de imágenes). Sus servidores pueden estar fuera de Colombia (por ejemplo, en Estados Unidos); al usar la herramienta autorizas esa transferencia.",
           "El contenido insertado en las diapositivas (Google, YouTube en modo privado, Figma, Canva, Miro, Notion…) se carga desde los servidores de cada servicio cuando alguien ve la diapositiva."
+        ]
+      },
+      {
+        "title": "Mensajes con tu docente",
+        "body": [
+          "Los mensajes que escribes en «Mensajes» solo los ven tú y los docentes de ese curso; tus compañeros no. Se guardan con el curso y en sus copias de seguridad, y solo el docente puede eliminarlos. Se borran cuando se purga el curso o cuando el docente te quita del curso con sus mensajes. Te recomendamos no enviar datos sensibles (contraseñas, datos de salud o bancarios)."
         ]
       },
       {
@@ -1473,5 +1479,50 @@
     "summaryOff": "Sin clase:",
     "summaryNews": "Novedades:",
     "summaryCounter": "Vamos en la clase {{given}} de {{total}} (quedan {{left}})."
+  },
+  "messages": {
+    "title": "Mensajes",
+    "titleStudent": "Mensajes con tu docente",
+    "button": "Mensajes",
+    "buttonCount_one": "Mensajes: {{count}} nuevo",
+    "buttonCount_other": "Mensajes: {{count}} nuevos",
+    "newForTeacher": "Tienes un mensaje nuevo de un estudiante",
+    "newForStudent": "Tu docente te escribió",
+    "open": "Abrir mensajes",
+    "older": "Ver anteriores",
+    "emptyStudent": "Escríbele a tu docente: una pregunta, un enlace, lo que necesites.",
+    "emptyTeacher": "Aún no hay mensajes. Escribe el primero.",
+    "teacherBadge": "Docente",
+    "delete": "Eliminar mensaje",
+    "seen": "Visto",
+    "deleteTitle": "¿Eliminar este mensaje?",
+    "deleteHint": "Desaparece para ti y para el estudiante. No se puede deshacer.",
+    "readOnly": "Este curso está archivado: los mensajes se pueden leer, no enviar.",
+    "notSent": "No se pudo enviar. Revisa tu conexión e inténtalo de nuevo.",
+    "privacyHint": "Solo tú y tu docente ven estos mensajes. Se guardan con el curso.",
+    "placeholder": "Escribe un mensaje…",
+    "send": "Enviar",
+    "formerStudent": "Antiguo estudiante",
+    "search": "Buscar estudiante",
+    "writeTo": "Escribir a…",
+    "writeToName": "Escribir a {{name}}",
+    "message": "Mensaje",
+    "noConversations": "Aún no hay conversaciones.",
+    "unread": "Nuevo",
+    "you": "Tú",
+    "waiting": "Sin responder",
+    "back": "Volver a la lista",
+    "viewSpace": "Ver su espacio",
+    "markUnread": "Marcar como no leído",
+    "deleteConversation": "Eliminar conversación",
+    "pick": "Elige una conversación o escribe a un estudiante.",
+    "deleteConversationTitle": "¿Eliminar la conversación con {{name}}?",
+    "deleteConversationHint": "Se borran todos sus mensajes, para ti y para el estudiante. No se puede deshacer.",
+    "homeBadge_one": "{{count}} mensaje nuevo",
+    "homeBadge_other": "{{count}} mensajes nuevos",
+    "removeWithStudent": "También eliminar sus mensajes",
+    "summaryNone": "Nada sin responder.",
+    "summary_one": "{{unread}} nuevos · {{count}} sin responder",
+    "summary_other": "{{unread}} nuevos · {{count}} sin responder"
   }
 }

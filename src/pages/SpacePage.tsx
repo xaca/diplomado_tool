@@ -1,7 +1,14 @@
 import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import { ArrowLeft, Pencil, PencilLine, Play, Presentation } from 'lucide-react'
+import {
+  ArrowLeft,
+  MessageCircle,
+  Pencil,
+  PencilLine,
+  Play,
+  Presentation,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { doc } from 'firebase/firestore'
 import { Button } from '@/components/ui/button'
@@ -18,6 +25,7 @@ import { useSlides } from '@/features/slides/hooks'
 import { SpaceProfileDialog } from '@/features/spaces/components/SpaceProfileDialog'
 import { useMyStudentId, useSpaces } from '@/features/spaces/hooks'
 import { ReadyToggle } from '@/features/spaces/components/ReadyToggle'
+import { messagesPath } from '@/features/messages/messages'
 import { ClockBanner } from '@/features/clock/components/ClockBanner'
 import { PollsSection } from '@/features/polls/components/PollsSection'
 import {
@@ -216,6 +224,17 @@ export function SpacePage() {
               <Button variant="outline" onClick={() => setEditing(true)}>
                 <Pencil />
                 {t('space.edit')}
+              </Button>
+            )}
+            {/* M26: the teacher writes to this student */}
+            {isBoardTeacher && (
+              <Button
+                variant="outline"
+                nativeButton={false}
+                render={<Link to={messagesPath(boardId, spaceId)} />}
+              >
+                <MessageCircle />
+                {t('messages.message')}
               </Button>
             )}
           </header>

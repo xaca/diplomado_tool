@@ -26,6 +26,7 @@ import { PrivacyPage } from '@/pages/PrivacyPage'
 import { ProfilePage } from '@/pages/ProfilePage'
 import { RecordingPlayerPage } from '@/pages/RecordingPlayerPage'
 import { PresentationsPage } from '@/pages/PresentationsPage'
+import { MessagesPage } from '@/pages/MessagesPage'
 import { RecordingsPage } from '@/pages/RecordingsPage'
 import { SpacePage } from '@/pages/SpacePage'
 import { StudentHomePage } from '@/pages/StudentHomePage'
@@ -86,6 +87,8 @@ export const router = createBrowserRouter([
                 element: <PresentationsPage />,
               },
               { path: 'b/:boardId/calendario', element: <CalendarPage /> },
+              // M26: Mensajes, a student ↔ the course's teachers
+              { path: 'b/:boardId/mensajes', element: <MessagesPage /> },
               { path: 'b/:boardId/class', element: <ClassesPage /> },
             ],
           },

@@ -1,6 +1,7 @@
 import { useState } from 'react'
+import { Link } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import { Merge, Pencil, SquarePlus, Trash2 } from 'lucide-react'
+import { Merge, MessageCircle, Pencil, SquarePlus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   AlertDialog,
@@ -30,6 +31,7 @@ import {
   type Student,
 } from '@/features/students/api'
 import { StudentFormDialog } from '@/features/students/components/StudentFormDialog'
+import { messagesPath } from '@/features/messages/messages'
 
 export function StudentsTable({
   boardId,
@@ -45,6 +47,8 @@ export function StudentsTable({
   const [selected, setSelected] = useState<string[]>([])
   const [editing, setEditing] = useState<Student | null>(null)
   const [removing, setRemoving] = useState<Student | null>(null)
+  // M26 (D119): removing a student also deletes their messages, unless unticked
+  const [removeMessages, setRemoveMessages] = useState(true)
   const [merging, setMerging] = useState(false)
   const [creatingCard, setCreatingCard] = useState<string | null>(null)
 
@@ -73,7 +77,7 @@ export function StudentsTable({
   async function confirmRemove() {
     if (!removing) return
     try {
-      await removeStudent(boardId, removing)
+      await removeStudent(boardId, removing, { messages: removeMessages })
       toast.success(t('students.removed'))
     } catch {
       toast.error(t('errors.generic'))
@@ -185,6 +189,19 @@ export function StudentsTable({
               </TableCell>
               <TableCell>
                 <div className="flex justify-end">
+                  {/* M26: write to this student */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={t('messages.writeToName', {
+                      name: student.displayName,
+                    })}
+                    title={t('messages.message')}
+                    nativeButton={false}
+                    render={<Link to={messagesPath(boardId, student.id)} />}
+                  >
+                    <MessageCircle />
+                  </Button>
                   <Button
                     variant="ghost"
                     size="icon"
@@ -197,7 +214,10 @@ export function StudentsTable({
                     variant="ghost"
                     size="icon"
                     aria-label={t('common.remove')}
-                    onClick={() => setRemoving(student)}
+                    onClick={() => {
+                      setRemoveMessages(true)
+                      setRemoving(student)
+                    }}
                   >
                     <Trash2 />
                   </Button>
@@ -232,6 +252,14 @@ export function StudentsTable({
               {t('students.removeHint')}
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <label className="flex items-center gap-2 text-sm">
+            <Checkbox
+              checked={removeMessages}
+              onCheckedChange={(checked) => setRemoveMessages(checked === true)}
+              data-testid="remove-messages"
+            />
+            {t('messages.removeWithStudent')}
+          </label>
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction

@@ -4,6 +4,7 @@ import { HomeLink } from '@/components/layout/HomeLink'
 import { UserMenu } from '@/components/layout/UserMenu'
 import { AchievementSync } from '@/features/achievements/components/AchievementSync'
 import { NotificationBell } from '@/features/announcements/components/NotificationBell'
+import { MessagesButton } from '@/features/messages/components/MessagesButton'
 
 /** Routes with `handle: { ownHeader: true }` render the app name and menu in their own header. */
 export type ShellHandle = { ownHeader?: boolean }
@@ -23,6 +24,7 @@ export function AppShell() {
         <header className="flex h-14 items-center justify-between border-b px-4">
           <HomeLink />
           <div className="flex items-center gap-1">
+            {boardId && <MessagesButton boardId={boardId} />}
             {boardId && <NotificationBell boardId={boardId} />}
             <UserMenu />
           </div>

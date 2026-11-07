@@ -10,6 +10,7 @@ import {
 } from 'firebase/firestore'
 import {
   classBackupOf,
+  conversationBackupOf,
   newsBackupOf,
   recordingBackupOf,
   type BoardSnapshot,
@@ -22,6 +23,7 @@ import {
   paths,
   type AssetDoc,
   type NewsDoc,
+  type MessageDoc,
   type RecordingDoc,
   type BoardDoc,
   type SlideDoc,
@@ -76,6 +78,7 @@ export async function loadBoardData(boardId: string): Promise<BoardData> {
     watchProgress,
     news,
     emailLog,
+    conversations,
   ] = await Promise.all([
     getDoc(doc(db, paths.board(boardId))),
     getDocs(collection(db, paths.students(boardId))),
@@ -99,7 +102,14 @@ export async function loadBoardData(boardId: string): Promise<BoardData> {
     // M24: news goes into the backup; the email log only goes with the board
     getDocs(collection(db, paths.news(boardId))),
     getDocs(collection(db, paths.emails(boardId))),
+    // M26: conversations and their messages go into the backup and with the board on purge
+    getDocs(collection(db, paths.conversations(boardId))),
   ])
+  const conversationMessages = await Promise.all(
+    conversations.docs.map((item) =>
+      getDocs(collection(db, paths.messages(boardId, item.id))),
+    ),
+  )
   if (!board.exists()) throw new Error('board not found')
   const classSlides = await Promise.all(
     classes.docs.map((item) =>
@@ -224,6 +234,15 @@ export async function loadBoardData(boardId: string): Promise<BoardData> {
         .sort((a, b) => a.position - b.position)
         .map(recordingBackupOf),
       news: news.docs.map((item) => newsBackupOf(item.data() as NewsDoc)),
+      conversations: conversations.docs.map((item, index) =>
+        conversationBackupOf(
+          item.id,
+          conversationMessages[index].docs.map((message) => {
+            const data = message.data() as MessageDoc
+            return { ...data, sentAt: toDate(data.createdAt) }
+          }),
+        ),
+      ),
     },
     assets: assets.docs.map((asset) => {
       const data = asset.data() as AssetDoc
@@ -294,6 +313,10 @@ export async function loadBoardData(boardId: string): Promise<BoardData> {
       ...watchProgress.docs.map((d) => d.ref),
       ...news.docs.map((d) => d.ref),
       ...emailLog.docs.map((d) => d.ref),
+      ...conversationMessages.flatMap((snapshot) =>
+        snapshot.docs.map((d) => d.ref),
+      ),
+      ...conversations.docs.map((d) => d.ref),
       doc(db, paths.achievementCounts(boardId)),
     ],
   }

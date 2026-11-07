@@ -5,6 +5,7 @@ import { isArchived, lifecycleOf } from '@/features/boards/lifecycle'
 import {
   buildBackup,
   classBackupOf,
+  conversationBackupOf,
   newsBackupOf,
   recordingBackupOf,
   type BoardSnapshot,
@@ -20,6 +21,7 @@ import type {
   AnnouncementDoc,
   ClassDoc,
   NewsDoc,
+  MessageDoc,
   RecordingDoc,
   ClassSlideDoc,
   SpaceDoc,
@@ -71,6 +73,7 @@ export async function loadBoard(boardId: string) {
     watchProgress,
     news,
     emailLog,
+    conversations,
   ] = await Promise.all([
     ref.collection('students').get(),
     ref.collection('spaces').get(),
@@ -93,7 +96,12 @@ export async function loadBoard(boardId: string) {
     // M24: course news (in the backup) and the email log (only purged)
     ref.collection('news').get(),
     ref.collection('emails').get(),
+    // M26: conversations (in the backup, with their messages)
+    ref.collection('conversations').get(),
   ])
+  const conversationMessages = await Promise.all(
+    conversations.docs.map((item) => item.ref.collection('messages').get()),
+  )
   const classSlides = await Promise.all(
     classes.docs.map((item) => item.ref.collection('slides').get()),
   )
@@ -208,6 +216,15 @@ export async function loadBoard(boardId: string) {
       .sort((a, b) => a.position - b.position)
       .map(recordingBackupOf),
     news: news.docs.map((doc) => newsBackupOf(doc.data() as NewsDoc)),
+    conversations: conversations.docs.map((item, index) =>
+      conversationBackupOf(
+        item.id,
+        conversationMessages[index].docs.map((doc) => {
+          const data = doc.data() as MessageDoc
+          return { ...data, sentAt: toDate(data.createdAt) }
+        }),
+      ),
+    ),
   }
   const assetRows: AssetRow[] = assets.docs.map((doc) => {
     const data = doc.data() as AssetDoc
@@ -236,7 +253,9 @@ export async function loadBoard(boardId: string) {
     ...classNotes.flat().flatMap((s) => s.docs.map((doc) => doc.ref)),
     ...classSlides.flatMap((s) => s.docs.map((doc) => doc.ref)),
     ref.collection('achievementStats').doc('counts'),
+    ...conversationMessages.flatMap((s) => s.docs.map((doc) => doc.ref)),
     ...[
+      conversations,
       news,
       emailLog,
       recordings,

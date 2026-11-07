@@ -4,6 +4,7 @@ import {
   buildBackup,
   buildTemplate,
   classBackupOf,
+  conversationBackupOf,
   newsBackupOf,
   parseBoardFile,
   recordingBackupOf,
@@ -434,5 +435,55 @@ describe('course setup and news in backups (M24)', () => {
     expect(() =>
       parseBoardFile({ ...backup, news: [{ ...news, link: 'javascript:x' }] }),
     ).toThrow()
+  })
+
+  it('keeps the students’ conversations, oldest message first, not in a template (M26, D119)', () => {
+    const laura = conversationBackupOf('st_laura', [
+      {
+        from: 'teacher',
+        authorName: 'Profe',
+        text: 'Sí, el viernes',
+        sentAt: new Date('2026-11-07T15:05:00Z'),
+      },
+      {
+        from: 'student',
+        authorName: 'Laura Nataly',
+        text: '¿La entrega es el viernes?',
+        sentAt: new Date('2026-11-07T15:00:00Z'),
+      },
+    ])
+    expect(laura.messages.map((m) => m.from)).toEqual(['student', 'teacher'])
+    expect(laura.messages[0].sentAt).toBe('2026-11-07T15:00:00.000Z')
+    const gone = conversationBackupOf('st_gone', [
+      {
+        from: 'student',
+        authorName: 'X',
+        text: 'Hola',
+        sentAt: new Date('2026-11-01T10:00:00Z'),
+      },
+    ])
+    const backup = buildBackup({ ...snapshot, conversations: [laura, gone] })
+    // a student no longer on the roster is left out
+    expect(backup.conversations).toEqual([laura])
+    const parsed = parseBoardFile(JSON.parse(JSON.stringify(backup)))
+    expect(parsed.kind === 'backup' && parsed.file.conversations).toEqual([
+      laura,
+    ])
+    expect('conversations' in buildTemplate(snapshot.board)).toBe(false)
+    // a message too long is refused; files from before M26 still restore
+    expect(() =>
+      parseBoardFile({
+        ...backup,
+        conversations: [
+          {
+            ...laura,
+            messages: [{ ...laura.messages[0], text: 'x'.repeat(1001) }],
+          },
+        ],
+      }),
+    ).toThrow()
+    const old = JSON.parse(JSON.stringify(backup))
+    delete old.conversations
+    expect(parseBoardFile(old).kind).toBe('backup')
   })
 })

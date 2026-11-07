@@ -4,6 +4,7 @@ import { UserMenu } from '@/components/layout/UserMenu'
 import { NotificationBell } from '@/features/announcements/components/NotificationBell'
 import { useBoard } from '@/features/boards/hooks'
 import { BoardSections } from '@/features/classes/components/BoardSections'
+import { MessagesButton } from '@/features/messages/components/MessagesButton'
 import { IMAGE_SIZES, imageUrl } from '@/lib/cloudinary'
 
 export function BoardSubpageLayout() {
@@ -32,6 +33,7 @@ export function BoardSubpageLayout() {
           </Link>
         )}
         <div className="ml-auto flex items-center gap-1">
+          <MessagesButton boardId={boardId} />
           <NotificationBell boardId={boardId} />
           <UserMenu />
         </div>
