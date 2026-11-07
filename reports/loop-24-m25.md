@@ -1,82 +1,80 @@
-# Loop 24 — M25 Presentaciones and Evaluaciones
+# Loop 24 — M25 Presentaciones (the students' own slides)
 
-2026-11-07 · commits `c34dd16`..(last) · D120–D125 taken as proposed (you said "go")
-
-The code for this milestone was started before it was in the plan (Presentaciones, Evaluaciones, the sections bar and the Administrar guard). This loop wrote it into the plan, closed the gaps and added the tests.
+2026-11-07 · commits `c34dd16`..(last) · D126 and D127 decided by you; D120–D125 withdrawn
 
 ## 1. Summary
 
-- **Presentaciones** (Administrar → Presentaciones):
-  - Paste any Google Slides link: `/edit`, `/view`, `/present`, or **published to the web** (`/presentation/d/e/…`), and a title.
-  - Reorder with ↑ ↓, **Ocultar / Mostrar a estudiantes**, Presentar, Abrir en Google Slides, rename, delete. The file in Google is never touched.
-  - Students get a **Presentaciones** section: thumbnails (or a list), and Google's viewer when they open one.
-- **Evaluaciones** (Administrar → Evaluaciones):
-  - Paste a Google Forms link: the editor's, the "Enviar" one, or a **`forms.gle`** short link.
-  - The same order, show / hide, open and delete.
-  - Students fill in the form inside the app. **Answers stay in Google Forms**: read them there.
-- **Hidden means hidden (D121).** Before, hiding only changed the screen, and a student could still read hidden items from the database. Now the rules give students only the visible ones.
-- **The sections bar (D120):** Tarjetas · Clases · Grabaciones · Presentaciones · Evaluaciones · Calendario · Logros, on the board and on every section page, under a compact header (logo, title, 🔔, menu).
-  - Students see **Presentaciones** and **Evaluaciones** only when there's something visible. You always see both.
-- **"¿No carga?"** The viewers use the same frame as embeds in slides: "Cargando…", then "¿No carga? … Abrir" if Google doesn't answer, and an "↗ Abrir" corner link.
-- **Sharing hint** in both panels: "Compartir → «Cualquier persona con el enlace»".
-- **Limits (D125):** 50 presentations and 20 evaluations per course. "Agregar" turns off at the limit, with a note.
-- **Backup, template and purge (D124):** both lists go into the backup **and into a template**, so a new cohort starts with the same material. Restoring creates them in order. Purge (app and CLI) deletes them.
-- **Administrar only for the board's own teachers.** A teacher of another course who is a student here sees "No eres docente de este tablero" with a way back, instead of empty lists.
+**First version (`c34dd16`, `d45eab9`):** you linked Google Slides and Google Forms in two new Administrar tabs, and students saw them embedded.
+
+**Your review, the same day:** "the presentation needs to be only the slides from the student, no extra slides; in these slides they will add the Google Form for evaluation." So the milestone now works like this:
+
+- **Presentaciones = each student's own slides, made in the app** (D126). Nobody links extra slides.
+  - A card per student **with slides**: cover or color, name, title, "N diapositivas", **"Lista"** when they marked their slides ready.
+  - **Ver** opens their slides. **Presentar** is there for you on every card, and for a student only on their own.
+  - Students without slides are only counted: "3 estudiantes aún no tienen diapositivas".
+  - **You:** **Presentar todas** and **Presentar listos**.
+  - **A student:** "Tu presentación: N diapositivas", **Editar mis diapositivas**, **Presentar**, and the tip: "¿Te van a evaluar? Pon tu formulario de Google en una diapositiva: Editar → Insertar contenido → Google Forms. Tus compañeros lo llenan al ver tu presentación."
+- **The evaluation is a Google Form inside the student's slides** (D127). This already worked since M14, and I checked it:
+  - in the slides viewer and the presenter, the form is a live frame where filling in is allowed (`allow-forms`);
+  - it has the "Cargando…" / "¿No carga?" states and an "↗ Abrir" link that opens it in a new tab;
+  - a classmate opens the presentation (Presentaciones → **Ver**) and answers there;
+  - the answers go to Google Forms, in whoever owns the form.
+- **Removed:** the teacher-linked Google Slides, the **Evaluaciones** section, their two Administrar tabs, and their rules, backup fields and tests.
+- **Kept:**
+  - **one sections bar on every board page:** Tarjetas · Clases · Grabaciones · Presentaciones · Calendario · Logros;
+  - **Administrar only for the board's own teachers;**
+  - **tests can run beside your other project's emulators** (see §3).
 
 ## 2. Done
 
-| Commit    | What                                                                                                                                                                                                                                                                                                              |
-| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `c34dd16` | Presentaciones and Evaluaciones: model, rules (students read only visible ones), links (published Slides, short links), panels (limits, sharing hint), section pages (`EmbedFrame`), sections bar (D120), Administrar guard; backup / template / restore / purge (app + CLI); texts es / en; unit and rules tests |
-| (last)    | E2E `m25.spec.ts`; tests can run beside another project's emulators (ports from the environment); plan and this report                                                                                                                                                                                            |
+| Commit    | What                                                                                                                                                                                                                                                       |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `c34dd16` | First version: teacher-linked Google Slides and Google Forms, sections bar, Administrar guard                                                                                                                                                              |
+| `d45eab9` | Its e2e, test ports from the environment, plan and report                                                                                                                                                                                                  |
+| `93e89eb` | Revision: Presentaciones lists the students' own slides with the form-in-a-slide guide; teacher-linked Slides / Forms and Evaluaciones removed (model, rules, backup, tabs, pages, tests); new e2e; plan (D126, D127; D120–D125 withdrawn) and this report |
 
 ## 3. Quality gate
 
-| Check                          | Result                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Typecheck, lint, format        | ✅                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| Unit                           | ✅ **267** (+28: every Slides / Forms link form, published ids, wrong links, the addresses, the viewer's sandbox; backup and template with the material)                                                                                                                                                                                                                                                                                                                                                        |
-| Rules                          | ✅ **127** (+3: the teacher manages presentations; students read only visible ones and never write; the same for evaluations)                                                                                                                                                                                                                                                                                                                                                                                   |
-| Worker                         | ✅ **46** (no Worker change)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| E2E                            | ✅ **117** (+5 in `m25.spec.ts`: link, order and hide presentations, students see only visible ones, a published link; a form filled in inside the app; the bar shows the sections only when there is something, on every section page; the 20-evaluation limit; a teacher of another course turned away). The first full run had 5 older tests failing because they clicked header buttons that are now links in the bar, or expected six Administrar tabs. I updated them and re-ran those 4 files (15 / 15). |
-| Admin CLI · Worker integration | ✅ · not run (no Worker change)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| Build                          | ✅ main chunk 844 KB, 272 KB gzip (+11 KB)                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Check                   | Result                                                                                                                                                                                                                                                                                   |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Typecheck, lint, format | ✅                                                                                                                                                                                                                                                                                       |
+| Unit                    | ✅ **239**: back to the M24 count. The Slides / Forms link and backup tests went away with that code                                                                                                                                                                                     |
+| Rules                   | ✅ **124**: back to the M24 rules. This loop adds no rules                                                                                                                                                                                                                               |
+| Worker                  | ✅ **46** (no Worker change)                                                                                                                                                                                                                                                             |
+| E2E                     | ✅ **116** (`m25.spec.ts` rewritten, 4 tests: a classmate sees only presentations with slides and fills in the form inside one; the teacher presents all / ready / one, no Administrar tabs for slides or forms; the bar on every section page; a teacher of another course turned away) |
+| Admin CLI               | ✅ (on the first version; the revision only removes from the purge what no longer exists)                                                                                                                                                                                                |
+| Build                   | ✅                                                                                                                                                                                                                                                                                       |
 
-**How I ran the emulator tests:** your admin_grades_tool emulator (`demo-grades`) holds ports 8080 / 9099, and its Vite server holds 5174. I didn't stop them. I ran this project's emulators on other ports with a temporary config. To make that possible, the rules tests, the e2e app and Playwright now take the ports from the environment (`FIRESTORE_EMULATOR_HOST`, `FIREBASE_AUTH_EMULATOR_HOST`, `E2E_PORT`). The defaults are unchanged, so `npm run check` works as before when the ports are free.
+**How I ran the emulator tests:** your admin_grades_tool emulator (`demo-grades`) holds ports 8080 / 9099, and its Vite server holds 5174. I didn't stop them. I ran this project's emulators on other ports with a temporary config. The rules tests, the e2e app and Playwright now take the ports from the environment (`FIRESTORE_EMULATOR_HOST`, `FIREBASE_AUTH_EMULATOR_HOST`, `E2E_PORT`). The defaults are unchanged.
 
 ## 4. Your turn
 
 ```bash
-npm run deploy:rules   # required: students may no longer read hidden items
+npm run deploy:rules   # only if you deployed the first version's rules; otherwise Loop 23's are current
 npm run update:web
 git push
 ```
 
-Then link one real presentation and one real form, and look at them as a student on a phone and in Safari.
-
 ## 5. Acceptance test
 
-- [ ] Administrar → **Presentaciones**: paste a Slides link (from the address bar) → it appears; ↑ ↓ changes the order; hide one.
-- [ ] As a student: **Presentaciones** shows only the visible ones, in your order; opening one shows the slides.
-- [ ] A presentation published to the web (Archivo → Compartir → Publicar en la web) is accepted too. It shows an icon instead of a thumbnail.
-- [ ] Administrar → **Evaluaciones**: paste the form's `forms.gle` link → it's accepted; as a student, fill it in inside the app → the answer shows in Google Forms.
-- [ ] With nothing visible, students don't see the Presentaciones / Evaluaciones tabs; you always do.
-- [ ] Download a **template** of a course with presentations → create a new course from it → the presentations and forms are there.
+- [ ] As a student: in your slides, **Insertar contenido → Google Forms**, paste your form's link → the form shows in the slide.
+- [ ] As a classmate: **Presentaciones** → that student's card → **Ver** → fill in the form inside the slide → the answer arrives in Google Forms.
+- [ ] Try the same on a phone, and in Safari. If the form doesn't load there, "↗ Abrir" works.
+- [ ] As the teacher: **Presentar listos** presents only the students who marked their slides ready; **Presentar** on a card presents that student.
+- [ ] Students without slides don't get a card; the count under the list says how many.
 
 ## 6. Assumptions (change any of them)
 
-- **Published Slides links** were rejected before (their id is longer and different). They are accepted now, stored with a `published` flag, and have no thumbnail: Drive's thumbnail only exists for the editor's id.
-- **Short links** are expanded by the existing media-api Worker (only its allow-list: `forms.gle`, `goo.gl`…). If the Worker can't be reached, the link is checked as typed and the "not recognised" message explains it.
-- **The teacher's view** of the section pages still shows hidden items marked "Oculta", as before.
-- **The template carries the material visible or hidden**, as the teacher had it.
-- **Evaluations grid view** still loads each form as a small preview: fine for a handful, heavier with many. The default is the list.
+- **No first-slide preview on the cards:** the card shows the cover or the color, like Tarjetas. A preview would read every student's first slide (up to 1 MB each) whenever the page opens.
+- **Classmates can't present someone else's slides.** They use **Ver**, which is where they fill in the form. Only the teacher, or the student themselves, presents.
+- **Who owns the form:** each student (or team) makes and shares their own Google Form, so the answers reach them. You can also make the form and give students the link to put in their slides.
+- **The app doesn't know who answered** (D127). Use Google Forms' "collect emails" if you need names.
 
 ## 7. Issues / risks
 
-- **Sharing:** a presentation or form that isn't shared with "anyone with the link" (or published) doesn't load for students. The panels say so, and the viewer offers "Abrir".
-- **Forms limited to university accounts** may not load inside the app in Safari / Brave (third-party cookies). "Abrir" always works.
-- **Thumbnails** use an undocumented Drive address. If Google changes it, cards show the icon.
-- **Deploy order:** deploy the rules and the web together. With the new rules but the old web, students' lists would come back empty (the old pages ask for everything).
+- **The form is as big as its box on the slide.** A long form scrolls inside the box, or opens full size with "↗ Abrir". Students should give the form a big box, or a slide of its own.
+- **Forms limited to university accounts** may not load inside the app in Safari / Brave (third-party cookies). "↗ Abrir" always works.
+- **Sharing:** the form must accept responses. If it's restricted to some accounts, those people must be signed in to Google.
 
 ## 8. Next loop
 
