@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { SaveButton } from '@/components/save/SaveButton'
+import { useSaveLock } from '@/components/save/use-save-lock'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
   Dialog,
@@ -120,7 +122,7 @@ function CreatePollDialog({
   const [question, setQuestion] = useState('')
   const [options, setOptions] = useState(['', ''])
   const [anonymous, setAnonymous] = useState(false)
-  const [saving, setSaving] = useState(false)
+  const lock = useSaveLock()
   const input = {
     question,
     options: options.filter((option) => option.trim()),
@@ -136,11 +138,11 @@ function CreatePollDialog({
           onSubmit={(event) => {
             event.preventDefault()
             if (!valid) return
-            setSaving(true)
-            onCreate(input)
-              .then(onClose)
-              .catch(() => toast.error(t('errors.generic')))
-              .finally(() => setSaving(false))
+            void lock.run(() =>
+              onCreate(input)
+                .then(onClose)
+                .catch(() => toast.error(t('errors.generic'))),
+            )
           }}
         >
           <DialogHeader>
@@ -214,9 +216,9 @@ function CreatePollDialog({
             <Button type="button" variant="outline" onClick={onClose}>
               {t('common.cancel')}
             </Button>
-            <Button type="submit" disabled={!valid || saving}>
+            <SaveButton type="submit" lock={lock} disabled={!valid}>
               {t('polls.create')}
-            </Button>
+            </SaveButton>
           </DialogFooter>
         </form>
       </DialogContent>

@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { useSaveLock } from '@/components/save/use-save-lock'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
   Table,
@@ -50,6 +51,7 @@ export function StudentsTable({
   // M26 (D119): removing a student also deletes their messages, unless unticked
   const [removeMessages, setRemoveMessages] = useState(true)
   const [merging, setMerging] = useState(false)
+  const removeLock = useSaveLock()
   const [creatingCard, setCreatingCard] = useState<string | null>(null)
 
   async function createCard(student: Student) {
@@ -74,16 +76,18 @@ export function StudentsTable({
     )
   }
 
-  async function confirmRemove() {
-    if (!removing) return
-    try {
-      await removeStudent(boardId, removing, { messages: removeMessages })
-      toast.success(t('students.removed'))
-    } catch {
-      toast.error(t('errors.generic'))
-    } finally {
-      setRemoving(null)
-    }
+  function confirmRemove() {
+    return removeLock.run(async () => {
+      if (!removing) return
+      try {
+        await removeStudent(boardId, removing, { messages: removeMessages })
+        toast.success(t('students.removed'))
+      } catch {
+        toast.error(t('errors.generic'))
+      } finally {
+        setRemoving(null)
+      }
+    })
   }
 
   if (students.length === 0) {
@@ -264,9 +268,10 @@ export function StudentsTable({
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
+              disabled={removeLock.saving}
               onClick={() => void confirmRemove()}
             >
-              {t('common.remove')}
+              {removeLock.saving ? t('common.saving') : t('common.remove')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -302,24 +307,24 @@ function MergeDialog({
       ? students[1].id
       : students[0].id,
   )
-  const [saving, setSaving] = useState(false)
+  const lock = useSaveLock()
   const keep = students.find((student) => student.id === keepId)!
   const remove = students.find((student) => student.id !== keepId)!
 
-  async function confirm() {
-    setSaving(true)
-    try {
-      await mergeStudents(boardId, keep, remove)
-      toast.success(t('merge.done'))
-      onClose(true)
-    } catch (error) {
-      toast.error(
-        error instanceof Error && error.message === 'tooManyEmails'
-          ? t('merge.tooManyEmails')
-          : t('errors.generic'),
-      )
-      setSaving(false)
-    }
+  function confirm() {
+    return lock.run(async () => {
+      try {
+        await mergeStudents(boardId, keep, remove)
+        toast.success(t('merge.done'))
+        onClose(true)
+      } catch (error) {
+        toast.error(
+          error instanceof Error && error.message === 'tooManyEmails'
+            ? t('merge.tooManyEmails')
+            : t('errors.generic'),
+        )
+      }
+    })
   }
 
   return (
@@ -356,8 +361,11 @@ function MergeDialog({
         </fieldset>
         <AlertDialogFooter>
           <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-          <AlertDialogAction disabled={saving} onClick={() => void confirm()}>
-            {t('merge.confirm')}
+          <AlertDialogAction
+            disabled={lock.saving}
+            onClick={() => void confirm()}
+          >
+            {lock.saving ? t('common.saving') : t('merge.confirm')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
+import { useSaveLock } from '@/components/save/use-save-lock'
 import {
   Card,
   CardContent,
@@ -25,6 +26,7 @@ export function JoinPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const [state, setState] = useState<State>({ step: 'loading' })
+  const lock = useSaveLock()
 
   useEffect(() => {
     let cancelled = false
@@ -45,13 +47,15 @@ export function JoinPage() {
 
   async function join(boardTitle: string) {
     if (!user) return
-    setState({ step: 'joining', boardTitle })
-    try {
-      const boardId = await joinWithCode(user, code)
-      navigate(`/b/${boardId}`, { replace: true })
-    } catch {
-      setState({ step: 'rejected' })
-    }
+    await lock.run(async () => {
+      setState({ step: 'joining', boardTitle })
+      try {
+        const boardId = await joinWithCode(user, code)
+        navigate(`/b/${boardId}`, { replace: true })
+      } catch {
+        setState({ step: 'rejected' })
+      }
+    })
   }
 
   return (

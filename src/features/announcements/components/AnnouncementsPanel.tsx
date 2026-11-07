@@ -14,6 +14,8 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { SaveButton } from '@/components/save/SaveButton'
+import { useSaveLock } from '@/components/save/use-save-lock'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
   Dialog,
@@ -80,7 +82,7 @@ export function AnnouncementsPanel({
   const states = useAnnouncementStates(boardId, true)
   const [form, setForm] = useState<AnnouncementInput>(EMPTY)
   const [editing, setEditing] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
+  const lock = useSaveLock()
   const [email, setEmail] = useState(false)
   const [removing, setRemoving] = useState<WithId<AnnouncementDoc> | null>(null)
   const valid = announcementInputSchema.safeParse(form).success
@@ -93,19 +95,20 @@ export function AnnouncementsPanel({
   )
 
   async function run(action: () => Promise<unknown>, done: string) {
-    setBusy(true)
-    try {
-      await action()
-      toast.success(done)
-      return true
-    } catch (error) {
-      // The cause (e.g. permission-denied) only shows in the console; the toast stays friendly
-      console.error('[announcements]', error)
-      toast.error(t('errors.generic'))
-      return false
-    } finally {
-      setBusy(false)
-    }
+    // Ignored (resolves undefined) while another save is running
+    const ok = await lock.run(async () => {
+      try {
+        await action()
+        toast.success(done)
+        return true
+      } catch (error) {
+        // The cause (e.g. permission-denied) only shows in the console; the toast stays friendly
+        console.error('[announcements]', error)
+        toast.error(t('errors.generic'))
+        return false
+      }
+    })
+    return ok === true
   }
 
   async function submit() {
@@ -220,10 +223,10 @@ export function AnnouncementsPanel({
             </div>
           )}
           <div className="flex gap-2">
-            <Button type="submit" disabled={!valid || busy}>
+            <SaveButton type="submit" lock={lock} disabled={!valid}>
               <Megaphone />
               {editing ? t('announcements.save') : t('announcements.publish')}
-            </Button>
+            </SaveButton>
             {editing && (
               <Button
                 type="button"
@@ -289,7 +292,7 @@ export function AnnouncementsPanel({
                     <Button
                       variant="ghost"
                       size="sm"
-                      disabled={busy}
+                      disabled={lock.saving}
                       onClick={() =>
                         void run(
                           () => remindAnnouncement(boardId, item.id, author),
@@ -349,7 +352,9 @@ export function AnnouncementsPanel({
               <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
               <AlertDialogAction
                 variant="destructive"
+                disabled={lock.saving}
                 onClick={() => {
+                  if (lock.isLocked()) return
                   const target = removing
                   setRemoving(null)
                   if (target)

@@ -13,6 +13,8 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
+import { SaveButton } from '@/components/save/SaveButton'
+import { useSaveLock } from '@/components/save/use-save-lock'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { deleteAttendanceDay, saveAttendance } from '@/features/attendance/api'
@@ -62,7 +64,8 @@ export function TakeAttendance({
   const [notesOpen, setNotesOpen] = useState<ReadonlySet<string>>(
     () => new Set(Object.keys(saved).filter((id) => saved[id].note)),
   )
-  const [busy, setBusy] = useState(false)
+  const lock = useSaveLock()
+  const removeLock = useSaveLock()
   const [confirmDelete, setConfirmDelete] = useState(false)
 
   const dirty =
@@ -88,30 +91,31 @@ export function TakeAttendance({
     })
   }
 
-  async function save() {
-    setBusy(true)
-    try {
-      // Marks of students no longer on the roster are left as they were
-      await saveAttendance(boardId, { date, topic, marks }, saved)
-      toast.success(t('attendance.saved'))
-    } catch {
-      toast.error(t('errors.generic'))
-    } finally {
-      setBusy(false)
-    }
+  function save() {
+    return lock.run(async () => {
+      try {
+        // Marks of students no longer on the roster are left as they were
+        await saveAttendance(boardId, { date, topic, marks }, saved)
+        toast.success(t('attendance.saved'))
+      } catch {
+        toast.error(t('errors.generic'))
+      }
+    })
   }
 
-  async function remove() {
-    setConfirmDelete(false)
-    if (!record) return
-    try {
-      await deleteAttendanceDay(boardId, record)
-      setMarks({})
-      setTopic('')
-      toast.success(t('attendance.deleted'))
-    } catch {
-      toast.error(t('errors.generic'))
-    }
+  function remove() {
+    return removeLock.run(async () => {
+      setConfirmDelete(false)
+      if (!record) return
+      try {
+        await deleteAttendanceDay(boardId, record)
+        setMarks({})
+        setTopic('')
+        toast.success(t('attendance.deleted'))
+      } catch {
+        toast.error(t('errors.generic'))
+      }
+    })
   }
 
   return (
@@ -320,14 +324,15 @@ export function TakeAttendance({
             {t('attendance.deleteDay')}
           </Button>
         )}
-        <Button
+        <SaveButton
+          lock={lock}
           className="ml-auto"
-          disabled={!dirty || busy}
+          disabled={!dirty}
           onClick={() => void save()}
         >
           <Save />
           {t('attendance.save')}
-        </Button>
+        </SaveButton>
       </div>
 
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
@@ -346,6 +351,7 @@ export function TakeAttendance({
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
+              disabled={removeLock.saving}
               onClick={() => void remove()}
             >
               {t('attendance.deleteDay')}

@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { SaveButton } from '@/components/save/SaveButton'
+import { useSaveLock } from '@/components/save/use-save-lock'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { saveStatus } from '@/features/profile/api'
@@ -26,31 +28,30 @@ export function StatusEditor({
   const { user } = useAuth()
   const [emoji, setEmoji] = useState(current?.emoji ?? '')
   const [text, setText] = useState(current?.text ?? '')
-  const [busy, setBusy] = useState(false)
+  const lock = useSaveLock()
   const valid = statusSchema.safeParse({ emoji, text }).success
 
   async function save(next: StatusMessage | null) {
     if (!user) return
-    setBusy(true)
-    try {
-      const { skipped } = await saveStatus(user, next)
-      toast.success(
-        skipped
-          ? t('status.skipped', { count: skipped })
-          : next
-            ? t('status.saved')
-            : t('status.cleared'),
-      )
-      if (!next) {
-        setEmoji('')
-        setText('')
+    await lock.run(async () => {
+      try {
+        const { skipped } = await saveStatus(user, next)
+        toast.success(
+          skipped
+            ? t('status.skipped', { count: skipped })
+            : next
+              ? t('status.saved')
+              : t('status.cleared'),
+        )
+        if (!next) {
+          setEmoji('')
+          setText('')
+        }
+        onDone?.()
+      } catch {
+        toast.error(t('errors.generic'))
       }
-      onDone?.()
-    } catch {
-      toast.error(t('errors.generic'))
-    } finally {
-      setBusy(false)
-    }
+    })
   }
 
   return (
@@ -141,14 +142,14 @@ export function StatusEditor({
       </fieldset>
 
       <div className="flex flex-wrap gap-2">
-        <Button type="submit" disabled={!valid || busy}>
+        <SaveButton type="submit" lock={lock} disabled={!valid}>
           {t('status.save')}
-        </Button>
+        </SaveButton>
         {current && (
           <Button
             type="button"
             variant="ghost"
-            disabled={busy}
+            disabled={lock.saving}
             onClick={() => void save(null)}
           >
             <Trash2 />

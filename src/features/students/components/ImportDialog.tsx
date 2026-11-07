@@ -4,6 +4,7 @@ import { Download, Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { useSaveLock } from '@/components/save/use-save-lock'
 import {
   Dialog,
   DialogContent,
@@ -47,7 +48,9 @@ export function ImportDialog({
   const [text, setText] = useState('')
   const [fileRows, setFileRows] = useState<RawRow[] | null>(null)
   const [fileError, setFileError] = useState<string | null>(null)
-  const [importing, setImporting] = useState(false)
+  // M27 (D131): a double click must not import twice
+  const lock = useSaveLock()
+  const importing = lock.saving
   const [progress, setProgress] = useState(0)
 
   const rows = useMemo(() => fileRows ?? parseQuickAdd(text), [fileRows, text])
@@ -73,18 +76,17 @@ export function ImportDialog({
     }
   }
 
-  async function confirm() {
-    setImporting(true)
-    try {
-      const count = await importStudents(boardId, preview, setProgress)
-      toast.success(t('import.done', { count }))
-      setOpen(false)
-      reset()
-    } catch {
-      toast.error(t('errors.generic'))
-    } finally {
-      setImporting(false)
-    }
+  function confirm() {
+    return lock.run(async () => {
+      try {
+        const count = await importStudents(boardId, preview, setProgress)
+        toast.success(t('import.done', { count }))
+        setOpen(false)
+        reset()
+      } catch {
+        toast.error(t('errors.generic'))
+      }
+    })
   }
 
   return (

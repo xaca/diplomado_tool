@@ -31,6 +31,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { useSaveLock } from '@/components/save/use-save-lock'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
@@ -134,6 +135,7 @@ export function ClassPage() {
   const [editing, setEditing] = useState<Editing | null>(null)
   const [prompt, setPrompt] = useState<'new' | 'edit' | null>(null)
   const [confirm, setConfirm] = useState<'clear' | 'deleteSlide' | null>(null)
+  const confirmLock = useSaveLock()
 
   const order = klass.data?.slideOrder ?? []
   const picked = chosen ?? order[slideParam - 1] ?? null
@@ -775,22 +777,25 @@ export function ClassPage() {
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
-              onClick={() => {
-                const action = confirm
-                setConfirm(null)
-                if (!slide) return
-                if (action === 'clear')
-                  clearClassSlide(boardId, classId, slide.id)
-                    .then(() => toast.success(t('classes.cleared')))
-                    .catch(fail)
-                else
-                  deleteClassSlide(boardId, classId, data, slide.id)
-                    .then(() => {
-                      setChosen(null)
-                      toast.success(t('classes.slideDeleted'))
-                    })
-                    .catch(fail)
-              }}
+              disabled={confirmLock.saving}
+              onClick={() =>
+                void confirmLock.run(async () => {
+                  const action = confirm
+                  setConfirm(null)
+                  if (!slide) return
+                  if (action === 'clear')
+                    await clearClassSlide(boardId, classId, slide.id)
+                      .then(() => toast.success(t('classes.cleared')))
+                      .catch(fail)
+                  else
+                    await deleteClassSlide(boardId, classId, data, slide.id)
+                      .then(() => {
+                        setChosen(null)
+                        toast.success(t('classes.slideDeleted'))
+                      })
+                      .catch(fail)
+                })
+              }
             >
               {confirm === 'clear'
                 ? t('classes.clear')

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { useSaveLock } from '@/components/save/use-save-lock'
 import {
   Dialog,
   DialogContent,
@@ -29,6 +30,8 @@ export function RestoreDialog() {
     done: number
     total: number
   } | null>(null)
+  // M27 (D131): a double click must not restore the board twice
+  const lock = useSaveLock()
 
   function reset() {
     setFile(null)
@@ -46,24 +49,27 @@ export function RestoreDialog() {
   }
 
   async function restore() {
-    if (!file || !user?.email) return
-    setProgress({
-      done: 0,
-      total: file.kind === 'backup' ? file.file.students.length : 0,
+    const email = user?.email
+    if (!file || !email) return
+    await lock.run(async () => {
+      setProgress({
+        done: 0,
+        total: file.kind === 'backup' ? file.file.students.length : 0,
+      })
+      try {
+        const boardId = await restoreBoardFile(email, file, (done, total) =>
+          setProgress({ done, total }),
+        )
+        toast.success(t('restore.done', { title: file.file.board.title }))
+        setOpen(false)
+        reset()
+        void navigate(`/teacher/boards/${boardId}`)
+      } catch (error) {
+        console.error('[restore] failed', error)
+        toast.error(t('restore.error'))
+        setProgress(null)
+      }
     })
-    try {
-      const boardId = await restoreBoardFile(user.email, file, (done, total) =>
-        setProgress({ done, total }),
-      )
-      toast.success(t('restore.done', { title: file.file.board.title }))
-      setOpen(false)
-      reset()
-      void navigate(`/teacher/boards/${boardId}`)
-    } catch (error) {
-      console.error('[restore] failed', error)
-      toast.error(t('restore.error'))
-      setProgress(null)
-    }
   }
 
   const slides =

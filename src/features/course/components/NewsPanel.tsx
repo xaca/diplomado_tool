@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { Mail, Pencil, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { SaveButton } from '@/components/save/SaveButton'
+import { useSaveLock } from '@/components/save/use-save-lock'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -56,44 +58,43 @@ export function NewsPanel({
   const [form, setForm] = useState<NewsInput>(() => empty(today))
   const [editing, setEditing] = useState<string | null>(null)
   const [announce, setAnnounce] = useState(false)
-  const [busy, setBusy] = useState(false)
+  const lock = useSaveLock()
   const parsed = newsInputSchema.safeParse(form)
 
   async function submit() {
     if (!parsed.success) return
-    setBusy(true)
-    try {
-      if (editing) await updateNews(boardId, editing, parsed.data)
-      else await addNews(boardId, parsed.data)
-      if (announce && !editing && user)
-        await createAnnouncement(
-          boardId,
-          {
-            email: normalizeEmail(user.email ?? ''),
-            name: displayNameOf(user, profile.data),
-          },
-          {
-            title: parsed.data.title.slice(0, 80),
-            body: [
-              `${t(`course.kinds.${parsed.data.kind}`)} · ${formatDay(parsed.data.date, locale)}`,
-              parsed.data.text,
-            ]
-              .filter(Boolean)
-              .join('\n')
-              .slice(0, 500),
-            link: parsed.data.link || `/b/${boardId}/calendario`,
-            important: parsed.data.kind === 'deliverable',
-          },
-        )
-      toast.success(editing ? t('course.newsSaved') : t('course.newsAdded'))
-      setForm(empty(today))
-      setEditing(null)
-      setAnnounce(false)
-    } catch {
-      toast.error(t('errors.generic'))
-    } finally {
-      setBusy(false)
-    }
+    await lock.run(async () => {
+      try {
+        if (editing) await updateNews(boardId, editing, parsed.data)
+        else await addNews(boardId, parsed.data)
+        if (announce && !editing && user)
+          await createAnnouncement(
+            boardId,
+            {
+              email: normalizeEmail(user.email ?? ''),
+              name: displayNameOf(user, profile.data),
+            },
+            {
+              title: parsed.data.title.slice(0, 80),
+              body: [
+                `${t(`course.kinds.${parsed.data.kind}`)} · ${formatDay(parsed.data.date, locale)}`,
+                parsed.data.text,
+              ]
+                .filter(Boolean)
+                .join('\n')
+                .slice(0, 500),
+              link: parsed.data.link || `/b/${boardId}/calendario`,
+              important: parsed.data.kind === 'deliverable',
+            },
+          )
+        toast.success(editing ? t('course.newsSaved') : t('course.newsAdded'))
+        setForm(empty(today))
+        setEditing(null)
+        setAnnounce(false)
+      } catch {
+        toast.error(t('errors.generic'))
+      }
+    })
   }
 
   async function remove(item: WithId<NewsDoc>) {
@@ -193,13 +194,14 @@ export function NewsPanel({
         )}
       </div>
       <div className="flex gap-2">
-        <Button
-          disabled={busy || !parsed.success}
+        <SaveButton
+          lock={lock}
+          disabled={!parsed.success}
           onClick={() => void submit()}
         >
           <Plus />
           {editing ? t('course.newsSave') : t('course.newsAdd')}
-        </Button>
+        </SaveButton>
         {editing && (
           <Button
             variant="ghost"

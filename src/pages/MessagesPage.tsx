@@ -14,6 +14,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
+import { useSaveLock } from '@/components/save/use-save-lock'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useClassAccess } from '@/features/classes/use-class-access'
@@ -108,6 +109,7 @@ function TeacherInbox({
   const [search, setSearch] = useState('')
   // the conversation being deleted (kept so the dialog's title has the name while it closes)
   const [removing, setRemoving] = useState<string | null>(null)
+  const removeLock = useSaveLock()
 
   const names = useMemo(
     () => new Map(spaces.data.map((space) => [space.id, space.ownerName])),
@@ -314,16 +316,21 @@ function TeacherInbox({
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => {
-                const studentId = removing
-                setRemoving(null)
-                if (!studentId) return
-                if (studentId === selected) open(null)
-                deleteConversation(boardId, studentId).catch((error) => {
-                  console.error('[messages] conversation not deleted', error)
-                  toast.error(t('errors.generic'))
+              disabled={removeLock.saving}
+              onClick={() =>
+                void removeLock.run(async () => {
+                  const studentId = removing
+                  setRemoving(null)
+                  if (!studentId) return
+                  if (studentId === selected) open(null)
+                  try {
+                    await deleteConversation(boardId, studentId)
+                  } catch (error) {
+                    console.error('[messages] conversation not deleted', error)
+                    toast.error(t('errors.generic'))
+                  }
                 })
-              }}
+              }
             >
               {t('common.remove')}
             </AlertDialogAction>

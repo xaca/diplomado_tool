@@ -4,6 +4,7 @@ import { BarChart3, Check, Lock, LockOpen, Trash2, Users } from 'lucide-react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { useSaveLock } from '@/components/save/use-save-lock'
 import {
   castVote,
   deletePoll,
@@ -44,7 +45,7 @@ export function PollCard({
   const { t } = useTranslation()
   const cheer = useCheer()
   const unlock = useAchievementUnlock(boardId)
-  const [busy, setBusy] = useState(false)
+  const lock = useSaveLock()
   const [showVoters, setShowVoters] = useState(false)
   const mine = useMyVote(boardId, studentId, poll.id, myStudentId)
   const author = poll.authorUid === myUid
@@ -62,20 +63,16 @@ export function PollCard({
   const showResults = !canVote || !!myOption || moderator
   const { total, options } = results(poll)
 
-  async function act(
-    action: () => Promise<unknown>,
-    done?: string | (() => void),
-  ) {
-    setBusy(true)
-    try {
-      await action()
-      if (typeof done === 'function') done()
-      else if (done) toast.success(done)
-    } catch {
-      toast.error(t('errors.generic'))
-    } finally {
-      setBusy(false)
-    }
+  function act(action: () => Promise<unknown>, done?: string | (() => void)) {
+    return lock.run(async () => {
+      try {
+        await action()
+        if (typeof done === 'function') done()
+        else if (done) toast.success(done)
+      } catch {
+        toast.error(t('errors.generic'))
+      }
+    })
   }
 
   return (
@@ -107,7 +104,7 @@ export function PollCard({
             <li key={option.id}>
               <button
                 type="button"
-                disabled={!canVote || busy}
+                disabled={!canVote || lock.saving}
                 aria-pressed={chosen}
                 onClick={() =>
                   void act(
@@ -174,7 +171,7 @@ export function PollCard({
             <Button
               variant="ghost"
               size="sm"
-              disabled={busy}
+              disabled={lock.saving}
               onClick={() =>
                 void act(() =>
                   setPollStatus(
@@ -194,7 +191,7 @@ export function PollCard({
             <Button
               variant="ghost"
               size="sm"
-              disabled={busy}
+              disabled={lock.saving}
               onClick={() =>
                 void act(() =>
                   deletePoll(boardId, studentId, poll, canSeeVoters),

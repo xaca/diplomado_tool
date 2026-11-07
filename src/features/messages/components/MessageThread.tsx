@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Check, Send, Trash2 } from 'lucide-react'
+import { Check, Loader2, Send, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   AlertDialog,
@@ -13,6 +13,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
+import { useSaveLock } from '@/components/save/use-save-lock'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
 import { deleteMessage, markRead, sendMessage } from '@/features/messages/api'
@@ -104,6 +105,7 @@ export function MessageThread({
   const conversation = useConversation(boardId, studentId)
   const messages = useMessages(boardId, studentId, count)
   const [deleting, setDeleting] = useState<WithId<MessageDoc> | null>(null)
+  const deleteLock = useSaveLock()
   const bottom = useRef<HTMLDivElement>(null)
 
   // Opening it marks it read; after that only a new message does, and never while it's
@@ -266,15 +268,20 @@ export function MessageThread({
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => {
-                const target = deleting
-                setDeleting(null)
-                if (!target) return
-                deleteMessage(boardId, studentId, target.id).catch((error) => {
-                  console.error('[messages] not deleted', error)
-                  toast.error(t('errors.generic'))
+              disabled={deleteLock.saving}
+              onClick={() =>
+                void deleteLock.run(async () => {
+                  const target = deleting
+                  setDeleting(null)
+                  if (!target) return
+                  try {
+                    await deleteMessage(boardId, studentId, target.id)
+                  } catch (error) {
+                    console.error('[messages] not deleted', error)
+                    toast.error(t('errors.generic'))
+                  }
                 })
-              }}
+              }
             >
               {t('common.remove')}
             </AlertDialogAction>
@@ -310,7 +317,7 @@ function Composer({
   const { t } = useTranslation()
   const key = draftKey(boardId, studentId)
   const [text, setText] = useState(() => readDraft(key))
-  const [sending, setSending] = useState(false)
+  const lock = useSaveLock()
   // Enter pressed before the conversation loaded: send as soon as it has
   const [queued, setQueued] = useState(false)
   // the latest render's send (it knows whether the conversation exists)
@@ -338,31 +345,31 @@ function Composer({
 
   async function send() {
     const clean = cleanText(text)
-    if (!clean || sending) return
+    if (!clean || lock.isLocked()) return
     if (!ready) {
       setQueued(true)
       return
     }
     setQueued(false)
-    const wait = cooldown()
-    if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait))
-    setSending(true)
-    try {
-      await sendMessage(boardId, studentId, {
-        from: me,
-        uid,
-        name: myName,
-        text: clean,
-        exists,
-      })
-      setText('')
-      saveDraft(key, '')
-    } catch (error) {
-      console.error('[messages] not sent', error)
-      toast.error(t('messages.notSent'))
-    } finally {
-      setSending(false)
-    }
+    // Locked from the first Enter / click, through the cooldown wait, until the server confirms
+    await lock.run(async () => {
+      const wait = cooldown()
+      if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait))
+      try {
+        await sendMessage(boardId, studentId, {
+          from: me,
+          uid,
+          name: myName,
+          text: clean,
+          exists,
+        })
+        setText('')
+        saveDraft(key, '')
+      } catch (error) {
+        console.error('[messages] not sent', error)
+        toast.error(t('messages.notSent'))
+      }
+    })
   }
 
   const tooLong = text.trim().length > MAX_MESSAGE_TEXT
@@ -406,11 +413,12 @@ function Composer({
         <Button
           type="submit"
           size="icon"
-          disabled={sending || queued || !cleanText(text)}
+          disabled={lock.saving || queued || !cleanText(text)}
+          aria-busy={lock.saving || undefined}
           aria-label={t('messages.send')}
           title={t('messages.send')}
         >
-          <Send />
+          {lock.saving ? <Loader2 className="animate-spin" /> : <Send />}
         </Button>
       </div>
       {text.length > 900 && (

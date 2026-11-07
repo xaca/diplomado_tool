@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { SaveButton } from '@/components/save/SaveButton'
+import { useSaveLock } from '@/components/save/use-save-lock'
 import {
   Dialog,
   DialogContent,
@@ -40,17 +42,16 @@ export function NoteDialog({
   const { t } = useTranslation()
   const [text, setText] = useState(initial.text)
   const [color, setColor] = useState<NoteColor>(initial.color)
-  const [busy, setBusy] = useState(false)
+  const lock = useSaveLock()
   const valid = stickyTextSchema.safeParse(text).success
 
-  async function run(action: () => Promise<unknown>) {
-    setBusy(true)
-    try {
-      await action()
-      onClose()
-    } catch {
-      setBusy(false)
-    }
+  function run(action: () => Promise<unknown>) {
+    return lock
+      .run(async () => {
+        await action()
+        onClose()
+      })
+      .catch(() => {})
   }
 
   return (
@@ -122,7 +123,7 @@ export function NoteDialog({
                 type="button"
                 variant="ghost"
                 className="text-destructive"
-                disabled={busy}
+                disabled={lock.saving}
                 onClick={() => void run(onDelete)}
               >
                 <Trash2 />
@@ -131,9 +132,9 @@ export function NoteDialog({
             ) : (
               <span />
             )}
-            <Button type="submit" disabled={!valid || busy}>
+            <SaveButton type="submit" lock={lock} disabled={!valid}>
               {t('classes.save')}
-            </Button>
+            </SaveButton>
           </DialogFooter>
         </form>
       </DialogContent>

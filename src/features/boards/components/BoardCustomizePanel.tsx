@@ -12,6 +12,8 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { SaveButton } from '@/components/save/SaveButton'
+import { useSaveLock } from '@/components/save/use-save-lock'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
@@ -75,7 +77,7 @@ export function BoardCustomizePanel({
 }: Props) {
   const { t } = useTranslation()
   const panel = useRef<HTMLElement>(null)
-  const [saving, setSaving] = useState(false)
+  const lock = useSaveLock()
   const set = (change: Partial<BoardDraft>) => onChange({ ...draft, ...change })
   const validInfo = boardInputSchema.safeParse({
     title: draft.title,
@@ -92,23 +94,25 @@ export function BoardCustomizePanel({
       })
   }, [])
 
-  async function save() {
-    setSaving(true)
-    try {
-      const { title, description, ...look } = draft
-      await saveBoardLook(board.id, look)
-      if (
-        title.trim() !== board.title ||
-        description.trim() !== board.description
-      )
-        await updateBoardInfo(board.id, board.joinCode, { title, description })
-      toast.success(t('look.saved'))
-      onClose()
-    } catch {
-      toast.error(t('errors.generic'))
-    } finally {
-      setSaving(false)
-    }
+  function save() {
+    return lock.run(async () => {
+      try {
+        const { title, description, ...look } = draft
+        await saveBoardLook(board.id, look)
+        if (
+          title.trim() !== board.title ||
+          description.trim() !== board.description
+        )
+          await updateBoardInfo(board.id, board.joinCode, {
+            title,
+            description,
+          })
+        toast.success(t('look.saved'))
+        onClose()
+      } catch {
+        toast.error(t('errors.generic'))
+      }
+    })
   }
 
   return (
@@ -268,12 +272,16 @@ export function BoardCustomizePanel({
       </div>
 
       <footer className="flex justify-end gap-2 border-t p-4">
-        <Button variant="outline" onClick={onClose} disabled={saving}>
+        <Button variant="outline" onClick={onClose} disabled={lock.saving}>
           {t('look.cancel')}
         </Button>
-        <Button onClick={() => void save()} disabled={saving || !validInfo}>
-          {saving ? t('common.saving') : t('common.save')}
-        </Button>
+        <SaveButton
+          lock={lock}
+          onClick={() => void save()}
+          disabled={!validInfo}
+        >
+          {t('common.save')}
+        </SaveButton>
       </footer>
     </aside>
   )

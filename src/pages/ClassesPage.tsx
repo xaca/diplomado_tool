@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { useSaveLock } from '@/components/save/use-save-lock'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,6 +49,7 @@ export function ClassesPage() {
   const [creating, setCreating] = useState(false)
   const [editing, setEditing] = useState<WithId<ClassDoc> | null>(null)
   const [removing, setRemoving] = useState<WithId<ClassDoc> | null>(null)
+  const removeLock = useSaveLock()
 
   if (!access.loading && !access.allowed)
     return (
@@ -204,14 +206,17 @@ export function ClassesPage() {
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
-              onClick={() => {
-                const target = removing
-                setRemoving(null)
-                if (target)
-                  deleteClass(boardId, target.id)
-                    .then(() => toast.success(t('classes.classDeleted')))
-                    .catch(() => toast.error(t('errors.generic')))
-              }}
+              disabled={removeLock.saving}
+              onClick={() =>
+                void removeLock.run(async () => {
+                  const target = removing
+                  setRemoving(null)
+                  if (target)
+                    await deleteClass(boardId, target.id)
+                      .then(() => toast.success(t('classes.classDeleted')))
+                      .catch(() => toast.error(t('errors.generic')))
+                })
+              }
             >
               {t('classes.deleteClass')}
             </AlertDialogAction>

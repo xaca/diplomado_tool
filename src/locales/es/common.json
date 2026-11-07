@@ -1524,5 +1524,34 @@
     "summaryNone": "Nada sin responder.",
     "summary_one": "{{unread}} nuevos · {{count}} sin responder",
     "summary_other": "{{unread}} nuevos · {{count}} sin responder"
+  },
+  "save": {
+    "slow": "Sigue guardando… revisa tu conexión",
+    "saved": "Guardado"
+  },
+  "unsaved": {
+    "title": "Tienes un comentario sin guardar",
+    "where": "Lo estás escribiendo {{where}}. ¿Lo guardas antes de seguir?",
+    "body": "¿Lo guardas antes de seguir?",
+    "saveAndGo": "Guardar y continuar",
+    "discard": "Descartar",
+    "keepWriting": "Seguir escribiendo",
+    "recovered": "Borrador recuperado"
+  },
+  "comments": {
+    "projectTitle": "Comentarios del docente sobre el proyecto",
+    "projectNew": "Comentar el proyecto",
+    "projectPlaceholder": "Escribe tu comentario sobre el proyecto…",
+    "private": "Privado",
+    "public": "Público",
+    "privateHint": "Solo los docentes y el estudiante",
+    "publicHint": "Lo ven sus compañeros",
+    "visibility": "Quién lo ve",
+    "reply": "Responder en Mensajes",
+    "new": "Comentario nuevo",
+    "whereSlide": "en la diapositiva {{number}} de {{name}}",
+    "whereProject": "en el proyecto de {{name}}",
+    "tabSlide": "Esta diapositiva",
+    "tabProject": "Proyecto"
   }
 }

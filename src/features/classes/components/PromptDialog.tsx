@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { SaveButton } from '@/components/save/SaveButton'
+import { useSaveLock } from '@/components/save/use-save-lock'
 import {
   Dialog,
   DialogContent,
@@ -71,7 +73,7 @@ export function PromptDialog({
 }) {
   const { t } = useTranslation()
   const [draft, setDraft] = useState(initial)
-  const [busy, setBusy] = useState(false)
+  const lock = useSaveLock()
   const zoneCount = draft.layout === 'free' ? 0 : zonesOf(draft.layout).length
   const input = { ...draft, zones: draft.zones.slice(0, zoneCount) }
   const valid = classSlideInputSchema.safeParse(input).success
@@ -87,10 +89,12 @@ export function PromptDialog({
           onSubmit={(event) => {
             event.preventDefault()
             if (!valid) return
-            setBusy(true)
-            onSave(input)
-              .then(onClose)
-              .catch(() => setBusy(false))
+            lock
+              .run(async () => {
+                await onSave(input)
+                onClose()
+              })
+              .catch(() => {})
           }}
         >
           <DialogHeader>
@@ -187,9 +191,9 @@ export function PromptDialog({
             ) : (
               <span />
             )}
-            <Button type="submit" disabled={!valid || busy}>
+            <SaveButton type="submit" lock={lock} disabled={!valid}>
               {t('classes.save')}
-            </Button>
+            </SaveButton>
           </DialogFooter>
         </form>
       </DialogContent>

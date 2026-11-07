@@ -21,6 +21,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
+import { useSaveLock } from '@/components/save/use-save-lock'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -60,6 +61,9 @@ export function StoragePage() {
   const [backupDone, setBackupDone] = useState(false)
   const [confirmName, setConfirmName] = useState('')
   const [purging, setPurging] = useState<PurgeStep | null>(null)
+  // M27 (D131): a double click must not clean up or purge twice
+  const cleanLock = useSaveLock()
+  const purgeLock = useSaveLock()
 
   // Bumped to read the board again (after a cleanup)
   const [version, setVersion] = useState(0)
@@ -120,23 +124,25 @@ export function StoragePage() {
 
   async function cleanUp() {
     if (!report || !boardId) return
-    setConfirmClean(false)
-    setCleaning(0)
-    try {
-      const { deleted, skipped } = await cleanUpImages(
-        boardId,
-        report.unused,
-        setCleaning,
-      )
-      toast.success(t('storage.cleaned', { count: deleted }))
-      if (skipped) toast.warning(t('storage.skipped', { count: skipped }))
-    } catch (error) {
-      console.error('[storage] cleanup failed', error)
-      toast.error(t('storage.cleanError'))
-    } finally {
-      setCleaning(null)
-      reload()
-    }
+    await cleanLock.run(async () => {
+      setConfirmClean(false)
+      setCleaning(0)
+      try {
+        const { deleted, skipped } = await cleanUpImages(
+          boardId,
+          report.unused,
+          setCleaning,
+        )
+        toast.success(t('storage.cleaned', { count: deleted }))
+        if (skipped) toast.warning(t('storage.skipped', { count: skipped }))
+      } catch (error) {
+        console.error('[storage] cleanup failed', error)
+        toast.error(t('storage.cleanError'))
+      } finally {
+        setCleaning(null)
+        reload()
+      }
+    })
   }
 
   function downloadBackup() {
@@ -150,15 +156,17 @@ export function StoragePage() {
 
   async function purge() {
     if (!boardId) return
-    try {
-      await purgeBoard(boardId, setPurging)
-      toast.success(t('storage.purged', { title }))
-      void navigate('/teacher', { replace: true })
-    } catch (error) {
-      console.error('[storage] purge failed', error)
-      toast.error(t('storage.purgeError'))
-      setPurging(null)
-    }
+    await purgeLock.run(async () => {
+      try {
+        await purgeBoard(boardId, setPurging)
+        toast.success(t('storage.purged', { title }))
+        void navigate('/teacher', { replace: true })
+      } catch (error) {
+        console.error('[storage] purge failed', error)
+        toast.error(t('storage.purgeError'))
+        setPurging(null)
+      }
+    })
   }
 
   return (
@@ -369,7 +377,8 @@ export function StoragePage() {
                   disabled={
                     !backupDone ||
                     confirmName.trim() !== title ||
-                    purging !== null
+                    purging !== null ||
+                    purgeLock.saving
                   }
                   onClick={() => void purge()}
                 >
@@ -398,6 +407,7 @@ export function StoragePage() {
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
+              disabled={cleanLock.saving}
               onClick={() => void cleanUp()}
             >
               {t('storage.cleanConfirm')}

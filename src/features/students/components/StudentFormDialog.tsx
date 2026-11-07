@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { Plus, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { SaveButton } from '@/components/save/SaveButton'
+import { useSaveLock } from '@/components/save/use-save-lock'
 import {
   Dialog,
   DialogContent,
@@ -41,7 +43,7 @@ export function StudentFormDialog({
   const [name, setName] = useState(student?.displayName ?? '')
   const [emails, setEmails] = useState<string[]>(student?.emails ?? ['', ''])
   const [group, setGroup] = useState(student?.group ?? '')
-  const [saving, setSaving] = useState(false)
+  const lock = useSaveLock()
 
   const input = {
     name,
@@ -53,21 +55,20 @@ export function StudentFormDialog({
   async function submit(event: React.FormEvent) {
     event.preventDefault()
     if (!valid) return
-    setSaving(true)
-    try {
-      if (student) await updateStudent(boardId, student, input, roster)
-      else await addStudent(boardId, input, roster)
-      toast.success(student ? t('students.updated') : t('students.added'))
-      onOpenChange(false)
-    } catch (error) {
-      toast.error(
-        error instanceof EmailTakenError
-          ? t('students.emailTaken', { email: error.email })
-          : t('errors.generic'),
-      )
-    } finally {
-      setSaving(false)
-    }
+    await lock.run(async () => {
+      try {
+        if (student) await updateStudent(boardId, student, input, roster)
+        else await addStudent(boardId, input, roster)
+        toast.success(student ? t('students.updated') : t('students.added'))
+        onOpenChange(false)
+      } catch (error) {
+        toast.error(
+          error instanceof EmailTakenError
+            ? t('students.emailTaken', { email: error.email })
+            : t('errors.generic'),
+        )
+      }
+    })
   }
 
   return (
@@ -153,9 +154,9 @@ export function StudentFormDialog({
           </div>
 
           <DialogFooter>
-            <Button type="submit" disabled={!valid || saving}>
-              {saving ? t('common.saving') : t('common.save')}
-            </Button>
+            <SaveButton type="submit" lock={lock} disabled={!valid}>
+              {t('common.save')}
+            </SaveButton>
           </DialogFooter>
         </form>
       </DialogContent>

@@ -15,6 +15,8 @@ import {
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { SaveButton } from '@/components/save/SaveButton'
+import { useSaveLock } from '@/components/save/use-save-lock'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
@@ -101,7 +103,7 @@ export function CourseSetupForm({
   const [endMode, setEndMode] = useState<'date' | 'weeks'>(
     board.course?.weeks ? 'weeks' : 'date',
   )
-  const [busy, setBusy] = useState(false)
+  const lock = useSaveLock()
   const [loadingHolidays, setLoadingHolidays] = useState(false)
   const [dayOff, setDayOff] = useState({ date: '', reason: '' })
   const [move, setMove] = useState({ from: '', to: '', start: '', end: '' })
@@ -122,16 +124,15 @@ export function CourseSetupForm({
   const dirty =
     JSON.stringify(draft) !== JSON.stringify(board.course ?? emptyCourse())
 
-  async function save(next: CourseSetup | null, done: string) {
-    setBusy(true)
-    try {
-      await saveCourse(boardId, next)
-      toast.success(done)
-    } catch {
-      toast.error(t('errors.generic'))
-    } finally {
-      setBusy(false)
-    }
+  function save(next: CourseSetup | null, done: string) {
+    return lock.run(async () => {
+      try {
+        await saveCourse(boardId, next)
+        toast.success(done)
+      } catch {
+        toast.error(t('errors.generic'))
+      }
+    })
   }
 
   async function fillHolidays(setup: CourseSetup) {
@@ -710,15 +711,16 @@ export function CourseSetupForm({
       </Section>
 
       <div className="sticky bottom-0 -mx-1 flex flex-wrap items-center gap-2 border-t bg-card px-1 py-3">
-        <Button
-          disabled={busy || !parsed.success || !dirty}
+        <SaveButton
+          lock={lock}
+          disabled={!parsed.success || !dirty}
           onClick={() =>
             parsed.success && void save(parsed.data, t('course.saved'))
           }
         >
           <Save />
           {t('course.save')}
-        </Button>
+        </SaveButton>
         {dirty && (
           <span className="text-sm text-muted-foreground">
             {t('course.unsaved')}
@@ -728,8 +730,9 @@ export function CourseSetupForm({
           <Button
             variant="ghost"
             className="ml-auto text-destructive"
-            disabled={busy}
+            disabled={lock.saving}
             onClick={() => {
+              if (lock.isLocked()) return
               if (window.confirm(t('course.clearConfirm')))
                 void save(null, t('course.cleared'))
             }}

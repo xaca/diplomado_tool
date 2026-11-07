@@ -14,6 +14,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
+import { useSaveLock } from '@/components/save/use-save-lock'
 import { Label } from '@/components/ui/label'
 import {
   archiveBoard,
@@ -35,7 +36,7 @@ import type { BoardDoc } from '@/model'
 export function LifecyclePanel({ board }: { board: WithId<BoardDoc> }) {
   const { t, i18n } = useTranslation()
   const [confirming, setConfirming] = useState(false)
-  const [busy, setBusy] = useState(false)
+  const lock = useSaveLock()
   const lifecycle = lifecycleOf(board)
   const archived = isArchived(lifecycle)
   const date = (value: Date) =>
@@ -43,16 +44,15 @@ export function LifecyclePanel({ board }: { board: WithId<BoardDoc> }) {
       dateStyle: 'long',
     }).format(value)
 
-  async function run(action: () => Promise<void>, done: string) {
-    setBusy(true)
-    try {
-      await action()
-      toast.success(done)
-    } catch {
-      toast.error(t('errors.generic'))
-    } finally {
-      setBusy(false)
-    }
+  function run(action: () => Promise<void>, done: string) {
+    return lock.run(async () => {
+      try {
+        await action()
+        toast.success(done)
+      } catch {
+        toast.error(t('errors.generic'))
+      }
+    })
   }
 
   return (
@@ -97,7 +97,7 @@ export function LifecyclePanel({ board }: { board: WithId<BoardDoc> }) {
           </Button>
           {archived ? (
             <Button
-              disabled={busy}
+              disabled={lock.saving}
               onClick={() =>
                 void run(() => restoreBoard(board.id), t('lifecycle.restored'))
               }
@@ -108,7 +108,7 @@ export function LifecyclePanel({ board }: { board: WithId<BoardDoc> }) {
           ) : (
             <Button
               variant="outline"
-              disabled={busy}
+              disabled={lock.saving}
               onClick={() => setConfirming(true)}
             >
               <Archive />
@@ -125,7 +125,7 @@ export function LifecyclePanel({ board }: { board: WithId<BoardDoc> }) {
             id="archive-after"
             className="h-8 rounded-lg border bg-background px-2"
             value={board.archiveAfterDays}
-            disabled={busy}
+            disabled={lock.saving}
             onChange={(event) =>
               void run(
                 () => setArchiveAfterDays(board.id, Number(event.target.value)),
@@ -163,7 +163,9 @@ export function LifecyclePanel({ board }: { board: WithId<BoardDoc> }) {
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
+              disabled={lock.saving}
               onClick={() => {
+                if (lock.isLocked()) return
                 setConfirming(false)
                 void run(() => archiveBoard(board.id), t('lifecycle.archived'))
               }}

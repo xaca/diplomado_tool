@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { ArrowDown, ArrowUp, Eye, Plus, RotateCcw, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { SaveButton } from '@/components/save/SaveButton'
+import { useSaveLock } from '@/components/save/use-save-lock'
 import { Input } from '@/components/ui/input'
 import { saveBoardStages } from '@/features/stages/api'
 import {
@@ -28,7 +30,7 @@ import {
 export function StagesPanel({ board }: { board: WithId<BoardDoc> }) {
   const { t } = useTranslation()
   const [stages, setStages] = useState<StageDef[]>(() => boardStages(board))
-  const [saving, setSaving] = useState(false)
+  const lock = useSaveLock()
   const custom = !!board.stages?.length
 
   const update = (index: number, change: Partial<StageDef>) =>
@@ -51,17 +53,16 @@ export function StagesPanel({ board }: { board: WithId<BoardDoc> }) {
     })
   }
 
-  async function save(next: StageDef[] | null) {
-    setSaving(true)
-    try {
-      await saveBoardStages(board.id, next)
-      if (next === null) setStages(boardStages(null))
-      toast.success(t('stages.saved'))
-    } catch {
-      toast.error(t('errors.generic'))
-    } finally {
-      setSaving(false)
-    }
+  function save(next: StageDef[] | null) {
+    return lock.run(async () => {
+      try {
+        await saveBoardStages(board.id, next)
+        if (next === null) setStages(boardStages(null))
+        toast.success(t('stages.saved'))
+      } catch {
+        toast.error(t('errors.generic'))
+      }
+    })
   }
 
   return (
@@ -165,7 +166,7 @@ export function StagesPanel({ board }: { board: WithId<BoardDoc> }) {
             <Button
               type="button"
               variant="ghost"
-              disabled={saving}
+              disabled={lock.saving}
               onClick={() => void save(null)}
             >
               <RotateCcw />
@@ -173,19 +174,17 @@ export function StagesPanel({ board }: { board: WithId<BoardDoc> }) {
             </Button>
           )}
         </div>
-        <Button
+        <SaveButton
           type="button"
-          disabled={
-            saving ||
-            stages.some(
-              (stage) =>
-                !DEFAULT_STAGE_IDS.includes(stage.id) && !stage.label?.trim(),
-            )
-          }
+          lock={lock}
+          disabled={stages.some(
+            (stage) =>
+              !DEFAULT_STAGE_IDS.includes(stage.id) && !stage.label?.trim(),
+          )}
           onClick={() => void save(stages)}
         >
-          {saving ? t('common.saving') : t('common.save')}
-        </Button>
+          {t('common.save')}
+        </SaveButton>
       </div>
     </section>
   )

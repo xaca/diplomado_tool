@@ -3,7 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { Save } from 'lucide-react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
+import { SaveButton } from '@/components/save/SaveButton'
+import { useSaveLock } from '@/components/save/use-save-lock'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { saveEmailSender } from '@/features/course/api'
@@ -33,20 +34,19 @@ export function EmailSenderForm({
   const [sender, setSender] = useState<EmailSender>(
     () => board.emailSender ?? { name: defaultName, replyTo: '' },
   )
-  const [busy, setBusy] = useState(false)
+  const lock = useSaveLock()
   const valid =
     emailSenderSchema.safeParse(sender).success && !!sender.name.trim()
 
-  async function save() {
-    setBusy(true)
-    try {
-      await saveEmailSender(boardId, sender)
-      toast.success(t('mail.senderSaved'))
-    } catch {
-      toast.error(t('errors.generic'))
-    } finally {
-      setBusy(false)
-    }
+  function save() {
+    return lock.run(async () => {
+      try {
+        await saveEmailSender(boardId, sender)
+        toast.success(t('mail.senderSaved'))
+      } catch {
+        toast.error(t('errors.generic'))
+      }
+    })
   }
 
   return (
@@ -79,14 +79,15 @@ export function EmailSenderForm({
       <p className="text-xs text-muted-foreground">
         {t('mail.senderHint', { email: gmail })}
       </p>
-      <Button
+      <SaveButton
+        lock={lock}
         className="w-fit"
-        disabled={busy || !valid}
+        disabled={!valid}
         onClick={() => void save()}
       >
         <Save />
         {t('mail.saveSender')}
-      </Button>
+      </SaveButton>
     </div>
   )
 }

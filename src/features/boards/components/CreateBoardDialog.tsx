@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next'
 import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { SaveButton } from '@/components/save/SaveButton'
+import { useSaveLock } from '@/components/save/use-save-lock'
 import { adminTabPath } from '@/features/boards/admin-tabs'
 import {
   Dialog,
@@ -28,27 +30,27 @@ export function CreateBoardDialog() {
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
-  const [saving, setSaving] = useState(false)
+  const lock = useSaveLock()
 
   const valid = boardInputSchema.safeParse({ title, description }).success
 
   async function submit(event: React.FormEvent) {
     event.preventDefault()
-    if (!user?.email || !valid) return
-    setSaving(true)
-    try {
-      const boardId = await createBoard(user.email, { title, description })
-      toast.success(t('boards.created'))
-      setOpen(false)
-      setTitle('')
-      setDescription('')
-      // A new board starts empty: open it where students are added (M24)
-      navigate(adminTabPath(boardId, 'students'))
-    } catch {
-      toast.error(t('errors.generic'))
-    } finally {
-      setSaving(false)
-    }
+    const email = user?.email
+    if (!email || !valid) return
+    await lock.run(async () => {
+      try {
+        const boardId = await createBoard(email, { title, description })
+        toast.success(t('boards.created'))
+        setOpen(false)
+        setTitle('')
+        setDescription('')
+        // A new board starts empty: open it where students are added (M24)
+        navigate(adminTabPath(boardId, 'students'))
+      } catch {
+        toast.error(t('errors.generic'))
+      }
+    })
   }
 
   return (
@@ -84,9 +86,9 @@ export function CreateBoardDialog() {
             />
           </div>
           <DialogFooter>
-            <Button type="submit" disabled={!valid || saving}>
-              {saving ? t('common.saving') : t('boards.create')}
-            </Button>
+            <SaveButton type="submit" lock={lock} disabled={!valid}>
+              {t('boards.create')}
+            </SaveButton>
           </DialogFooter>
         </form>
       </DialogContent>

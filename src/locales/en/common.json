@@ -1524,5 +1524,34 @@
     "summaryNone": "Nothing waiting for a reply.",
     "summary_one": "{{unread}} new · {{count}} not answered",
     "summary_other": "{{unread}} new · {{count}} not answered"
+  },
+  "save": {
+    "slow": "Still saving… check your connection",
+    "saved": "Saved"
+  },
+  "unsaved": {
+    "title": "You have an unsaved comment",
+    "where": "You're writing it {{where}}. Save it before moving on?",
+    "body": "Save it before moving on?",
+    "saveAndGo": "Save and continue",
+    "discard": "Discard",
+    "keepWriting": "Keep writing",
+    "recovered": "Draft recovered"
+  },
+  "comments": {
+    "projectTitle": "Teacher's comments on the project",
+    "projectNew": "Comment on the project",
+    "projectPlaceholder": "Write your comment on the project…",
+    "private": "Private",
+    "public": "Public",
+    "privateHint": "Only the teachers and the student",
+    "publicHint": "Classmates see it",
+    "visibility": "Who sees it",
+    "reply": "Reply in Messages",
+    "new": "New comment",
+    "whereSlide": "on slide {{number}} of {{name}}",
+    "whereProject": "on {{name}}'s project",
+    "tabSlide": "This slide",
+    "tabProject": "Project"
   }
 }

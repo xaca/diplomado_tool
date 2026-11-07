@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Button } from '@/components/ui/button'
+import { SaveButton } from '@/components/save/SaveButton'
+import { useSaveLock } from '@/components/save/use-save-lock'
 import {
   Dialog,
   DialogContent,
@@ -32,7 +33,7 @@ export function ClassDialog({
   const [title, setTitle] = useState(initial?.title ?? '')
   const [date, setDate] = useState(initial?.date ?? localDate())
   const [prompt, setPrompt] = useState('')
-  const [busy, setBusy] = useState(false)
+  const lock = useSaveLock()
   const valid = classInputSchema.safeParse({ title, date }).success
 
   return (
@@ -43,10 +44,12 @@ export function ClassDialog({
           onSubmit={(event) => {
             event.preventDefault()
             if (!valid) return
-            setBusy(true)
-            onSave({ title: title.trim(), date }, prompt.trim())
-              .then(onClose)
-              .catch(() => setBusy(false))
+            lock
+              .run(async () => {
+                await onSave({ title: title.trim(), date }, prompt.trim())
+                onClose()
+              })
+              .catch(() => {})
           }}
         >
           <DialogHeader>
@@ -87,9 +90,9 @@ export function ClassDialog({
             </div>
           )}
           <DialogFooter>
-            <Button type="submit" disabled={!valid || busy}>
+            <SaveButton type="submit" lock={lock} disabled={!valid}>
               {creating ? t('classes.create') : t('classes.save')}
-            </Button>
+            </SaveButton>
           </DialogFooter>
         </form>
       </DialogContent>

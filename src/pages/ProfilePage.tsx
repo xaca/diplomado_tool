@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next'
 import { ArrowLeft, ImageUp, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { SaveButton } from '@/components/save/SaveButton'
+import { useSaveLock } from '@/components/save/use-save-lock'
 import {
   Card,
   CardContent,
@@ -99,7 +101,8 @@ function ProfileForm({ profile }: { profile: UserDoc | null }) {
   const [photoSource, setPhotoSource] = useState<PhotoSource>(
     photoSourceOf(profile),
   )
-  const [saving, setSaving] = useState(false)
+  const lock = useSaveLock()
+  const uploadLock = useSaveLock()
   const [cropping, setCropping] = useState<ImageBitmap | null>(null)
   const [uploading, setUploading] = useState<number | null>(null)
   const fileInput = useRef<HTMLInputElement>(null)
@@ -114,16 +117,15 @@ function ProfileForm({ profile }: { profile: UserDoc | null }) {
   async function submit(event: React.FormEvent) {
     event.preventDefault()
     if (!user || !valid) return
-    setSaving(true)
-    try {
-      const { skipped } = await saveProfile(user, { name, photoSource })
-      toast.success(t('profile.saved'))
-      if (skipped > 0) toast.info(t('profile.skipped', { count: skipped }))
-    } catch {
-      toast.error(t('errors.generic'))
-    } finally {
-      setSaving(false)
-    }
+    await lock.run(async () => {
+      try {
+        const { skipped } = await saveProfile(user, { name, photoSource })
+        toast.success(t('profile.saved'))
+        if (skipped > 0) toast.info(t('profile.skipped', { count: skipped }))
+      } catch {
+        toast.error(t('errors.generic'))
+      }
+    })
   }
 
   async function pickFile(file: File | undefined) {
@@ -145,35 +147,37 @@ function ProfileForm({ profile }: { profile: UserDoc | null }) {
 
   async function upload(photo: Blob) {
     if (!user) return
-    setUploading(0)
-    try {
-      await uploadAvatar(user, photo, isTeacherRole(role), setUploading)
-      setPhotoSource('upload')
-      if (!cheer('photo')) toast.success(t('profile.uploaded'))
-      closeCrop()
-    } catch (error) {
-      logUploadFailure(error)
-      toast.error(
-        error instanceof UploadError && error.reason === 'forbidden'
-          ? t('profile.uploadForbidden')
-          : t('profile.uploadFailed'),
-      )
-      setUploading(null)
-    }
+    // A double click on the crop dialog's button would upload twice
+    await uploadLock.run(async () => {
+      setUploading(0)
+      try {
+        await uploadAvatar(user, photo, isTeacherRole(role), setUploading)
+        setPhotoSource('upload')
+        if (!cheer('photo')) toast.success(t('profile.uploaded'))
+        closeCrop()
+      } catch (error) {
+        logUploadFailure(error)
+        toast.error(
+          error instanceof UploadError && error.reason === 'forbidden'
+            ? t('profile.uploadForbidden')
+            : t('profile.uploadFailed'),
+        )
+        setUploading(null)
+      }
+    })
   }
 
   async function remove() {
     if (!user) return
-    setSaving(true)
-    try {
-      await removeAvatar(user)
-      if (photoSource === 'upload') setPhotoSource('google')
-      toast.success(t('profile.removed'))
-    } catch {
-      toast.error(t('errors.generic'))
-    } finally {
-      setSaving(false)
-    }
+    await lock.run(async () => {
+      try {
+        await removeAvatar(user)
+        if (photoSource === 'upload') setPhotoSource('google')
+        toast.success(t('profile.removed'))
+      } catch {
+        toast.error(t('errors.generic'))
+      }
+    })
   }
 
   const sources: { value: PhotoSource; label: string }[] = [
@@ -257,7 +261,7 @@ function ProfileForm({ profile }: { profile: UserDoc | null }) {
                 type="button"
                 variant="secondary"
                 size="sm"
-                disabled={saving}
+                disabled={lock.saving}
                 onClick={() => fileInput.current?.click()}
               >
                 <ImageUp />
@@ -268,7 +272,7 @@ function ProfileForm({ profile }: { profile: UserDoc | null }) {
                   type="button"
                   variant="ghost"
                   size="sm"
-                  disabled={saving}
+                  disabled={lock.saving}
                   onClick={() => void remove()}
                 >
                   <Trash2 />
@@ -286,13 +290,14 @@ function ProfileForm({ profile }: { profile: UserDoc | null }) {
             />
           </fieldset>
 
-          <Button
+          <SaveButton
             type="submit"
+            lock={lock}
             className="self-end"
-            disabled={!valid || saving}
+            disabled={!valid}
           >
-            {saving ? t('common.saving') : t('common.save')}
-          </Button>
+            {t('common.save')}
+          </SaveButton>
         </form>
       </CardContent>
       {cropping && (

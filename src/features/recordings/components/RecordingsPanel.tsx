@@ -25,6 +25,8 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
+import { SaveButton } from '@/components/save/SaveButton'
+import { useSaveLock } from '@/components/save/use-save-lock'
 import {
   Dialog,
   DialogContent,
@@ -114,7 +116,7 @@ function AddPlaylist({
   const [title, setTitle] = useState('')
   const [problem, setProblem] = useState<string | null>(null)
   const [reading, setReading] = useState(false)
-  const [saving, setSaving] = useState(false)
+  const lock = useSaveLock()
   const [found, setFound] = useState<{
     listId: string
     videos: RecordingVideo[]
@@ -148,21 +150,20 @@ function AddPlaylist({
 
   async function save() {
     if (!found || !title.trim()) return
-    setSaving(true)
-    try {
-      await addRecording(
-        boardId,
-        { title: title.trim(), listId: found.listId },
-        found.videos,
-        position,
-      )
-      toast.success(t('recordings.added'))
-      onDone()
-    } catch {
-      toast.error(t('errors.generic'))
-    } finally {
-      setSaving(false)
-    }
+    await lock.run(async () => {
+      try {
+        await addRecording(
+          boardId,
+          { title: title.trim(), listId: found.listId },
+          found.videos,
+          position,
+        )
+        toast.success(t('recordings.added'))
+        onDone()
+      } catch {
+        toast.error(t('errors.generic'))
+      }
+    })
   }
 
   return (
@@ -218,9 +219,9 @@ function AddPlaylist({
           {t('common.cancel')}
         </Button>
         {found ? (
-          <Button type="submit" disabled={saving || !title.trim()}>
-            {saving ? t('common.saving') : t('common.save')}
-          </Button>
+          <SaveButton type="submit" lock={lock} disabled={!title.trim()}>
+            {t('common.save')}
+          </SaveButton>
         ) : (
           <Button type="submit" disabled={reading || !link.trim()}>
             {reading ? <RefreshCw className="animate-spin" /> : <Search />}
@@ -248,34 +249,34 @@ function EditPlaylist({
   const [title, setTitle] = useState(recording.title)
   const [titles, setTitles] = useState(recording.titles)
   const [hidden, setHidden] = useState(new Set(recording.hidden))
-  const [saving, setSaving] = useState(false)
+  const lock = useSaveLock()
 
-  async function save() {
-    setSaving(true)
-    try {
-      const own = Object.fromEntries(
-        Object.entries(titles)
-          .map(([id, value]) => [id, value.trim()] as const)
-          .filter(
-            ([id, value]) =>
-              value && value !== videos.find((video) => video.id === id)?.title,
+  function save() {
+    return lock.run(async () => {
+      try {
+        const own = Object.fromEntries(
+          Object.entries(titles)
+            .map(([id, value]) => [id, value.trim()] as const)
+            .filter(
+              ([id, value]) =>
+                value &&
+                value !== videos.find((video) => video.id === id)?.title,
+            ),
+        )
+        await updateRecording(boardId, recording.id, {
+          title: title.trim(),
+          titles: own,
+          // a video no longer in the playlist is forgotten
+          hidden: [...hidden].filter((id) =>
+            videos.some((video) => video.id === id),
           ),
-      )
-      await updateRecording(boardId, recording.id, {
-        title: title.trim(),
-        titles: own,
-        // a video no longer in the playlist is forgotten
-        hidden: [...hidden].filter((id) =>
-          videos.some((video) => video.id === id),
-        ),
-      })
-      toast.success(t('recordings.saved'))
-      onClose()
-    } catch {
-      toast.error(t('errors.generic'))
-    } finally {
-      setSaving(false)
-    }
+        })
+        toast.success(t('recordings.saved'))
+        onClose()
+      } catch {
+        toast.error(t('errors.generic'))
+      }
+    })
   }
 
   return (
@@ -345,12 +346,13 @@ function EditPlaylist({
           <Button variant="ghost" onClick={onClose}>
             {t('common.cancel')}
           </Button>
-          <Button
-            disabled={saving || !title.trim()}
+          <SaveButton
+            lock={lock}
+            disabled={!title.trim()}
             onClick={() => void save()}
           >
-            {saving ? t('common.saving') : t('common.save')}
-          </Button>
+            {t('common.save')}
+          </SaveButton>
         </div>
       </DialogContent>
     </Dialog>
@@ -373,6 +375,7 @@ function PlaylistRow({
   const live = useLivePlaylist(boardId, recording, true)
   const [editing, setEditing] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const deleteLock = useSaveLock()
   const shown = live.videos.filter(
     (video) => !recording.hidden.includes(video.id),
   ).length
@@ -494,12 +497,15 @@ function PlaylistRow({
           <AlertDialogFooter>
             <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => {
-                setDeleting(false)
-                void deleteRecording(boardId, recording.id).catch(() =>
-                  toast.error(t('errors.generic')),
-                )
-              }}
+              disabled={deleteLock.saving}
+              onClick={() =>
+                void deleteLock.run(async () => {
+                  setDeleting(false)
+                  await deleteRecording(boardId, recording.id).catch(() =>
+                    toast.error(t('errors.generic')),
+                  )
+                })
+              }
             >
               {t('common.remove')}
             </AlertDialogAction>

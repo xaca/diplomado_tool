@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next'
 import { Expand, Pause, Play, Plus, Square, Timer } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { SaveButton } from '@/components/save/SaveButton'
+import { useSaveLock } from '@/components/save/use-save-lock'
 import {
   Dialog,
   DialogContent,
@@ -44,18 +46,20 @@ export function ClockControls({
   const [label, setLabel] = useState('')
   const [instructions, setInstructions] = useState('')
   const [minutes, setMinutes] = useState(10)
-  const [busy, setBusy] = useState(false)
+  const lock = useSaveLock()
 
+  /** Resolves true once it ran (false when ignored: another one is still running) */
   async function run(action: () => Promise<unknown>, done?: string) {
-    setBusy(true)
-    try {
-      await action()
-      if (done) toast.success(done)
-    } catch {
-      toast.error(t('errors.generic'))
-    } finally {
-      setBusy(false)
-    }
+    const ran = await lock.run(async () => {
+      try {
+        await action()
+        if (done) toast.success(done)
+      } catch {
+        toast.error(t('errors.generic'))
+      }
+      return true
+    })
+    return ran === true
   }
 
   return (
@@ -85,7 +89,7 @@ export function ClockControls({
             <div className="flex flex-wrap justify-center gap-2">
               {clock.paused ? (
                 <Button
-                  disabled={busy}
+                  disabled={lock.saving}
                   onClick={() => void run(() => resumeClassClock(boardId))}
                 >
                   <Play />
@@ -94,7 +98,7 @@ export function ClockControls({
               ) : (
                 <Button
                   variant="outline"
-                  disabled={busy || now.status === 'ended'}
+                  disabled={lock.saving || now.status === 'ended'}
                   onClick={() =>
                     void run(() => pauseClassClock(boardId, clock))
                   }
@@ -105,7 +109,7 @@ export function ClockControls({
               )}
               <Button
                 variant="outline"
-                disabled={busy}
+                disabled={lock.saving}
                 onClick={() => void run(() => addClassMinute(boardId, clock))}
               >
                 <Plus />
@@ -113,7 +117,7 @@ export function ClockControls({
               </Button>
               <Button
                 variant="destructive"
-                disabled={busy}
+                disabled={lock.saving}
                 onClick={() => void run(() => stopClassClock(boardId))}
               >
                 <Square />
@@ -143,7 +147,7 @@ export function ClockControls({
                     minutes,
                   }),
                 t('clock.started'),
-              ).then(() => onOpenChange(false))
+              ).then((ran) => ran && onOpenChange(false))
             }}
           >
             <div
@@ -229,10 +233,10 @@ export function ClockControls({
                 />
               </div>
             </fieldset>
-            <Button type="submit" disabled={busy}>
+            <SaveButton type="submit" lock={lock}>
               <Timer />
               {t('clock.start')}
-            </Button>
+            </SaveButton>
           </form>
         )}
       </DialogContent>

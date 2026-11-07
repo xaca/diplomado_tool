@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { CircleCheck, Mail, RotateCcw, Send, TriangleAlert } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { useSaveLock } from '@/components/save/use-save-lock'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
   Dialog,
@@ -95,6 +96,8 @@ export function SendEmailDialog({
   } | null>(null)
   const [result, setResult] = useState<SendResult | null>(null)
   const [problem, setProblem] = useState<GmailProblem | null>(null)
+  // M27 (D131): a double click must never send the emails twice
+  const lock = useSaveLock()
 
   const pool = useMemo(
     () =>
@@ -139,45 +142,52 @@ export function SendEmailDialog({
 
   async function send(to: Recipient[]) {
     if (!user) return
-    setProblem(null)
-    try {
-      if (JSON.stringify(sender) !== JSON.stringify(board.emailSender ?? null))
-        await saveEmailSender(boardId, sender)
-      setProgress({ done: 0, total: to.length })
-      const outcome = await sendToStudents({
-        boardId,
-        user,
-        sender,
-        kind: start.kind,
-        draft,
-        frame,
-        recipients: to,
-        onProgress: (done, total) => setProgress({ done, total }),
-      })
-      setResult((previous) =>
-        previous
-          ? {
-              sent: [...previous.sent, ...outcome.sent],
-              failed: outcome.failed,
-              problem: outcome.problem,
-            }
-          : outcome,
-      )
-      setProblem(outcome.problem)
-      if (outcome.sent.length)
-        toast.success(t('mail.sentToast', { count: outcome.sent.length }))
-    } catch (error) {
-      console.error('[mail]', error)
-      setProblem(error instanceof GmailError ? error.problem : 'failed')
-    } finally {
-      setProgress(null)
-    }
+    await lock.run(async () => {
+      setProblem(null)
+      try {
+        if (
+          JSON.stringify(sender) !== JSON.stringify(board.emailSender ?? null)
+        )
+          await saveEmailSender(boardId, sender)
+        setProgress({ done: 0, total: to.length })
+        const outcome = await sendToStudents({
+          boardId,
+          user,
+          sender,
+          kind: start.kind,
+          draft,
+          frame,
+          recipients: to,
+          onProgress: (done, total) => setProgress({ done, total }),
+        })
+        setResult((previous) =>
+          previous
+            ? {
+                sent: [...previous.sent, ...outcome.sent],
+                failed: outcome.failed,
+                problem: outcome.problem,
+              }
+            : outcome,
+        )
+        setProblem(outcome.problem)
+        if (outcome.sent.length)
+          toast.success(t('mail.sentToast', { count: outcome.sent.length }))
+      } catch (error) {
+        console.error('[mail]', error)
+        setProblem(error instanceof GmailError ? error.problem : 'failed')
+      } finally {
+        setProgress(null)
+      }
+    })
   }
 
   const busy = progress !== null
 
   return (
-    <Dialog open onOpenChange={(open) => !open && !busy && onClose()}>
+    <Dialog
+      open
+      onOpenChange={(open) => !open && !busy && !lock.saving && onClose()}
+    >
       <DialogContent
         className="max-h-[calc(100svh-2rem)] overflow-y-auto sm:max-w-2xl"
         data-testid="send-email-dialog"
@@ -208,7 +218,7 @@ export function SendEmailDialog({
                 <Button
                   variant="outline"
                   className="w-fit"
-                  disabled={busy}
+                  disabled={busy || lock.saving}
                   onClick={() => void send(result.failed)}
                 >
                   <RotateCcw />
@@ -411,7 +421,10 @@ export function SendEmailDialog({
             <Button onClick={onClose}>{t('mail.done')}</Button>
           ) : (
             <>
-              <Button disabled={!ready} onClick={() => void send(chosen)}>
+              <Button
+                disabled={!ready || lock.saving}
+                onClick={() => void send(chosen)}
+              >
                 <Send />
                 {t('mail.send', { count: chosen.length })}
               </Button>
