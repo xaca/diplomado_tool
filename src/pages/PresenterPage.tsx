@@ -26,7 +26,12 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useBoard } from '@/features/boards/hooks'
+import { PROJECT_NOTES } from '@/features/notes/api'
 import { useNotes } from '@/features/notes/hooks'
+import {
+  useGuardLeavingPage,
+  useUnsavedGuard,
+} from '@/features/notes/unsaved-guard-context'
 import { PresenterNotesPanel } from '@/features/presenter/components/PresenterNotesPanel'
 import { SlideOverview } from '@/features/presenter/components/SlideOverview'
 import { PollCard } from '@/features/polls/components/PollCard'
@@ -48,6 +53,8 @@ import { SlidePreview } from '@/features/slides/components/SlidePreview'
 import { preloadSlide } from '@/features/slides/engine/use-slide-svg'
 import { useSlides } from '@/features/slides/hooks'
 import { useMyStudentId, useSpaces } from '@/features/spaces/hooks'
+import { WorkStatusBadge } from '@/features/spaces/components/WorkStatus'
+import { statusOf } from '@/features/spaces/ready'
 import { StageAvatar } from '@/features/stages/components/StageAvatar'
 import { boardStages, findStage } from '@/features/stages/stages'
 import { IMAGE_SIZES, imageUrl } from '@/lib/cloudinary'
@@ -89,7 +96,7 @@ export function PresenterPage() {
         ? spaces.data.filter(
             (space) =>
               (space.slideCount > 0 &&
-                (!onlyReady || !!space.readyToPresent)) ||
+                (!onlyReady || statusOf(space) === 'ready')) ||
               space.id === param,
           )
         : spaces.data.filter((space) => space.id === me.studentId),
@@ -123,12 +130,27 @@ export function PresenterPage() {
   const swipeStart = useRef<number | null>(null)
 
   // Teacher's notes on the slide on screen (M13, D33): closed by default when projected (D34)
-  const notes = useNotes(boardId, space?.id, teacher)
+  const notes = useNotes(boardId, space?.id, teacher ? 'all' : 'none')
+  // M27 (D130): every move to another slide, student or page asks first when a comment is unsaved.
+  // Moves that come from the other window (follow) don't: the question would show on the projector.
+  const guard = useUnsavedGuard()
+  useGuardLeavingPage()
   const [notesOpen, setNotesOpen] = useState(consoleView)
   // M16: the student's polls, shown with live results for class discussion
   const polls = usePolls(teacher ? boardId : undefined, space?.id)
   const [pollsOpen, setPollsOpen] = useState(false)
   const slideNotes = slide ? (notes.bySlide.get(slide.id) ?? []) : []
+  const projectNotes = notes.bySlide.get(PROJECT_NOTES) ?? []
+  const whereSlide = space
+    ? t('comments.whereSlide', {
+        number: slideIndex + 1,
+        name: space.ownerName,
+      })
+    : ''
+  const whereProject = space
+    ? t('comments.whereProject', { name: space.ownerName })
+    : ''
+  const closeNotes = () => guard.run(() => setNotesOpen(false))
 
   // Sync with the other window (projected ↔ console), same browser only
   const channel = useRef<BroadcastChannel | null>(null)
@@ -139,7 +161,9 @@ export function PresenterPage() {
       slide: slideNumber,
     })
 
-  function exit() {
+  const exit = () => guard.run(exitNow)
+
+  function exitNow() {
     if (document.fullscreenElement) void document.exitFullscreen()
     // Back to where the presentation was started (board, card or space page)
     const index = (window.history.state as { idx?: number } | null)?.idx ?? 0
@@ -147,7 +171,9 @@ export function PresenterPage() {
     else void navigate(`/b/${boardId}`)
   }
 
-  function go(action: Move) {
+  const go = (action: Move) => guard.run(() => goNow(action))
+
+  function goNow(action: Move) {
     if (studentIndex < 0) return
     const next = move({ student: studentIndex, slide: rawSlide }, action, {
       students: students.length,
@@ -167,14 +193,18 @@ export function PresenterPage() {
       })
   }
 
-  function pick(index: number) {
+  const pick = (index: number) => guard.run(() => pickNow(index))
+
+  function pickNow(index: number) {
     direction.current = { axis: 'x', sign: index >= slideIndex ? 1 : -1 }
     setPosition({ studentId: currentId, slide: index })
     if (currentId) announce(currentId, index)
     setOverview(false)
   }
 
-  function pickStudent(id: string) {
+  const pickStudent = (id: string) => guard.run(() => pickStudentNow(id))
+
+  function pickStudentNow(id: string) {
     if (id === currentId) return
     direction.current = { axis: 'y', sign: 1 }
     setPosition({ studentId: id, slide: 0 })
@@ -210,6 +240,7 @@ export function PresenterPage() {
   const keys = useRef({
     go,
     exit,
+    closeNotes,
     toggleFullscreen,
     overview,
     notesOpen,
@@ -221,6 +252,7 @@ export function PresenterPage() {
     keys.current = {
       go,
       exit,
+      closeNotes,
       toggleFullscreen,
       overview,
       notesOpen,
@@ -276,7 +308,7 @@ export function PresenterPage() {
         if (handlers.overview) setOverview(false)
         // Esc closes the notes first; a second Esc leaves, as before
         else if (handlers.notesOpen && !handlers.consoleView)
-          setNotesOpen(false)
+          handlers.closeNotes()
         // In full screen the browser uses Esc to leave it; otherwise Esc leaves the presentation
         else if (!document.fullscreenElement) handlers.exit()
         return
@@ -286,7 +318,7 @@ export function PresenterPage() {
       if (event.key === 'o' || event.key === 'O')
         return setOverview(!handlers.overview)
       if ((event.key === 'n' || event.key === 'N') && handlers.teacher)
-        return setNotesOpen((open) => !open)
+        return handlers.notesOpen ? handlers.closeNotes() : setNotesOpen(true)
       if (handlers.overview) return
       if (event.key === ' ' && target?.closest('button')) return
       const action = keyToMove(event.key)
@@ -422,6 +454,8 @@ export function PresenterPage() {
             <p className="truncate text-xs text-white/60">{space.title}</p>
           )}
         </div>
+        {/* M27: En progreso / Listo, for the teacher */}
+        {teacher && space && <WorkStatusBadge status={statusOf(space)} />}
         {showStudents && (
           <span className="text-xs text-white/60">
             {t('presenter.studentOf', {
@@ -482,6 +516,9 @@ export function PresenterPage() {
               studentId={space?.id}
               slideId={slide?.id}
               notes={slideNotes}
+              projectNotes={projectNotes}
+              whereSlide={whereSlide}
+              whereProject={whereProject}
               teacherProfiles={board.data.teacherProfiles}
               onScreen={false}
             />
@@ -511,9 +548,12 @@ export function PresenterPage() {
               studentId={space?.id}
               slideId={slide?.id}
               notes={slideNotes}
+              projectNotes={projectNotes}
+              whereSlide={whereSlide}
+              whereProject={whereProject}
               teacherProfiles={board.data.teacherProfiles}
               onScreen
-              onClose={() => setNotesOpen(false)}
+              onClose={closeNotes}
             />
           )}
         </div>
@@ -667,7 +707,7 @@ export function PresenterPage() {
                 notesOpen ? t('presenterNotes.close') : t('presenterNotes.open')
               }
               aria-pressed={notesOpen}
-              onClick={() => setNotesOpen((open) => !open)}
+              onClick={() => (notesOpen ? closeNotes() : setNotesOpen(true))}
             >
               <MessageSquareText />
             </Button>
@@ -678,12 +718,15 @@ export function PresenterPage() {
                 className={controlButton}
                 aria-label={t('teacherEdits.present')}
                 title={t('teacherEdits.present')}
-                onClick={() => {
-                  if (document.fullscreenElement) void document.exitFullscreen()
-                  void navigate(
-                    `/b/${boardId}/s/${space.id}/edit?slide=${slide.id}`,
-                  )
-                }}
+                onClick={() =>
+                  guard.run(() => {
+                    if (document.fullscreenElement)
+                      void document.exitFullscreen()
+                    void navigate(
+                      `/b/${boardId}/s/${space.id}/edit?slide=${slide.id}`,
+                    )
+                  })
+                }
               >
                 <PencilLine />
               </Button>

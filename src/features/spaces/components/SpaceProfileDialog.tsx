@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Check } from 'lucide-react'
 import { toast } from 'sonner'
-import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
@@ -16,7 +15,13 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { recordBoardActivity } from '@/features/boards/api'
 import { useCheer } from '@/features/fun/use-cheer'
-import { updateSpaceProfile, type Space } from '@/features/spaces/api'
+import { SaveButton } from '@/components/save/SaveButton'
+import { useSaveLock } from '@/components/save/use-save-lock'
+import {
+  updateProjectAsTeacher,
+  updateSpaceProfile,
+  type Space,
+} from '@/features/spaces/api'
 import { CoverPicker } from '@/features/spaces/components/CoverPicker'
 import { StagePicker } from '@/features/stages/components/StagePicker'
 import { findStage, stageLabel } from '@/features/stages/stages'
@@ -36,6 +41,8 @@ type Props = {
   onOpenChange: (open: boolean) => void
   /** The board's stages (M11) */
   stages: StageDef[]
+  /** M27 (D129): the board's teacher edits the project; the student's version is kept */
+  asTeacher?: boolean
 }
 
 export function SpaceProfileDialog({
@@ -44,6 +51,7 @@ export function SpaceProfileDialog({
   open,
   onOpenChange,
   stages,
+  asTeacher = false,
 }: Props) {
   const { t } = useTranslation()
   const [title, setTitle] = useState(space.title)
@@ -56,7 +64,7 @@ export function SpaceProfileDialog({
   // A stage the teacher removed from the list shows as "no stage"
   const initialStage = findStage(stages, space.stage)?.id ?? null
   const [stage, setStage] = useState<string | null>(initialStage)
-  const [saving, setSaving] = useState(false)
+  const lock = useSaveLock()
   const cheer = useCheer()
 
   const valid = spaceProfileSchema.safeParse({ title, summary, color }).success
@@ -64,26 +72,37 @@ export function SpaceProfileDialog({
   async function submit(event: React.FormEvent) {
     event.preventDefault()
     if (!valid) return
-    setSaving(true)
     try {
-      await updateSpaceProfile(
-        boardId,
-        space.id,
-        { title, summary, color },
-        stage === initialStage ? undefined : stage,
-      )
-      void recordBoardActivity(boardId)
-      // M20: a new Design Thinking stage is a milestone ("Vitrineando" isn't)
-      const next = stage === initialStage ? undefined : findStage(stages, stage)
-      const cheered =
-        next?.kind === 'stage' && cheer('stage', { stage: stageLabel(next, t) })
-      if (!cheered) toast.success(t('space.saved'))
-      onOpenChange(false)
+      const done = await lock.run(async () => {
+        await save()
+        return true
+      })
+      // ignored (a second click while saving): the first save closes it
+      if (done) onOpenChange(false)
     } catch {
       toast.error(t('errors.generic'))
-    } finally {
-      setSaving(false)
     }
+  }
+
+  async function save() {
+    if (asTeacher) {
+      await updateProjectAsTeacher(boardId, space, { title, summary, color })
+      void recordBoardActivity(boardId)
+      toast.success(t('projectEdits.saved', { name: space.ownerName }))
+      return
+    }
+    await updateSpaceProfile(
+      boardId,
+      space.id,
+      { title, summary, color },
+      stage === initialStage ? undefined : stage,
+    )
+    void recordBoardActivity(boardId)
+    // M20: a new Design Thinking stage is a milestone ("Vitrineando" isn't)
+    const next = stage === initialStage ? undefined : findStage(stages, stage)
+    const cheered =
+      next?.kind === 'stage' && cheer('stage', { stage: stageLabel(next, t) })
+    if (!cheered) toast.success(t('space.saved'))
   }
 
   return (
@@ -92,8 +111,14 @@ export function SpaceProfileDialog({
       <DialogContent className="max-h-[calc(100svh-2rem)] overflow-y-auto">
         <form onSubmit={submit} className="flex flex-col gap-4">
           <DialogHeader>
-            <DialogTitle>{t('space.editTitle')}</DialogTitle>
-            <DialogDescription>{t('space.editHint')}</DialogDescription>
+            <DialogTitle>
+              {asTeacher
+                ? t('projectEdits.title', { name: space.ownerName })
+                : t('space.editTitle')}
+            </DialogTitle>
+            <DialogDescription>
+              {asTeacher ? t('projectEdits.hint') : t('space.editHint')}
+            </DialogDescription>
           </DialogHeader>
 
           <div className="flex flex-col gap-2">
@@ -123,15 +148,18 @@ export function SpaceProfileDialog({
             </span>
           </div>
 
-          <StagePicker
-            stages={stages}
-            value={stage}
-            onChange={setStage}
-            legend={t('stages.question')}
-            hint={t('stages.questionHint')}
-          />
+          {/* The teacher sets the stage on the space page (M11) */}
+          {!asTeacher && (
+            <StagePicker
+              stages={stages}
+              value={stage}
+              onChange={setStage}
+              legend={t('stages.question')}
+              hint={t('stages.questionHint')}
+            />
+          )}
 
-          <CoverPicker boardId={boardId} space={space} />
+          <CoverPicker boardId={boardId} space={space} asTeacher={asTeacher} />
 
           <fieldset className="flex flex-col gap-2">
             <legend className="mb-2 text-sm font-medium">
@@ -158,9 +186,9 @@ export function SpaceProfileDialog({
           </fieldset>
 
           <DialogFooter>
-            <Button type="submit" disabled={!valid || saving}>
-              {saving ? t('common.saving') : t('common.save')}
-            </Button>
+            <SaveButton type="submit" lock={lock} disabled={!valid}>
+              {t('common.save')}
+            </SaveButton>
           </DialogFooter>
         </form>
       </DialogContent>

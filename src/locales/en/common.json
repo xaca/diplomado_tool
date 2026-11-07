@@ -400,6 +400,7 @@
         "body": [
           "From your Google account: name, email and profile photo. Your teacher also records your name and emails to add you to the board. If you choose, a photo you upload.",
           "What you publish: your card's title and summary, the project stage you're in, your slides and the images you upload.",
+          "Your teacher's comments on your project and slides: private ones are seen only by your teachers and you; the ones your teacher marks public are also seen by your classmates on the board. Your teacher can edit your project (title, description, cover, slides and their order); the app keeps your version so you can restore it.",
           "Technical security data: Google reCAPTCHA checks that requests come from this app.",
           "Your votes in space polls: the teacher sees who voted; so does the poll’s author, unless it is anonymous.",
           "Your class attendance (present, late, absent or excused, with an optional note by the teacher): your teacher records it; you see only yours (without the notes) and classmates never see it. Your teacher may copy your email to write to you from their own mail account, or email you from the app: emails go from your teacher's Gmail account (with Google's send-only permission), and the app keeps who each email went to and when, not its content.",
@@ -664,18 +665,26 @@
     "remaining": "Time left"
   },
   "ready": {
-    "mark": "My slides are ready",
+    "mark": "Ready to present",
     "unmark": "Unmark as ready",
     "badge": "Ready",
-    "marked": "You marked your slides as ready",
-    "unmarked": "No longer marked as ready",
+    "marked": "You marked your project “Ready”",
+    "unmarked": "Not marked",
     "filters": "Filter by progress",
     "ready": "Ready",
     "withSlides": "With slides",
     "noSlides": "No slides",
     "presentReady": "Present ready ones",
     "label": "Progress",
-    "all": "All"
+    "all": "All",
+    "wip": "In progress",
+    "wipHint": "I'm still editing",
+    "wipMarked": "You marked your project “In progress”",
+    "byTeacher": "Set by the teacher",
+    "wipFilter": "In progress",
+    "backToWip": "You changed a slide. Back to “In progress”?",
+    "backYes": "Yes, in progress",
+    "backNo": "No, still ready"
   },
   "polls": {
     "title": "Polls",
@@ -1553,5 +1562,30 @@
     "whereProject": "on {{name}}'s project",
     "tabSlide": "This slide",
     "tabProject": "Project"
+  },
+  "projectEdits": {
+    "edit": "Edit project",
+    "title": "Edit {{name}}'s project",
+    "hint": "Your changes are marked “Edited by the teacher” and {{name}} can restore their version.",
+    "saved": "You saved the changes to {{name}}'s project",
+    "edited": "Edited by the teacher",
+    "editedHint": "Your teacher changed your project's title, description, cover or color.",
+    "restore": "Restore my version",
+    "restored": "You restored your version",
+    "backToTeacher": "Back to the teacher's version",
+    "youRestored": "You restored your version of the project.",
+    "orderChanged": "Your teacher changed the order of your slides.",
+    "restoreOrder": "Restore the order",
+    "orderRestored": "Your order is back",
+    "deleted": "Deleted by the teacher",
+    "deletedHint": "Your teacher removed these slides. You can bring them back.",
+    "deletedBy": "Deleted by {{name}} · {{when}}",
+    "restoreSlide": "Restore",
+    "slideRestored": "The slide is back in your presentation",
+    "discardSlide": "Remove for good",
+    "discardTitle": "Remove this slide for good?",
+    "discardHint": "You won't be able to restore it. Its notes are deleted too.",
+    "deleteTeacherHint": "{{name}} can restore it from “Deleted by the teacher”.",
+    "changesTitle": "Your teacher's changes"
   }
 }

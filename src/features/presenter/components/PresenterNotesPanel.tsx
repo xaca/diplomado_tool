@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Eye, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { Note } from '@/features/notes/api'
+import { cn } from '@/lib/utils'
 import { SlideNotes } from '@/features/notes/components/SlideNotes'
 import type { TeacherProfile } from '@/model'
 
@@ -10,6 +12,11 @@ type Props = {
   studentId: string | undefined
   slideId: string | undefined
   notes: Note[]
+  /** M27: comments on the whole project ("Proyecto" tab) */
+  projectNotes: Note[]
+  /** "en la diapositiva 3 de Laura Nataly" / "en el proyecto de Laura Nataly" */
+  whereSlide: string
+  whereProject: string
   teacherProfiles?: Record<string, TeacherProfile>
   /** Projected window: warn that the panel is visible to the class (D34) */
   onScreen: boolean
@@ -25,11 +32,16 @@ export function PresenterNotesPanel({
   studentId,
   slideId,
   notes,
+  projectNotes,
+  whereSlide,
+  whereProject,
   teacherProfiles,
   onScreen,
   onClose,
 }: Props) {
   const { t } = useTranslation()
+  // M27: this slide's comments, or the project's
+  const [tab, setTab] = useState<'slide' | 'project'>('slide')
   return (
     <aside
       className="flex w-full shrink-0 flex-col gap-2 overflow-y-auto bg-neutral-900 p-3 sm:w-80"
@@ -58,7 +70,42 @@ export function PresenterNotesPanel({
           </Button>
         )}
       </header>
-      {studentId && slideId ? (
+      <div className="flex gap-1" role="tablist">
+        {(['slide', 'project'] as const).map((option) => (
+          <button
+            key={option}
+            type="button"
+            role="tab"
+            aria-selected={tab === option}
+            className={cn(
+              'rounded-full px-2.5 py-1 text-xs',
+              tab === option
+                ? 'bg-white text-neutral-900'
+                : 'bg-white/10 text-white/80 hover:bg-white/20',
+            )}
+            onClick={() => setTab(option)}
+          >
+            {option === 'slide'
+              ? t('comments.tabSlide')
+              : t('comments.tabProject')}
+            {(option === 'slide' ? notes : projectNotes).length > 0 &&
+              ` · ${(option === 'slide' ? notes : projectNotes).length}`}
+          </button>
+        ))}
+      </div>
+      {studentId && tab === 'project' ? (
+        <SlideNotes
+          key={`${studentId}:project`}
+          boardId={boardId}
+          studentId={studentId}
+          slideId={null}
+          notes={projectNotes}
+          canWrite
+          enterToSave
+          where={whereProject}
+          teacherProfiles={teacherProfiles}
+        />
+      ) : studentId && slideId ? (
         <SlideNotes
           key={slideId}
           boardId={boardId}
@@ -67,6 +114,7 @@ export function PresenterNotesPanel({
           notes={notes}
           canWrite
           enterToSave
+          where={whereSlide}
           teacherProfiles={teacherProfiles}
         />
       ) : (

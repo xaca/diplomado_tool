@@ -13,6 +13,8 @@ import { StageAvatar } from '@/features/stages/components/StageAvatar'
 import { IMAGE_SIZES, imageUrl } from '@/lib/cloudinary'
 import { cn } from '@/lib/utils'
 import type { StageDef } from '@/model'
+import { WorkStatusBadge } from '@/features/spaces/components/WorkStatus'
+import { statusOf } from '@/features/spaces/ready'
 import { formatRelative, toDate } from '@/lib/time'
 
 type Props = {
@@ -111,14 +113,24 @@ export function SpaceCard({
             ✎ {t('teacherEdits.badge')}
           </Badge>
         )}
-        {space.readyToPresent && space.slideCount > 0 && (
+        {/* M27: a new comment from the teacher, for the student and the teacher */}
+        {space.teacherCommentsUnseen && (isMine || canPresent) && (
           <Badge
-            className="bg-green-100 text-green-900"
-            data-testid="ready-badge"
+            className="bg-sky-100 text-sky-900"
+            data-testid="comments-badge"
           >
-            ✓ {t('ready.badge')}
+            💬 {t('comments.new')}
           </Badge>
         )}
+        {/* M27: 🚧 En progreso · ✓ Listo ("Listo" only counts with slides, as in M16) */}
+        <WorkStatusBadge
+          status={
+            statusOf(space) === 'ready' && space.slideCount === 0
+              ? null
+              : statusOf(space)
+          }
+          byTeacher={space.workStatusBy === 'teacher'}
+        />
         {isMine && <Badge variant="secondary">{t('space.mine')}</Badge>}
       </header>
 

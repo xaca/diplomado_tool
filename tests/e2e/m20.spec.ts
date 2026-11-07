@@ -65,9 +65,7 @@ test.describe('M20 · encouraging messages', () => {
     // Ready: a cheer instead of the plain toast (no confetti: one burst every 30 s)
     await page.getByTestId('ready-toggle').click()
     await expect(cheerToast(page)).toContainText(/list|Lo lograste|presentar/i)
-    await expect(
-      page.getByText('Marcaste tus diapositivas como listas'),
-    ).toHaveCount(0)
+    await expect(page.getByText('Marcaste tu proyecto «Listo»')).toHaveCount(0)
     await expect(page.getByTestId('ready-toggle').locator('svg')).toHaveClass(
       /check-draw/,
     )
@@ -93,9 +91,7 @@ test.describe('M20 · encouraging messages', () => {
     await page.goto(editorUrl('st_laura'))
     await createFirstSlide(page)
     await page.getByTestId('ready-toggle').click()
-    await expect(
-      page.getByText('Marcaste tus diapositivas como listas'),
-    ).toBeVisible()
+    await expect(page.getByText('Marcaste tu proyecto «Listo»')).toBeVisible()
     await expect(cheerToast(page)).toHaveCount(0)
     await expect(confetti(page)).toHaveCount(0)
     expect(await milestones('laura@gmail.com')).toBeUndefined()

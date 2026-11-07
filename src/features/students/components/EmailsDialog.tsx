@@ -28,9 +28,10 @@ import { emailList, mailtoLinks } from '@/features/students/emails'
 import { useMembers } from '@/features/students/hooks'
 import { toCsv } from '@/lib/csv'
 import { downloadText, slugify } from '@/lib/download'
+import { statusOf } from '@/features/spaces/ready'
 import type { BoardDoc } from '@/model'
 
-/** "kind:value": all · group:<name> · stage:<id> · ready:yes|no · absent:<date> */
+/** "kind:value": all · group:<name> · stage:<id> · ready:yes|wip|no · absent:<date> */
 type Filter = string
 
 const selectClass =
@@ -87,7 +88,9 @@ export function EmailsDialog({
         case 'stage':
           return !!card && matchesStage(card, stages, value)
         case 'ready':
-          return (value === 'yes') === !!card?.readyToPresent
+          // M27: Listo · En progreso · not Listo
+          if (value === 'wip') return !!card && statusOf(card) === 'wip'
+          return (value === 'yes') === (!!card && statusOf(card) === 'ready')
         case 'absent':
           return (
             attendance.data.find((day) => day.date === value)?.marks[student.id]
@@ -171,6 +174,7 @@ export function EmailsDialog({
             </optgroup>
             <optgroup label={t('emails.progress')}>
               <option value="ready:yes">{t('emails.ready')}</option>
+              <option value="ready:wip">{t('ready.wip')}</option>
               <option value="ready:no">{t('emails.notReady')}</option>
             </optgroup>
             {absentDays.length > 0 && (

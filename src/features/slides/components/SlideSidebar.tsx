@@ -35,6 +35,8 @@ type Props = {
   onReorder: (order: string[]) => void
   /** M15: the teacher edits and adds slides, but reordering and deleting stay with the student */
   manage?: boolean
+  /** M27: the teacher reorders and deletes too, but adds only at the end (no duplicates) */
+  duplicate?: boolean
   /** M20: the slide just added flies into the list */
   addedId?: string | null
 }
@@ -50,6 +52,7 @@ export function SlideSidebar({
   onDelete,
   onReorder,
   manage = true,
+  duplicate = true,
   addedId = null,
 }: Props) {
   const { t } = useTranslation()
@@ -95,6 +98,7 @@ export function SlideSidebar({
                 busy={busy}
                 full={full}
                 manage={manage}
+                duplicate={duplicate}
                 fresh={slide.id === addedId}
                 onSelect={onSelect}
                 onDuplicate={onDuplicate}
@@ -125,6 +129,7 @@ function SortableSlide({
   busy,
   full,
   manage,
+  duplicate,
   fresh,
   onSelect,
   onDuplicate,
@@ -136,6 +141,7 @@ function SortableSlide({
   busy: boolean
   full: boolean
   manage: boolean
+  duplicate: boolean
   fresh: boolean
 } & Pick<Props, 'onSelect' | 'onDuplicate' | 'onDelete'>) {
   const { t } = useTranslation()
@@ -199,15 +205,17 @@ function SortableSlide({
         </span>
         {manage && (
           <>
-            <Button
-              variant="ghost"
-              size="icon-xs"
-              disabled={busy || full}
-              aria-label={t('slides.duplicate', { number: index + 1 })}
-              onClick={() => onDuplicate(slide)}
-            >
-              <Copy />
-            </Button>
+            {duplicate && (
+              <Button
+                variant="ghost"
+                size="icon-xs"
+                disabled={busy || full}
+                aria-label={t('slides.duplicate', { number: index + 1 })}
+                onClick={() => onDuplicate(slide)}
+              >
+                <Copy />
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon-xs"

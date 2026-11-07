@@ -400,6 +400,7 @@
         "body": [
           "De tu cuenta de Google: nombre, correo y foto de perfil. Tu docente también registra tu nombre y tus correos para agregarte al tablero. Si lo eliges, una foto que tú subes.",
           "Lo que publicas: el título y resumen de tu tarjeta, la etapa del proyecto en la que vas, tus diapositivas y las imágenes que subes.",
+          "Los comentarios de tu docente sobre tu proyecto y tus diapositivas: los privados los ven solo tus docentes y tú; los que tu docente marca como públicos los ven también tus compañeros del tablero. Tu docente puede editar tu proyecto (título, descripción, portada, diapositivas y su orden); la app guarda tu versión para que la restaures.",
           "Datos técnicos de seguridad: Google reCAPTCHA comprueba que las solicitudes vienen de esta aplicación.",
           "Tus votos en las encuestas de los espacios: el docente ve quién votó; el autor de la encuesta también, salvo que sea anónima.",
           "Tu asistencia a clase (presente, tarde, ausente o excusa, con una nota opcional del docente): la registra tu docente; tú ves solo la tuya (sin las notas) y tus compañeros nunca la ven. Tu docente puede copiar tu correo para escribirte desde su propio correo, o enviarte correos desde la app: salen de la cuenta de Gmail de tu docente (con el permiso de Google solo para enviar) y la app guarda a quién se envió cada correo y cuándo, no su contenido.",
@@ -664,18 +665,26 @@
     "remaining": "Tiempo restante"
   },
   "ready": {
-    "mark": "Mis diapositivas están listas",
+    "mark": "Listo para presentar",
     "unmark": "Quitar «lista»",
-    "badge": "Lista",
-    "marked": "Marcaste tus diapositivas como listas",
-    "unmarked": "Ya no aparecen como listas",
+    "badge": "Listo",
+    "marked": "Marcaste tu proyecto «Listo»",
+    "unmarked": "Sin marcar",
     "filters": "Filtrar por avance",
     "ready": "Listos",
     "withSlides": "Con diapositivas",
     "noSlides": "Sin diapositivas",
     "presentReady": "Presentar listos",
     "label": "Avance",
-    "all": "Todos"
+    "all": "Todos",
+    "wip": "En progreso",
+    "wipHint": "Todavía estoy editando",
+    "wipMarked": "Marcaste tu proyecto «En progreso»",
+    "byTeacher": "Marcado por el docente",
+    "wipFilter": "En progreso",
+    "backToWip": "Cambiaste una diapositiva. ¿Vuelves a «En progreso»?",
+    "backYes": "Sí, En progreso",
+    "backNo": "No, sigue Listo"
   },
   "polls": {
     "title": "Encuestas",
@@ -1553,5 +1562,30 @@
     "whereProject": "en el proyecto de {{name}}",
     "tabSlide": "Esta diapositiva",
     "tabProject": "Proyecto"
+  },
+  "projectEdits": {
+    "edit": "Editar proyecto",
+    "title": "Editar el proyecto de {{name}}",
+    "hint": "Tus cambios quedan marcados «Editado por el docente» y {{name}} puede restaurar su versión.",
+    "saved": "Guardaste los cambios en el proyecto de {{name}}",
+    "edited": "Editado por el docente",
+    "editedHint": "Tu docente cambió el título, la descripción, la portada o el color de tu proyecto.",
+    "restore": "Restaurar mi versión",
+    "restored": "Restauraste tu versión",
+    "backToTeacher": "Volver a la versión del docente",
+    "youRestored": "Restauraste tu versión del proyecto.",
+    "orderChanged": "Tu docente cambió el orden de tus diapositivas.",
+    "restoreOrder": "Restaurar el orden",
+    "orderRestored": "Volviste a tu orden",
+    "deleted": "Eliminadas por el docente",
+    "deletedHint": "Tu docente quitó estas diapositivas. Puedes traerlas de vuelta.",
+    "deletedBy": "Eliminada por {{name}} · {{when}}",
+    "restoreSlide": "Restaurar",
+    "slideRestored": "La diapositiva volvió a tu presentación",
+    "discardSlide": "Quitar definitivamente",
+    "discardTitle": "¿Quitar esta diapositiva definitivamente?",
+    "discardHint": "Ya no podrás restaurarla. Se borran también sus anotaciones.",
+    "deleteTeacherHint": "{{name}} podrá restaurarla desde «Eliminadas por el docente».",
+    "changesTitle": "Cambios de tu docente"
   }
 }

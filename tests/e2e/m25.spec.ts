@@ -61,7 +61,7 @@ test.describe('M25 · Presentaciones: the students’ own slides', () => {
     const pitch = card(page, 'st_sebastian')
     await expect(pitch).toContainText('Sebastian Cetina')
     await expect(pitch).toContainText('2 diapositivas')
-    await expect(pitch).toContainText('Lista')
+    await expect(pitch).toContainText('Listo')
     // a classmate can view it, not present it
     await expect(
       pitch.getByRole('button', { name: 'Presentar', exact: true }),

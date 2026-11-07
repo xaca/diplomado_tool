@@ -8,13 +8,17 @@ import {
   Play,
   Presentation,
 } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useClassAccess } from '@/features/classes/use-class-access'
 import { useSpaces } from '@/features/spaces/hooks'
 import { IMAGE_SIZES, imageUrl } from '@/lib/cloudinary'
 import type { WithId } from '@/lib/firestore-hooks'
+import {
+  WorkStatusBadge,
+  WorkStatusControl,
+} from '@/features/spaces/components/WorkStatus'
+import { statusOf } from '@/features/spaces/ready'
 import type { SpaceDoc } from '@/model'
 
 /**
@@ -91,6 +95,14 @@ export function PresentationsPage() {
               {t('presentations.mine', { count: mine.slideCount })}
             </p>
             <div className="flex flex-wrap gap-2">
+              {access.writableBoard && (
+                <WorkStatusControl
+                  boardId={boardId}
+                  studentId={mine.id}
+                  status={statusOf(mine)}
+                  by="student"
+                />
+              )}
               {access.writableBoard && (
                 <Button
                   variant="outline"
@@ -185,12 +197,11 @@ function PresentationCard({
             <Presentation className="size-10 text-foreground/25" />
           </span>
         )}
-        {space.readyToPresent && (
-          <Badge className="absolute top-2 right-2">
-            <CircleCheck className="mr-1 size-3" />
-            {t('ready.badge')}
-          </Badge>
-        )}
+        {/* M27: 🚧 En progreso · ✓ Listo */}
+        <WorkStatusBadge
+          status={statusOf(space)}
+          className="absolute top-2 right-2"
+        />
       </div>
       <div className="flex flex-1 flex-col gap-1 p-3">
         <p className="truncate font-semibold">{space.ownerName}</p>

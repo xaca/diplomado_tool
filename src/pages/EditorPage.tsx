@@ -37,12 +37,18 @@ import { recordBoardActivity } from '@/features/boards/api'
 import { useBoard } from '@/features/boards/hooks'
 import { isWritable, lifecycleOf } from '@/features/boards/lifecycle'
 import { SlideNotes } from '@/features/notes/components/SlideNotes'
+import {
+  useGuardLeavingPage,
+  useUnsavedGuard,
+} from '@/features/notes/unsaved-guard-context'
 import { useNotes } from '@/features/notes/hooks'
 import {
   addSlide,
   addSlideAsTeacher,
   deleteSlide,
+  deleteSlideAsTeacher,
   reorderSlides,
+  reorderSlidesAsTeacher,
   shouldTouchSpace,
   touchSpace,
   TooManySlidesError,
@@ -56,7 +62,9 @@ import { useTeacherEditCheer } from '@/features/fun/use-teacher-edit-cheer'
 import { InsertEmbedDialog } from '@/features/slides/components/InsertEmbedDialog'
 import { SlidePreview } from '@/features/slides/components/SlidePreview'
 import { ClockBanner } from '@/features/clock/components/ClockBanner'
-import { ReadyToggle } from '@/features/spaces/components/ReadyToggle'
+import { setWorkStatus } from '@/features/spaces/api'
+import { WorkStatusControl } from '@/features/spaces/components/WorkStatus'
+import { shouldAskBackToWip, statusOf } from '@/features/spaces/ready'
 import { linksInText, toEmbedUrl } from '@/features/slides/embeds'
 import { SlideSidebar } from '@/features/slides/components/SlideSidebar'
 import type { SaveStatus } from '@/features/slides/engine/autosave'
@@ -100,7 +108,16 @@ export function EditorPage() {
     boardId && studentId ? doc(db, paths.space(boardId, studentId)) : null
   const space = useLiveDoc<SpaceDoc>(ref, `space:${boardId}:${studentId}`)
   const slides = useSlides(boardId, studentId, space.data?.slideOrder)
-  const notes = useNotes(boardId, studentId, isMine || isBoardTeacher)
+  const notes = useNotes(
+    boardId,
+    studentId,
+    isMine || isBoardTeacher ? 'all' : 'none',
+  )
+  // M27 (D130): ask before switching slides or leaving with a comment not saved
+  const guard = useUnsavedGuard()
+  useGuardLeavingPage()
+  // D133: "¿Vuelves a En progreso?" once per editing session
+  const askedBackToWip = useRef(false)
   const [showNotes, setShowNotes] = useState(true)
   // M15: slides the teacher changed in this session, and the note they're writing
   const [editedIds, setEditedIds] = useState<ReadonlySet<string>>(new Set())
@@ -238,7 +255,8 @@ export function EditorPage() {
     })
 
   const select = (id: string) =>
-    id !== current?.id && run(async () => setSelectedId(id))
+    id !== current?.id &&
+    guard.run(() => void run(async () => setSelectedId(id)))
 
   const confirmDelete = async () => {
     const slide = deleting
@@ -252,13 +270,24 @@ export function EditorPage() {
       const rest = order.filter((id) => id !== slide.id)
       if (slide.id === current?.id)
         setSelectedId(rest[Math.min(index, rest.length - 1)] ?? null)
-      await deleteSlide(
-        boardId,
-        studentId,
-        order,
-        slide.id,
-        (notes.bySlide.get(slide.id) ?? []).map((note) => note.id),
-      )
+      // M27 (D129): the teacher's delete keeps a copy the student can restore (notes stay with it)
+      if (asTeacher)
+        await deleteSlideAsTeacher(
+          boardId,
+          studentId,
+          order,
+          slide,
+          lockOwner?.name ?? '',
+          latest.current.space?.studentSlideOrder,
+        )
+      else
+        await deleteSlide(
+          boardId,
+          studentId,
+          order,
+          slide.id,
+          (notes.bySlide.get(slide.id) ?? []).map((note) => note.id),
+        )
     })
     // Still here = the delete failed: back to normal (a removed item is already gone)
     unshrink(item)
@@ -273,6 +302,27 @@ export function EditorPage() {
         ids.has(savedId) ? ids : new Set([...ids, savedId]),
       )
     const saved = latest.current.space
+    // D133: a student marked "Listo" changed a slide → maybe they're back to work
+    if (
+      value === 'saved' &&
+      isMine &&
+      saved &&
+      shouldAskBackToWip(statusOf(saved), 'student', askedBackToWip.current)
+    ) {
+      askedBackToWip.current = true
+      toast(t('ready.backToWip'), {
+        id: 'back-to-wip',
+        duration: 15_000,
+        action: {
+          label: t('ready.backYes'),
+          onClick: () =>
+            void setWorkStatus(boardId, studentId, 'wip', 'student').catch(() =>
+              toast.error(t('errors.generic')),
+            ),
+        },
+        cancel: { label: t('ready.backNo'), onClick: () => undefined },
+      })
+    }
     if (
       value === 'saved' &&
       saved &&
@@ -320,10 +370,11 @@ export function EditorPage() {
           {t('embeds.insert')}
         </Button>
         {isMine && (
-          <ReadyToggle
+          <WorkStatusControl
             boardId={boardId}
             studentId={studentId}
-            ready={!!space.data.readyToPresent}
+            status={statusOf(space.data)}
+            by="student"
           />
         )}
         <SaveIndicator
@@ -336,7 +387,11 @@ export function EditorPage() {
             variant={showNotes ? 'secondary' : 'outline'}
             size="sm"
             aria-pressed={showNotes}
-            onClick={() => setShowNotes((value) => !value)}
+            onClick={() =>
+              showNotes
+                ? guard.run(() => setShowNotes(false))
+                : setShowNotes(true)
+            }
           >
             <MessageSquareText />
             {t('notes.count', { count: currentNotes.length })}
@@ -407,7 +462,7 @@ export function EditorPage() {
 
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
         <SlideSidebar
-          manage={!asTeacher}
+          duplicate={!asTeacher}
           addedId={addedId}
           slides={slides.data}
           currentId={current?.id}
@@ -417,9 +472,17 @@ export function EditorPage() {
           onDuplicate={(slide) => void add(slide)}
           onDelete={setDeleting}
           onReorder={(next) =>
-            void reorderSlides(boardId, studentId, next).catch(() =>
-              toast.error(t('errors.generic')),
-            )
+            void (
+              asTeacher
+                ? reorderSlidesAsTeacher(
+                    boardId,
+                    studentId,
+                    order,
+                    next,
+                    space.data?.studentSlideOrder,
+                  )
+                : reorderSlides(boardId, studentId, next)
+            ).catch(() => toast.error(t('errors.generic')))
           }
         />
         <div className="relative min-h-0 flex-1">
@@ -487,6 +550,10 @@ export function EditorPage() {
               slideId={current.id}
               notes={currentNotes}
               canWrite={isBoardTeacher}
+              where={t('comments.whereSlide', {
+                number: order.indexOf(current.id) + 1,
+                name: space.data.ownerName,
+              })}
               teacherProfiles={board.data?.teacherProfiles}
               draft={noteDraft ?? undefined}
               onAdded={() => setNoteDraft(null)}
@@ -519,9 +586,13 @@ export function EditorPage() {
               })}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {deleting && notes.bySlide.has(deleting.id)
-                ? t('slides.deleteHintNotes')
-                : t('slides.deleteHint')}
+              {asTeacher
+                ? t('projectEdits.deleteTeacherHint', {
+                    name: space.data.ownerName,
+                  })
+                : deleting && notes.bySlide.has(deleting.id)
+                  ? t('slides.deleteHintNotes')
+                  : t('slides.deleteHint')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

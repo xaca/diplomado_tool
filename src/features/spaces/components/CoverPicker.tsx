@@ -10,21 +10,42 @@ import {
   UploadError,
 } from '@/features/assets/upload'
 import { recordBoardActivity } from '@/features/boards/api'
-import { setSpaceCover, type Space } from '@/features/spaces/api'
+import {
+  setSpaceCover,
+  updateProjectAsTeacher,
+  type Space,
+} from '@/features/spaces/api'
 import { IMAGE_SIZES, imageUrl } from '@/lib/cloudinary'
 
-/** Card cover: upload (with progress) or remove. Applies immediately. */
+/**
+ * Card cover: upload (with progress) or remove. Applies immediately. M27: the board's teacher
+ * changes it too, keeping the student's version (`asTeacher`).
+ */
 export function CoverPicker({
   boardId,
   space,
+  asTeacher = false,
 }: {
   boardId: string
   space: Space
+  asTeacher?: boolean
 }) {
   const { t } = useTranslation()
   const input = useRef<HTMLInputElement>(null)
   const [progress, setProgress] = useState<number | null>(null)
   const busy = progress !== null
+
+  function apply(next: Space['cover']) {
+    return asTeacher
+      ? updateProjectAsTeacher(boardId, space, { cover: next ?? null })
+      : setSpaceCover(
+          boardId,
+          space.id,
+          next ?? null,
+          space.cover,
+          space.previousVersion?.cover,
+        )
+  }
 
   async function upload(file: File) {
     setProgress(0)
@@ -36,7 +57,7 @@ export function CoverPicker({
         kind: 'cover',
         onProgress: setProgress,
       })
-      await setSpaceCover(boardId, space.id, ref, space.cover)
+      await apply(ref)
       void recordBoardActivity(boardId)
       toast.success(t('cover.saved'))
     } catch (error) {
@@ -54,7 +75,7 @@ export function CoverPicker({
 
   async function remove() {
     try {
-      await setSpaceCover(boardId, space.id, null, space.cover)
+      await apply(null)
     } catch {
       toast.error(t('errors.generic'))
     }

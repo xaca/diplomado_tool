@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import {
@@ -14,17 +14,21 @@ import { doc } from 'firebase/firestore'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useBoard } from '@/features/boards/hooks'
+import { PROJECT_NOTES } from '@/features/notes/api'
 import { SlideNotes } from '@/features/notes/components/SlideNotes'
+import { useGuardLeavingPage } from '@/features/notes/unsaved-guard-context'
 import { useTeacherEditCheer } from '@/features/fun/use-teacher-edit-cheer'
 import { useNoteCheer } from '@/features/fun/use-note-cheer'
 import { useNotes } from '@/features/notes/hooks'
 import { isWritable, lifecycleOf } from '@/features/boards/lifecycle'
 import { SlidePreview } from '@/features/slides/components/SlidePreview'
 import { TeacherEditBadge } from '@/features/slides/components/TeacherEditBadge'
-import { useSlides } from '@/features/slides/hooks'
+import { useDeletedSlides, useSlides } from '@/features/slides/hooks'
 import { SpaceProfileDialog } from '@/features/spaces/components/SpaceProfileDialog'
 import { useMyStudentId, useSpaces } from '@/features/spaces/hooks'
-import { ReadyToggle } from '@/features/spaces/components/ReadyToggle'
+import { WorkStatusControl } from '@/features/spaces/components/WorkStatus'
+import { TeacherChanges } from '@/features/spaces/components/TeacherChanges'
+import { statusOf } from '@/features/spaces/ready'
 import { messagesPath } from '@/features/messages/messages'
 import { ClockBanner } from '@/features/clock/components/ClockBanner'
 import { PollsSection } from '@/features/polls/components/PollsSection'
@@ -36,7 +40,7 @@ import {
 import { MyAttendance } from '@/features/attendance/components/MyAttendance'
 import { displayNameOf } from '@/features/profile/api'
 import { useProfile } from '@/features/profile/hooks'
-import { clearCardStatus } from '@/features/spaces/api'
+import { clearCardStatus, markTeacherChangesSeen } from '@/features/spaces/api'
 import { AccessoryContext } from '@/features/boards/accessory-context'
 import { resolveLook } from '@/features/boards/look'
 import { boardTheme } from '@/features/boards/styles'
@@ -74,8 +78,25 @@ export function SpacePage() {
   // The student looked at their slides: the card's "✎ Docente" badge goes away
   const unseen = isMine && !!space.data?.teacherEditsUnseen
   useTeacherEditCheer(boardId, studentId, unseen)
-  // The teacher's annotations: private to the teacher and the owner
-  const notes = useNotes(boardId, studentId, teacher || isMine)
+  // The teacher's comments: all for the teacher and the owner; classmates get the public ones (M27)
+  const notes = useNotes(
+    boardId,
+    studentId,
+    teacher || isMine ? 'all' : me.studentId ? 'public' : 'none',
+  )
+  // M27: slides the teacher deleted (the owner restores them)
+  const deleted = useDeletedSlides(boardId, studentId, isMine || isBoardTeacher)
+  const [editingAsTeacher, setEditingAsTeacher] = useState(false)
+  // M27 (D130): a comment being written is never lost by leaving the page
+  useGuardLeavingPage()
+  // M27: the student opened their space: "Comentario nuevo" goes away
+  const commentsUnseen = isMine && !!space.data?.teacherCommentsUnseen
+  useEffect(() => {
+    if (commentsUnseen && boardId && studentId)
+      void markTeacherChangesSeen(boardId, studentId, { comments: true }).catch(
+        () => undefined,
+      )
+  }, [commentsUnseen, boardId, studentId])
   // M20: "Tu docente te dejó una nota" when there are new ones since my last visit
   useNoteCheer(boardId, studentId, notes, isMine)
   // M16: polls need my name, and (teacher / author) classmates' names to show who voted
@@ -106,6 +127,7 @@ export function SpacePage() {
   }
 
   const spaceId = space.data.id
+  const ownerName = space.data.ownerName
   const writable = !!board.data && isWritable(lifecycleOf(board.data))
   const canEdit = isMine && writable
   const stages = boardStages(board.data)
@@ -214,16 +236,19 @@ export function SpacePage() {
               )}
             </div>
             {canEdit && (
-              <ReadyToggle
-                boardId={boardId}
-                studentId={spaceId}
-                ready={!!space.data.readyToPresent}
-              />
-            )}
-            {canEdit && (
               <Button variant="outline" onClick={() => setEditing(true)}>
                 <Pencil />
                 {t('space.edit')}
+              </Button>
+            )}
+            {/* M27 (D129): the board's teacher edits the project too */}
+            {isBoardTeacher && writable && !isMine && (
+              <Button
+                variant="outline"
+                onClick={() => setEditingAsTeacher(true)}
+              >
+                <Pencil />
+                {t('projectEdits.edit')}
               </Button>
             )}
             {/* M26: the teacher writes to this student */}
@@ -247,6 +272,22 @@ export function SpacePage() {
               {space.data.summary}
             </p>
           )}
+          {/* M27: 🚧 En progreso · ✓ Listo, by the student (or the teacher, D129) */}
+          {(canEdit || (isBoardTeacher && writable)) && (
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <WorkStatusControl
+                boardId={boardId}
+                studentId={spaceId}
+                status={statusOf(space.data)}
+                by={canEdit ? 'student' : 'teacher'}
+              />
+              {space.data.workStatusBy === 'teacher' && (
+                <span className="text-xs text-neutral-600">
+                  {t('ready.byTeacher')}
+                </span>
+              )}
+            </div>
+          )}
           {teacher && writable && (
             <div className="mt-4 rounded-xl bg-white/70 p-3">
               <StagePicker
@@ -258,6 +299,28 @@ export function SpacePage() {
             </div>
           )}
         </article>
+
+        {/* M27: the teacher's comments on the whole project (public ones for classmates too) */}
+        <SlideNotes
+          boardId={boardId}
+          studentId={spaceId}
+          slideId={null}
+          notes={notes.bySlide.get(PROJECT_NOTES) ?? []}
+          canWrite={isBoardTeacher}
+          viewer={isBoardTeacher ? 'teacher' : isMine ? 'owner' : 'classmate'}
+          where={t('comments.whereProject', { name: space.data.ownerName })}
+          teacherProfiles={board.data?.teacherProfiles}
+        />
+
+        {(isMine || isBoardTeacher) && (
+          <TeacherChanges
+            boardId={boardId}
+            space={{ ...space.data, id: spaceId }}
+            deleted={deleted.data}
+            notesBySlide={notes.bySlide}
+            canRestore={isMine && writable}
+          />
+        )}
 
         <div className="flex items-center justify-between gap-2">
           <h2 className="font-semibold">
@@ -326,16 +389,20 @@ export function SpacePage() {
                     </Button>
                   )}
                 </div>
-                {(teacher || isMine) && (
-                  <SlideNotes
-                    boardId={boardId}
-                    studentId={spaceId}
-                    slideId={slide.id}
-                    notes={notes.bySlide.get(slide.id) ?? []}
-                    canWrite={teacher}
-                    teacherProfiles={board.data?.teacherProfiles}
-                  />
-                )}
+                {/* Classmates see only the public comments (M27); the list hides when empty */}
+                <SlideNotes
+                  boardId={boardId}
+                  studentId={spaceId}
+                  slideId={slide.id}
+                  notes={notes.bySlide.get(slide.id) ?? []}
+                  canWrite={teacher}
+                  viewer={teacher ? 'teacher' : isMine ? 'owner' : 'classmate'}
+                  where={t('comments.whereSlide', {
+                    number: index + 1,
+                    name: ownerName,
+                  })}
+                  teacherProfiles={board.data?.teacherProfiles}
+                />
               </li>
             ))}
           </ol>
@@ -356,6 +423,17 @@ export function SpacePage() {
             owner={isMine}
             writable={writable}
             names={names}
+          />
+        )}
+
+        {editingAsTeacher && (
+          <SpaceProfileDialog
+            boardId={boardId}
+            space={space.data}
+            stages={stages}
+            asTeacher
+            open
+            onOpenChange={(open) => !open && setEditingAsTeacher(false)}
           />
         )}
 

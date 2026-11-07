@@ -560,6 +560,8 @@ function ReadyFilters({
   const { t } = useTranslation()
   const labels = {
     ready: 'ready.ready',
+    wip: 'ready.wipFilter',
+    unmarked: 'ready.unmarked',
     withSlides: 'ready.withSlides',
     noSlides: 'ready.noSlides',
   } as const
